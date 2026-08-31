@@ -1,4 +1,0 @@
-uwsgi
-websocket-client
-watchdog
-matplotlib
