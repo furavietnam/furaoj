@@ -1,0 +1,62 @@
+{% extends "common-content.html" %}
+
+{% block content_js_media %}
+    {% if comment_form and comment_form.errors %}
+        {# comments/list.html is SSR'd directly below (not via the AJAX fragment) in
+           this case, so it needs its own media JS (martor editor, vote/hide/edit). #}
+        {% include "comments/media-js.html" %}
+    {% endif %}
+    {% include "comments/lazy-load-js.html" %}
+{% endblock %}
+
+{% block content_media %}
+    {% include "comments/media-css.html" %}
+{% endblock %}
+
+{% block header %}
+    <div style="float:right">
+        {% if problem.is_editable_by(request.user) %}
+            [<a href="{{ url('admin:judge_problem_change', problem.id) }}">{{ _('Edit') }}</a>]
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block body %}
+    <div class="content-description">
+        {% if not has_solved_problem %}
+            <div class="alert alert-danger">
+                {{ _('Remember to use this editorial **only** when stuck, and **not to copy-paste code from it**. Please be respectful to the problem author and editorialist.')|markdown('default', strip_paragraphs=True) }}<br>
+                <b>{{ _('Submitting an official solution before solving the problem yourself is a bannable offence.') }}</b>
+            </div>
+        {% endif %}
+        {% with authors=solution.authors.all() %}
+            {% if authors %}
+                <p>
+                    {% trans trimmed count=authors|length %}
+                        Author: 
+                    {% pluralize %}
+                        Authors: 
+                    {% endtrans %}
+                    {{ link_users(authors) }}
+                </p>
+            {% endif %}
+        {% endwith %}
+        {{ solution.content|markdown('solution', MATH_ENGINE)|reference|str|safe }}
+    </div>
+    <hr>
+    <div id="comments" data-comments-url="{{ url('problem_editorial_comments', problem.code) }}"
+         data-comments-trigger="auto"
+         data-comments-preloaded="{{ 'true' if comment_form and comment_form.errors else 'false' }}">
+        {% if comment_form and comment_form.errors %}
+            {% include "comments/list.html" %}
+        {% else %}
+            <div class="comments-loading">{{ _('Loading...') }}</div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block bodyend %}
+    {% if REQUIRE_JAX %}
+        {% include "mathjax-load.html" %}
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,457 @@
+{% extends "common-content.html" %}
+{% block content_media %}
+    {% if not comment_lock %}
+        {% include "comments/media-css.html" %}
+    {% endif %}
+    {% if request.user.is_authenticated and form %}
+        {{ form.media.css }}
+    {% endif %}
+    <style>
+        .title-state {
+            font-size: 2em;
+            float: left;
+            width: 1.1em;
+            display: block;
+            margin-top: 0.16em;
+        }
+
+        .info-float a {
+            vertical-align: middle;
+        }
+
+        .problem-clarification {
+            border-bottom: 1px solid #ccc;
+            margin-top: 1em;
+            margin-bottom: 1em;
+        }
+
+        .clarifications-area h2 {
+            margin-bottom: 20px;
+        }
+
+        .problem-clarification .body {
+            display: inline-block;
+            padding-left: 3em;
+        }
+
+        #content-right {
+            max-width: 12.5em;
+            min-width: 12.5em;
+        }
+
+        #problem-types, #allowed-langs, #available-judges {
+            padding-top: 1em;
+        }
+
+        .problem-info-entry {
+            padding-top: 0.5em;
+        }
+
+        #raw_problem {
+            visibility: hidden;
+            width: 0;
+            height: 0;
+            position: absolute;
+            left: -999em;
+        }
+    </style>
+{% endblock %}
+
+{% block content_js_media %}
+    {% if comment_form and comment_form.errors %}
+        {# comments/list.html is SSR'd directly below (not via the AJAX fragment) in
+           this case, so it needs its own media JS (martor editor, vote/hide/edit). #}
+        {% include "comments/media-js.html" %}
+    {% endif %}
+    {% include "comments/lazy-load-js.html" %}
+    {% if request.user.is_authenticated and form %}
+        {% include "problem/submit-js.html" %}
+    {% endif %}
+    <script type="text/javascript">
+        $(function() {
+            $('#pdf_button').click(async function(e) {
+                e.preventDefault();
+                if (!$('#raw_problem').attr("src"))
+                    $('#raw_problem').attr("src", "{{problem.code}}/raw");
+
+                while(!$('.math-loaded', frames['raw_problem'].document).length) {
+                    await new Promise(r => setTimeout(r, 200));
+                }
+                frames['raw_problem'].print();
+            });
+
+            // Tab switching functionality
+            $('.problem-tabs a').click(function(e) {
+                e.preventDefault();
+                var target = $(this).attr('href');
+
+                // Update active tab
+                $('.problem-tabs a').removeClass('active');
+                $(this).addClass('active');
+
+                // Update active content
+                $('.tab-content').removeClass('active');
+                $(target).addClass('active');
+
+                if (target === '#comments') {
+                    var loadComments = $('#comments').data('load-comments');
+                    if (loadComments) loadComments();
+                }
+
+                // Update URL hash without scrolling
+                if (history.pushState) {
+                    history.pushState(null, null, target);
+                } else {
+                    location.hash = target;
+                }
+            });
+
+            // Handle initial hash in URL. A #comment-<id> permalink (e.g. from the
+            // recent-comments widget) isn't a tab id, so it needs its own handling:
+            // open the comments tab and let lazy-load-js.html scroll to it once loaded.
+            var hash = window.location.hash;
+            if (/^#comment-\d+$/.test(hash)) {
+                var setPendingScroll = $('#comments').data('set-pending-scroll');
+                if (setPendingScroll) setPendingScroll(hash);
+                $('.problem-tabs a[href="#comments"]').click();
+            } else if (hash && $(hash).length) {
+                $('.problem-tabs a[href="' + hash + '"]').click();
+            } else if ($('#comments').hasClass('active')) {
+                // No hash-driven tab switch happened, but the comments tab is
+                // already the default active tab (anonymous users have no
+                // "Submit Solution" tab) - load it now instead of waiting for a
+                // click that will never come.
+                var loadComments = $('#comments').data('load-comments');
+                if (loadComments) loadComments();
+            }
+        });
+    </script>
+{% endblock %}
+
+{% block title_row %}
+    <div class="problem-title">
+        {% if request.user.is_authenticated %}
+            {% if problem.id in completed_problem_ids %}
+                <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
+                    {% if problem.is_public or request.in_contest %}
+                        <i class="solved-problem-color title-state fa fa-check-circle"></i>
+                    {% else %}
+                        <i class="solved-problem-color title-state fa fa-lock"></i>
+                    {% endif %}
+                </a>
+            {% elif problem.id in attempted_problems %}
+                <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
+                    {% if problem.is_public or request.in_contest %}
+                        <i class="attempted-problem-color title-state fa fa-frown-o"></i>
+                    {% else %}
+                        <i class="attempted-problem-color title-state fa fa-lock"></i>
+                    {% endif %}
+                </a>
+            {% endif %}
+        {% endif %}
+        <h2 style="display: inline-block">{{ title }}</h2>
+        {% if problem.is_organization_private and problem.organization %}
+            <span class="organization-tags">
+                <span class="organization-tag">
+                    <a href="{{ problem.organization.get_absolute_url() }}">
+                        <i class="fa fa-lock"></i> {{ problem.organization.name }}
+                    </a>
+                </span>
+            </span>
+        {% endif %}
+        <span class="spacer"></span>
+        {% if has_pdf_render %}
+            <a href="{{ url('problem_pdf', problem.code) }}" class="view-pdf">
+        {% else %}
+        <a id="pdf_button" class="view-pdf" href='#'>
+        {% endif %}
+            <span class="pdf-icon">
+                <span class="fa fa-file-pdf-o pdf-icon-logo"></span>
+                <span class="pdf-icon-bar"></span>
+            </span>
+            {{ _('View as PDF') }}
+        </a>
+    </div>
+{% endblock %}
+
+{% block info_float %}
+    {% if request.user.is_authenticated and request.in_contest and submission_limit %}
+        {% if submissions_left > 0 %}
+            <a href="{{ url('problem_submit', problem.code) }}" class="unselectable button full">
+                {{ _('Submit solution') }}
+            </a>
+            <div class="submissions-left">
+                {% trans trimmed counter=submissions_left %}
+                    {{ counter }} submission left
+                    {% pluralize %}
+                    {{ counter }} submissions left
+                {% endtrans %}
+            </div>
+        {% else %}
+            <a class="unselectable button full disabled">{{ _('Submit solution') }}</a>
+            <div class="no-submissions-left submissions-left">{{ _('0 submissions left') }}</div>
+        {% endif %}
+    {% else %}
+        <a href="{{ url('problem_submit', problem.code) }}" class="unselectable button full">
+            {{ _('Submit solution') }}
+        </a>
+    {% endif %}
+
+    <hr style="padding-bottom: 0.3em">
+    {% if request.in_contest and contest_problem %}
+        {% set contest = contest_problem.contest %}
+        <div><a href="{{ url('contest_user_submissions', contest.key, request.user.username, problem.code) }}">{{ _('My submissions') }}</a></div>
+        {% if contest.can_see_full_submission_list(request.user) %}
+            <div><a href="{{ url('chronological_submissions', problem.code) }}">{{ _('All submissions') }}</a></div>
+            <div><a href="{{ url('contest_ranked_submissions', contest.key, problem.code) }}">{{ _('Best submissions') }}</a></div>
+        {% endif %}
+    {% else %}
+        {% if request.user.is_authenticated and has_submissions %}
+            <div>
+                <a href="{{ url('user_submissions', problem.code, request.user.username) }}">{{ _('My submissions') }}</a>
+            </div>
+        {% endif %}
+        <div><a href="{{ url('chronological_submissions', problem.code) }}">{{ _('All submissions') }}</a></div>
+        <div><a href="{{ url('ranked_submissions', problem.code) }}">{{ _('Best submissions') }}</a></div>
+    {% endif %}
+    {% if (editorial and editorial.is_accessible_by(request.user)) and not request.in_contest %}
+        <hr>
+        <div><a href="{{ url('problem_editorial', problem.code) }}">{{ _('Read editorial') }}</a></div>
+    {% endif %}
+    {% if can_edit_problem %}
+        <hr>
+        <div>
+            <a href="{{ url('problem_ticket_list', problem.code) }}">{{ _('Manage tickets') }}
+                {% if num_open_tickets %}<span class="badge">{{ num_open_tickets }}</span>{% endif %}
+            </a>
+        </div>
+        <div><a href="{{ url('problem_edit', problem.code) }}">{{ _('Edit problem') }}</a></div>
+        <div><a href="{{ url('problem_delete', problem.code) }}?next={{ request.get_full_path()|urlencode }}">{{ _('Delete problem') }}</a></div>
+        {% if not problem.is_manually_managed %}
+            <div><a href="{{ url('problem_data', problem.code) }}">{{ _('Edit test data') }}</a></div>
+        {% endif %}
+    {% elif request.user.is_authenticated and has_tickets %}
+        <hr>
+        <div>
+            <a href="{{ url('problem_ticket_list', problem.code) }}">{{ _('My tickets') }}
+                {% if num_open_tickets %}<span class="badge">{{ num_open_tickets }}</span>{% endif %}
+            </a>
+        </div>
+    {% endif %}
+
+    {% if perms.judge.edit_type_group_all_problem %}
+        <div><a href="{{ url('problem_edit_type_group', problem.code) }}">{{ _('Edit type group') }}</a></div>
+    {% endif %}
+
+    {% if problem.is_subs_manageable_by(request.user) %}
+        <div>
+            <a href="{{ url('problem_manage_submissions', problem.code) }}">{{ _('Manage submissions') }}</a>
+        </div>
+    {% endif %}
+
+    {% if perms.judge.clone_problem and can_edit_problem %}
+        <div>
+            <a href="{{ url('problem_clone', problem.code) }}">{{ _('Clone problem') }}</a>
+        </div>
+    {% endif %}
+
+    <hr style="padding-top: 0.3em">
+
+    <div class="problem-info-entry">
+        <i class="fa fa-check fa-fw"></i><span class="pi-name">{{ _('Points:') }}</span>
+        <span class="pi-value">
+            {% if contest_problem %}
+                {{ contest_problem.points }}{% if contest_problem.partial %} {{ _('(partial)') }}{% endif %}
+            {% else %}
+                {{ problem.points|floatformat(2) }}{% if problem.partial %} {{ _('(partial)') }}{% endif %}
+            {% endif %}
+        </span>
+    </div>
+    <div class="problem-info-entry">
+        <i class="fa fa-clock-o fa-fw"></i><span class="pi-name">{{ _('Time limit:') }}</span>
+        <span class="pi-value">{{ problem.time_limit }}s</span>
+    </div>
+    <div class="problem-lang-limits">
+        {% for name, limit in problem.language_time_limit %}
+            <div class="lang-limit">
+                <span class="lang-name">{{ name }}</span>
+                <span class="lang-tl">{{ limit }}s</span>
+            </div>
+        {% endfor %}
+    </div>
+    <div class="problem-info-entry">
+        <i class="fa fa-server fa-fw"></i><span class="pi-name">{{ _('Memory limit:') }}</span>
+        <span class="pi-value">{{ problem.memory_limit|kbsimpleformat }}</span>
+    </div>
+    <div class="problem-lang-limits">
+        {% for name, limit in problem.language_memory_limit %}
+            <div class="lang-limit">
+                <span class="lang-name">{{ name }}</span>
+                <span class="lang-ml">{{ limit|kbsimpleformat }}</span>
+            </div>
+        {% endfor %}
+    </div>
+    {% if problem.io_method.method == 'standard' %}
+        <div class="problem-info-entry">
+            <i class="fa fa-keyboard-o fa-fw"></i><span class="pi-name">{{ _('Input:') }}</span>
+            <span class="pi-value">stdin</span>
+        </div>
+        <div class="problem-info-entry">
+            <i class="fa fa-print fa-fw"></i><span class="pi-name">{{ _('Output:') }}</span>
+            <span class="pi-value">stdout</span>
+        </div>
+    {% elif problem.io_method.method == 'file' %}
+        <div class="problem-info-entry">
+            <i class="fa fa-keyboard-o fa-fw"></i><span class="pi-name">{{ _('Input:') }}</span>
+            <span class="pi-value"><i>{{ problem.io_method.input }}</i></span>
+        </div>
+        <div class="problem-info-entry">
+            <i class="fa fa-print fa-fw"></i><span class="pi-name">{{ _('Output:') }}</span>
+            <span class="pi-value"><i>{{ problem.io_method.output }}</i></span>
+        </div>
+    {% endif %}
+
+    <hr style="padding-top: 0.7em">
+
+    {% if not contest_problem or not contest_problem.contest.hide_problem_authors %}
+        {% cache 86400 'problem_authors' problem.id LANGUAGE_CODE %}
+            {% with authors=problem.authors.all() %}
+                {% if authors %}
+                    <div class="problem-info-entry">
+                        <i class="fa fa-pencil-square-o fa-fw"></i><span
+                            class="pi-name">{% trans trimmed count=authors|length %}
+                        Author:
+                        {% pluralize count %}
+                        Authors:
+                    {% endtrans %}</span>
+                        <div class="pi-value authors-value">{{ link_users(authors) }}</div>
+                    </div>
+                {% endif %}
+            {% endwith %}
+        {% endcache %}
+    {% endif %}
+
+    {% if problem.source %}
+        <div class="problem-info-entry">
+            <i class="fa fa-pencil-square-o fa-fw"></i><span
+                class="pi-name">{{ _('Problem source:') }}</span>
+            <div class="pi-value authors-value">{{ problem.source }}</div>
+        </div>
+    {% endif %}
+
+    {% if not contest_problem or not contest_problem.contest.hide_problem_tags %}
+        <div id="problem-types">
+            {% with types=problem.types_list %}
+                <div class="toggle closed unselectable">
+                    <i class="fa fa-chevron-right fa-fw"></i>{% trans trimmed count=problem.types_list|length %}
+                    Problem type
+                    {% pluralize count %}
+                    Problem types
+                {% endtrans %}
+                </div>
+                <div style="display:none" class="toggled">{{ problem.types_list|join(", ") }}</div>
+            {% endwith %}
+        </div>
+    {% endif %}
+    {% if show_languages %}
+        <div id="allowed-langs">
+            <div class="toggle open unselectable">
+                <i class="fa fa-chevron-right fa-fw"></i>{{ _('Allowed languages') }}
+            </div>
+            <div class="toggled">
+                {% with usable=problem.usable_common_names, langs=problem.languages_list() %}
+                    {% for lang in langs %}
+                        {%- if lang in usable -%}
+                            {{ lang }}
+                        {%- else -%}
+                            <s title="{{ _('No %(lang)s judge online', lang=lang) }}">{{ lang }}</s>
+                        {%- endif -%}
+                        {% if not loop.last %}, {% endif -%}
+                    {% endfor %}
+                {% endwith %}
+            </div>
+        </div>
+    {% endif %}
+
+    {% if problem.is_editable_by(request.user) %}
+        <div id="available-judges">
+            <i class="fa fa-database fa-fw"></i><span
+                class="pi-name">{% trans trimmed count=available_judges|length %}
+                Judge:
+                {% pluralize count %}
+                Judges:
+            {% endtrans %}
+            </span>
+            <div class="pi-value judges-value">
+                {% if available_judges %}
+                    {% if perms.judge.change_judge %}
+                        {% for judge in available_judges %}
+                            <a href="{{ url('admin:judge_judge_change', judge.id) }}">{{ judge.name }}</a>
+                            {%- if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        {{ available_judges|join(", ") }}
+                    {% endif %}
+                {% else %}
+                    <i>{{ _('none available') }}</i>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block description %}
+    <iframe name="raw_problem" id="raw_problem"></iframe>
+    {% include "problem/problem-detail.html" %}
+{% endblock %}
+
+{% block post_description_end %}
+    {% if request.user.is_authenticated and not request.profile.mute %}
+        <a href="{{ url('new_problem_ticket', problem.code) }}" class="button clarify">
+            {%- if comment_lock and request.profile.current_contest.live -%}
+                {{ _('Request clarification') }}
+            {%- else -%}
+                {{ _('Report an issue') }}
+            {%- endif -%}
+        </a>
+    {% endif %}
+{% endblock %}
+
+{% block comments %}
+    {# A failed comment submission must land on the Comments tab so the error is
+       actually visible, even for authenticated users (whose default tab is
+       otherwise Submit Solution). #}
+    {% set comments_tab_active = not request.user.is_authenticated or (comment_form and comment_form.errors) %}
+    <div class="problem-tabs">
+        <ul>
+            {% if request.user.is_authenticated %}
+                <li><a href="#submit" {% if not comments_tab_active %}class="active"{% endif %}>{{ _('Submit Solution') }}</a></li>
+            {% endif %}
+            <li><a href="#comments" {% if comments_tab_active %}class="active"{% endif %}>{{ _('Comments') }}</a></li>
+        </ul>
+    </div>
+
+    {% if request.user.is_authenticated %}
+        <div id="submit" class="tab-content {% if not comments_tab_active %}active{% endif %}">
+            <div class="submit-tab-content">
+                {% include "problem/submit-form.html" %}
+            </div>
+        </div>
+    {% endif %}
+
+    <div id="comments" class="tab-content {% if comments_tab_active %}active{% endif %}"
+         data-comments-url="{{ url('problem_comments', problem.code) }}" data-comments-trigger="tab"
+         data-comments-preloaded="{{ 'true' if comment_form and comment_form.errors else 'false' }}">
+        {% if comment_form and comment_form.errors %}
+            {# A failed comment submission needs its error shown; render the full list
+               instead of the placeholder so comment_form.errors is actually visible.
+               data-comments-preloaded above tells lazy-load-js.html not to clobber
+               this with an AJAX fetch (which would build a fresh, error-free form). #}
+            {% with comment_warn_code=true %}
+                {% include "comments/list.html" %}
+            {% endwith %}
+        {% else %}
+            <div class="comments-loading">{{ _('Loading...') }}</div>
+        {% endif %}
+    </div>
+{% endblock %}

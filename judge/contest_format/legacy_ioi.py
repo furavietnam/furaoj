@@ -1,0 +1,83 @@
+from django.core.exceptions import ValidationError
+from django.db.models import Min, OuterRef, Subquery
+from django.utils.translation import gettext as _, gettext_lazy
+
+from judge.contest_format.default import DefaultContestFormat
+from judge.contest_format.registry import register_contest_format
+
+
+@register_contest_format('ioi')
+class LegacyIOIContestFormat(DefaultContestFormat):
+    name = gettext_lazy('IOI (pre-2016)')
+    config_defaults = {'cumtime': False, 'last_score_altering': False}
+    """
+        cumtime: Specify True if time penalties are to be computed. Defaults to False.
+        last_score_altering: Specify True if ties are to be broken by the time of the last score altering submission.
+        Defaults to False.
+    """
+
+    @classmethod
+    def validate(cls, config):
+        if config is None:
+            return
+
+        if not isinstance(config, dict):
+            raise ValidationError('IOI-styled contest expects no config or dict as config')
+
+        for key, value in config.items():
+            if key not in cls.config_defaults:
+                raise ValidationError('unknown config key "%s"' % key)
+            if not isinstance(value, type(cls.config_defaults[key])):
+                raise ValidationError('invalid type for config key "%s"' % key)
+
+    def __init__(self, contest, config):
+        self.config = self.config_defaults.copy()
+        self.config.update(config or {})
+        self.contest = contest
+
+    def update_participation(self, participation):
+        cumtime = 0
+        last_submission_time = 0
+        score = 0
+        format_data = {}
+
+        queryset = (participation.submissions.values('problem_id')
+                                             .filter(points=Subquery(
+                                                 participation.submissions.filter(problem_id=OuterRef('problem_id'))
+                                                                          .order_by('-points').values('points')[:1]))
+                                             .annotate(time=Min('submission__date'))
+                                             .values_list('problem_id', 'time', 'points'))
+
+        for problem_id, time, points in queryset:
+            if points:
+                dt = (time - participation.start).total_seconds()
+                if self.config['last_score_altering']:
+                    last_submission_time = max(last_submission_time, dt)
+                if self.config['cumtime']:
+                    cumtime += dt
+            else:
+                dt = 0
+
+            format_data[str(problem_id)] = {'points': points, 'time': dt}
+            score += points
+
+        participation.cumtime = max(cumtime, 0) if self.config['cumtime'] else last_submission_time
+        participation.score = round(score, self.contest.points_precision)
+        participation.tiebreaker = last_submission_time
+        participation.format_data = format_data
+        participation.save()
+
+    def get_short_form_display(self):
+        yield _('The maximum score submission for each problem will be used.')
+
+        if self.config['last_score_altering']:
+            if self.config['cumtime']:
+                yield _('Ties will be broken by the sum of the last score altering submission time on problems with '
+                        'a non-zero score, followed by the time of the last score altering submission.')
+            else:
+                yield _('Ties will be broken by the time of the last score altering submission.')
+        elif self.config['cumtime']:
+            yield _('Ties will be broken by the sum of the last score altering submission time on problems with a '
+                    'non-zero score.')
+        else:
+            yield _('Ties by score will **not** be broken.')

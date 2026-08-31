@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title_row %}
+    <h2 style="display: inline-block">
+        {% if content_title %}{{ content_title }}{% else %}{{ title }}{% endif %}
+    </h2>
+    {% if organization %}
+        <span class="organization-tags">
+            <span class="organization-tag">
+                <a href="{{ organization.get_absolute_url() }}">
+                    <i class="fa fa-lock"></i> {{ organization.name }}
+                </a>
+            </span>
+        </span>
+    {% endif %}
+{% endblock %}
+
+{% block js_media %}
+    {{ form.media.js }}
+    {% include "leave-warning.html" %}
+
+    <script src="{{ static('furaoj/jquery.formset.js') }}"></script>
+    <script src="{{ static('libs/featherlight/featherlight.min.js') }}"></script>
+
+    <script>
+        $(function() {
+            {% if lang_limit_formset %}
+                $('#form_set tr').formset({
+                    prefix: '{{ lang_limit_formset.prefix }}',
+                    deleteText: '<i class="fa fa-trash" aria-hidden="true"></i>'
+                });
+
+            $('#lang_limit_title').click(function() {
+                $('#lang_limit_title i').toggleClass('fa-caret-down fa-caret-up');
+                $('#lang_limit_table').toggleClass('hidden');
+            });
+            $('#lang_limit_title').click();
+            {% endif %}
+
+            var noResults = function () {
+                return {{ _('Press Enter to select multiple users...')|htmltojs }};
+            };
+
+            $(document).one('click', '#id_testers + .select2', function (e) {
+                $('#id_testers').data().select2.options.get('translations').dict['noResults'] = noResults;
+            });
+
+            $(document).on('keyup', '#id_testers + .select2 .select2-search__field', function (e) {
+                if (e.keyCode === 13) {
+                    var $id_testers = $('#id_testers');
+                    var testers = $(this).val().split(/[\s,]+/);
+                    if (testers.length <= 1) {
+                        // Skip to let select2 handle this
+                        return;
+                    }
+
+                    $.ajax({
+                        type: 'GET',
+                        url: $id_testers.data().select2.dataAdapter.ajaxOptions.url,
+                        data: {
+                            multiple_terms: testers,
+                        },
+                        success: function (response) {
+                            for (const tester of response.results) {
+                                $id_testers.select2('trigger', 'select', {
+                                    data: tester,
+                                });
+                            }
+                        },
+                    });
+                }
+            });
+
+            {% if organization %}
+            // Open instantly instead of fading in an empty box first.
+            $.featherlight.defaults.openSpeed = 0;
+            var $problemTags = $('#id_tags');
+            if ($problemTags.length) {
+                var $target = $problemTags.next('.select2');
+                if (!$target.length) {
+                    $target = $problemTags;
+                }
+
+                $('<a>', {
+                    href: {{ url('organization_tag_add', organization.slug)|htmltojs }},
+                    class: 'related-widget-wrapper-link js-add-org-tag',
+                    text: {{ _('Create new tag')|htmltojs }},
+                    title: {{ _('Create new tag')|htmltojs }},
+                }).prepend($('<i>', { class: 'fa fa-plus', 'aria-hidden': 'true' })).appendTo($target.parent());
+            }
+
+            $(document).on('click', '.js-add-org-tag', function (e) {
+                e.preventDefault();
+
+                $.featherlight($('#add-org-tag-form'), {
+                    afterOpen: function () {
+                        var $form = $.featherlight.current().$content.show();
+                        var $error = $form.find('.tag-dialog-error');
+                        $form.find('input[name=name]').val('').focus();
+                        $error.hide();
+
+                        $form.off('submit').on('submit', function (ev) {
+                            ev.preventDefault();
+
+                            var name = $.trim($form.find('input[name=name]').val());
+                            if (!name) {
+                                $error.text({{ _('Tag name is required.')|htmltojs }}).show();
+                                return;
+                            }
+
+                            $.ajax({
+                                type: 'POST',
+                                url: $form.attr('action'),
+                                data: {
+                                    name: name,
+                                    csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val(),
+                                },
+                                headers: {
+                                    'X-Requested-With': 'XMLHttpRequest',
+                                },
+                                success: function (tag) {
+                                    var option = new Option(tag.name, tag.id, true, true);
+                                    $problemTags.append(option).trigger('change');
+                                    $.featherlight.current().close();
+                                },
+                                error: function (xhr) {
+                                    var message = {{ _('Could not create tag.')|htmltojs }};
+                                    var errors = xhr.responseJSON && xhr.responseJSON.errors;
+                                    if (errors && errors.name && errors.name.length && errors.name[0].message) {
+                                        message = errors.name[0].message;
+                                    }
+                                    $error.text(message).show();
+                                },
+                            });
+                        });
+                    }
+                });
+            });
+            {% endif %}
+        })
+    </script>
+{% endblock %}
+
+{% block media %}
+    {{ form.media.css }}
+    <link rel="stylesheet" type="text/css" href="{{ static('ui_form.css') }}">
+    <style>
+        .hidden {
+            display: none;
+        }
+
+        .related-widget-wrapper-link {
+            margin-left: 0.75em;
+            white-space: nowrap;
+        }
+
+        .related-widget-wrapper-link .fa {
+            margin-right: 0.3em;
+        }
+
+        #id_tags + .select2 {
+            min-width: 16em;
+        }
+
+        .tag-dialog h3 {
+            margin: 0 0 0.75em;
+        }
+
+        .tag-dialog input[name=name] {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .tag-dialog .submit {
+            margin-top: 1em;
+        }
+    </style>
+{% endblock %}
+
+{% macro form_as_row(form) -%}
+    {% if form.non_field_errors() %}
+    <tr>
+        <td colspan="6">{{ form.non_field_errors() }}</td>
+    </tr>
+    {% endif %}
+    <tr>
+        <td>{{ form.id }} {{ form.language.errors }}{{ form.language }}</td>
+        <td>{{ form.time_limit.errors }}{{ form.time_limit }}</td>
+        <td>{{ form.memory_limit.errors }}{{ form.memory_limit }}</td>
+        <td>
+        {% if lang_limit_formset.can_delete and form.instance.pk %}
+            {{ form.DELETE }}
+        {% endif %}
+        </td>
+    <tr>
+{%- endmacro %}
+
+{% block body %}
+<div>
+    {% if request.user.is_staff %}
+        <div class="alert alert-warning alert-dismissable">
+            <a class="close">x</a>
+            <a href="{{ url('admin:judge_problem_change', object.id) }}">{{ _('Edit problem in admin panel for more options') }}</a>
+        </div>
+    {% endif %}
+    {% if perms.judge.import_polygon_package %}
+        <div class="alert alert-warning alert-dismissable">
+            <a class="close">x</a>
+            <a href="{{ url('problem_update_polygon', object.code) }}">{{ _('Update problem from Codeforces Polygon package') }}</a>
+        </div>
+    {% endif %}
+    <form action="" method="post" class="form-area" enctype="multipart/form-data" style="display: flex; justify-content: center; flex-direction: column;">
+        {% if form.errors or solution_formset.errors %}
+            <p class="errornote"> {{ _('Please correct the error below.') }}</p>
+        {% endif %}
+        {% csrf_token %}
+        {{ lang_limit_formset.management_form }}
+        <table class="django-as-table">{{ form.as_table() }}</table>
+        <hr>
+
+        <center>
+            <h3 id="lang_limit_title">{{ _('Language-specific resource limit') }} <i class="fa fa-caret-up"></i></h3>
+            <span class="helptext">{{ _('Only use this feature if you really need to!') }}</span>
+        </center>
+        <table class="table" id="lang_limit_table">
+            <thead>
+                <tr>
+                    <th style="width: 20em;"> {{ _('Language') }} </th>
+                    <th> {{ _('Time limit (seconds)') }} </th>
+                    <th> {{ _('Memory limit (KiB)') }} </th>
+                    <th> {{ _('Delete') }} </th>
+                </tr>
+            </thead>
+            <tbody id="form_set">
+                {% for form in lang_limit_formset %}
+                    {{ form_as_row(form) }}
+                {% endfor %}
+            </tbody>
+        </table>
+        <hr>
+
+        <center><h3> {{ _('Editorial') }} </h3></center>
+        <table class="django-as-table">{{ solution_formset.as_table() }}</table>
+
+        <table>
+            <tr><td style="float: left;">
+            <td style="float: right;"><input type="submit" value="{{ _('Update') }}" class="button"></td></tr>
+        </table>
+    </form>
+    {% if organization %}
+    <form id="add-org-tag-form" class="tag-dialog" style="display: none;"
+          action="{{ url('organization_tag_add', organization.slug) }}" method="post">
+        <h3>{{ _('Create new tag') }}</h3>
+        <input type="text" name="name" placeholder="{{ _('New tag name') }}" autocomplete="off">
+        <p class="tag-dialog-error errornote" style="display: none;"></p>
+        <button type="submit" class="button submit">{{ _('Create') }}</button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

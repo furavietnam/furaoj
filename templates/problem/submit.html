@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block js_media %}
+    {% include "problem/submit-js.html" %}
+{% endblock %}
+
+{% block media %}
+    {{ form.media.css }}
+{% endblock %}
+
+{% block body %}
+    {% include "problem/submit-form.html" %}
+{% endblock %}

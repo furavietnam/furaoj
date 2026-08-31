@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block body %}
+    {% if error.is_private %}
+        <p><i>{{ _('This contest is private to specific users.') }}</i></p>
+    {% endif %}
+
+    {% if error.is_organization_private and error.org %}
+        {% if error.is_private %}
+            <p>{{ _('Additionally, only the following organization may access this contest:') }}</p>
+        {% else %}
+            <p>{{ _('Only the following organization may access this contest:') }}</p>
+        {% endif %}
+        <ul>
+            <li><a href="{{ error.org.get_absolute_url() }}">{{ error.org.name }}</a></li>
+        </ul>
+    {% endif %}
+{% endblock %}

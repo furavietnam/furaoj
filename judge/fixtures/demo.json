@@ -1,0 +1,195 @@
+[
+    {
+        "fields": {
+            "about": "",
+            "ace_theme": "github",
+            "current_contest": null,
+            "display_rank": "admin",
+            "ip": "10.0.2.2",
+            "language": 1,
+            "last_access": "2017-12-02T08:57:10.093Z",
+            "math_engine": "auto",
+            "mute": false,
+            "organizations": [
+                1
+            ],
+            "performance_points": 0.0,
+            "points": 0.0,
+            "problem_count": 0,
+            "rating": null,
+            "timezone": "Asia/Ho_Chi_Minh",
+            "user": 1,
+            "user_script": ""
+        },
+        "model": "judge.profile",
+        "pk": 1
+    },
+    {
+        "fields": {
+            "date_joined": "2017-12-02T08:34:17.408Z",
+            "email": "",
+            "first_name": "",
+            "groups": [],
+            "is_active": true,
+            "is_staff": true,
+            "is_superuser": true,
+            "last_login": "2017-12-02T08:34:31.840Z",
+            "last_name": "",
+            "password": "pbkdf2_sha256$36000$eFRRZq4DgktS$md1gk0bBJb7PH/+3YEXkcCW8K+KmiI+y/amqR32G2DY=",
+            "user_permissions": [],
+            "username": "admin"
+        },
+        "model": "auth.user",
+        "pk": 1
+    },
+    {
+        "fields": {
+            "about": "This is a sample organization. You can use organizations to split up your user base, host private contests, and more.",
+            "access_code": null,
+            "admins": [
+                1
+            ],
+            "creation_date": "2017-12-02T08:50:25.199Z",
+            "is_open": true,
+            "slug": "vnoj",
+            "name": "FuraOJ: Fura Online Judge",
+            "short_name": "FuraOJ",
+            "slots": null
+        },
+        "model": "judge.organization",
+        "pk": 1
+    },
+    {
+        "fields": {
+            "full_name": "Chưa phân loại",
+            "name": "uncategorized"
+        },
+        "model": "judge.problemtype",
+        "pk": 1
+    },
+    {
+        "fields": {
+            "full_name": "Chưa phân loại",
+            "name": "Uncategorized"
+        },
+        "model": "judge.problemgroup",
+        "pk": 1
+    },
+    {
+        "fields": {
+            "ac_rate": 0.0,
+            "allowed_languages": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10
+            ],
+            "authors": [
+                1
+            ],
+            "banned_users": [],
+            "code": "aplusb",
+            "curators": [],
+            "date": "2017-12-02T05:00:00Z",
+            "description": "Tudor is sitting in math class, on his laptop. Clearly, he is not paying attention in this situation. However, he gets called on by his math teacher to do some problems. Since his math teacher did not expect much from Tudor, he only needs to do some simple addition problems. However, simple for you and I may not be simple for Tudor, so please help him!\n\n## Input Specification\n\nThe first line will contain an integer ~N~ (~1 \\le N \\le 100\\,000~), the number of addition problems Tudor needs to do. The next ~N~ lines will each contain two space-separated integers whose absolute value is less than ~1\\,000\\,000\\,000~, the two integers Tudor needs to add.\n\n## Output Specification\n\nOutput ~N~ lines of one integer each, the solutions to the addition problems in order.\n\n## Sample Input\n\n    2\n    1 1\n    -1 0\n\n## Sample Output\n\n    2\n    -1",
+            "group": 1,
+            "is_manually_managed": false,
+            "is_public": true,
+            "license": null,
+            "memory_limit": 65536,
+            "name": "A Plus B",
+            "og_image": "",
+            "partial": true,
+            "points": 5.0,
+            "short_circuit": false,
+            "summary": "",
+            "testers": [],
+            "time_limit": 2.0,
+            "types": [
+                1
+            ],
+            "user_count": 0
+        },
+        "model": "judge.problem",
+        "pk": 1
+    },
+    {
+        "model": "judge.blogpost",
+        "pk": 1,
+        "fields": {
+            "title": "Chào mừng bạn đến với FuraOJ",
+            "slug": "welcome-to-vnoj",
+            "visible": true,
+            "global_post": true,
+            "sticky": true,
+            "publish_on": "2017-12-02T05:00:00Z",
+            "content": "Chào mừng bạn đến với FuraOJ.\r\n\r\nFuraOJ - Fura Online Judge - là hệ thống online judge chính thức của [Fura](https://team.vnoi.info/)",
+            "summary": "",
+            "og_image": "",
+            "authors": [
+                1
+            ]
+        }
+    },
+    {
+        "fields": {
+            "author": 1,
+            "body": "This is your first comment!",
+            "hidden": false,
+            "level": 0,
+            "lft": 1,
+            "page": "b:1",
+            "parent": null,
+            "rght": 2,
+            "score": 0,
+            "time": "2017-12-02T08:46:54.007Z",
+            "tree_id": 1
+        },
+        "model": "judge.comment",
+        "pk": 1
+    },
+    {
+        "fields": {
+            "domain": "localhost:8081",
+            "name": "FuraOJ: Fura Online Judge"
+        },
+        "model": "sites.site",
+        "pk": 1
+    },
+    {
+        "model": "flatpages.flatpage",
+        "pk": 1,
+        "fields": {
+            "url": "/custom_checkers/",
+            "title": "Custom checkers",
+            "content": "Một số bài tập có thể có nhiều output đúng, vì vậy đôi lúc ta cần phải viết checker để  kiểm tra xem output có đúng hay chưa. \r\n\r\n\r\n# 1. Checker mặc định\r\nFuraOJ có hỗ trợ các checker mặc định của DMOJ, các bạn có thể xem ở [đây](https://docs.dmoj.ca/#/problem_format/custom_checkers)\r\n\r\n# 2. Custom Checker (Python)\r\n\r\nMột `checker` được viết bằng Python cần cài đặt một hàm như sau:\r\n```python3\r\ndef check(process_output, judge_output, **kwargs):\r\n    # your code\r\n    \r\n```\r\n\r\nTrong đó:\r\n* `process_output`: output của bài nộp\r\n* `judge_output`: đáp án\r\n \r\n`**kwargs` có thể chứa các biến sau:\r\n\r\n* `submission_source`: source code của bài nộp\r\n* `judge_input`: input của đề bài\r\n* `point_value`: điểm của test đang chấm\r\n* `case_position`: thứ tự của test\r\n* `batch`: batch của test case (với các bài chấm theo subtask), đại đa số các bài ta không cần quan tâm tới biến này.\r\n* `submission_language`: ngôn ngữ của bài nộp\r\n* `execution_time`: thời gian chạy, tính bằng giây\r\n\r\n## Return\r\nHàm `check` có 2 cách return:\r\n\r\n\r\n1. Return bằng True hoặc False, nếu đáp án đúng thì return True, ngược lại return False\r\n2. Return bằng `CheckerResult`, return bằng cách này thì có thể trả về được feedback cho người nộp. Cách dùng như sau: `CheckerResult(passed, points_awarded)`. Trong đó:\r\n    * `passed` là có giá trị True/False tùy vào kết quả có đúng hay không.\r\n    * `points_awarded`: là số điểm nhận được với test đó.\r\n    * `feedback`: thông tin đưa tới người nộp. \r\n\r\n## Ví dụ\r\nDưới đây là checker mẫu cho bài toán [POST - A cộng B](/problem/post).\r\n\r\n```python3\r\nfrom dmoj.result import CheckerResult\r\n\r\ndef check(process_output, judge_output, judge_input, point_value, **kwargs):\r\n    # convert from bytes to texts\r\n    process_output = process_output.decode(\"ascii\")\r\n    judge_output = judge_output.decode(\"ascii\")\r\n    judge_input = judge_input.decode(\"ascii\")\r\n    \r\n    # read data as normal\r\n    a, b = judge_input.split(' ')\r\n    output_sum = int(process_output)\r\n    if a + b != output_sum:\r\n        return CheckerResult(False, 0, f\"{a} + {b} != {output_sum}\")\r\n    return CheckerResult(True, point_value, \"Ok answer is correct\")\r\n```\r\n\r\n# 3. Custom Checker (C++)\r\n\r\nĐể viết được C++ checker, ta cần viết một chương trình C++ nhận vào 3 tham số dòng lệnh theo thứ tự là `input_file`, `output_file`, `answer_file`, tươn ứng với đường dẫn tới các file input, output, đáp án. \r\n\r\n## Return\r\n\r\nChương trình (hàm main) trả về các giá trị sau:\r\n* 0 nếu AC (100% số điểm)\r\n* 1 nếu WA (0 điểm)\r\n* 7 nếu nhận được điểm thành phần. Khi đó cần in ra `stderr` một số thực trong đoạn `[0, 1]` thể hiện tỷ lệ điểm. Lưu ý rằng điểm phải được in ra ở dòng đầu tiên của `stderr`\r\n* Nếu chương trình trả về giá trị khác (exit code khác 0, hay run time error) thì bài nộp sẽ được 0 điểm (xem như WA).\r\n\r\nNhững thông tin được viết ra `stdout` sẽ được in ra màn hình cho người nộp bài (feedback), nhưng thông tin này chỉ hiển thị được khoản 20 ký tự.\r\nNếu muốn người dùng xem được nhiều feedback hơn, thì in feedback vào stderr (lưu ý in sau khi in điểm ở dòng đầu tiên).\r\n\r\n\r\n## Ví dụ: \r\nChương trình sau dùng để chấm bài toán: Cho ~n~ là một số nguyên dương. In ra hai số tự nhiên ~a~, ~b~ sao cho ~a + b = n~.\r\n\r\nNếu in ra ~a + b = n~ và ~a, b \\ge 0~ thì được ~100\\%~ số điểm, nếu ~a + b = n~ nhưng một trong 2 số ~a, b~ âm thì được ~50\\%~ số điểm.\r\n\r\n```c++\r\n#include <bits/stdc++.h>\r\nusing namespace std;\r\n\r\nint main(int argc, char** argv) {\r\n    ifstream inp(argv[1]);\r\n    ifstream out(argv[2]);\r\n    ifstream ans(argv[3]);\r\n\r\n    int n, a, b, c, d;\r\n    \r\n    inp >> n;\r\n    out >> a >> b;\r\n    ans >> c >> d;\r\n\r\n    if (a + b == c + d) {\r\n        cout << a << \" + \" << b << \" = \" << c << \" + \" << d << endl;\r\n            \r\n        if (a >= 0 && b >= 0) {\r\n            cerr << \"This line will be show to the contestants as a extended feedback\";\r\n            return 0; // AC\r\n        }\r\n        else {\r\n            cerr << 0.5 << '\\n'; // in ra điểm ở dòng đầu tiên\r\n            cerr << \"Thís line will be show to the contestants as a extended feedback\";\r\n            return 7; // PARTIAL\r\n        }\r\n    }     \r\n    else {\r\n        cout << \"a + b = \" << a + b << \" != \" << n << endl;\r\n        return 1; // WA\r\n    }\r\n}\r\n```\r\n\r\nFuraOJ cũng hộ trợ các checker được viết bằng [testlib.h](https://github.com/MikeMirzayanov/testlib/blob/master/testlib.h), tuy nhiên hiện tại chỉ có thể chấm các bài không phải interactive. \r\n\r\nĐây là checker được viết bằng `testlib.h` cho bài toán trên:\r\n\r\n```c++\r\n#include \"testlib.h\"\r\n\r\nusing namespace std;\r\n\r\nint main(int argc, char* argv[]) {\r\n    registerTestlibCmd(argc, argv);\r\n\r\n    int n = inf.readInt();\r\n    int a = ouf.readInt();\r\n    int b = ouf.readInt();\r\n    ensuref(a + b == n, \"%d + %d != %d\", a, b, n);\r\n    if (a < 0) {\r\n        quitf(_points, \"0.5 \\n a = %d < 0\", a);\r\n    }\r\n    if (b < 0) {\r\n        quitf(_points, \"0.5 \\n b = %d < 0\", a);\r\n    }\r\n    quitf(_ok, \"%d + %d = %d\", a, b, n);\r\n}\r\n```",
+            "enable_comments": false,
+            "template_name": "",
+            "registration_required": false,
+            "sites": [
+                1
+            ]
+        }
+    },
+    {
+        "model": "flatpages.flatpage",
+        "pk": 2,
+        "fields": {
+            "url": "/about/",
+            "title": "Thông tin",
+            "content": "FuraOJ - Fura Online Judge là hệ thống online judge chính thức của [Fura](https://team.vnoi.info/)\r\n\r\n\r\n\r\n\r\n# 1. Todo 1\r\n\r\n# 2. Todo 2",
+            "enable_comments": false,
+            "template_name": "",
+            "registration_required": false,
+            "sites": [
+                1
+            ]
+        }
+    }
+]
