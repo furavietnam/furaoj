@@ -23,35 +23,9 @@
 {% block extrahead %}
 {{ block.super }}
 {{ media.js }}
-{% if action_form %}{% if actions_on_top or actions_on_bottom %}
-<script type="text/javascript">
-(function() {
-    function initAdminActions() {
-        if (typeof django === 'undefined' || typeof django.jQuery === 'undefined') {
-            return setTimeout(initAdminActions, 30);
-        }
-        django.jQuery(function ($) {
-            // Django 4.2+ uses window.Actions instead of $.fn.actions.
-            // Wire up admin actions via the public Actions API when available,
-            // so we don't depend on a removed jQuery plugin.
-            if (typeof window.Actions === 'function') {
-                var els = document.querySelectorAll('tr input.action-select');
-                if (els.length > 0) {
-                    window.Actions(els, {'allToggle': 'th.action-checkbox-column input'});
-                }
-            } else if (typeof $.fn.actions === 'function') {
-                $("tr input.action-select").actions({'allToggle': 'th.action-checkbox-column input'});
-            }
-        });
-    }
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initAdminActions);
-    } else {
-        initAdminActions();
-    }
-})();
-</script>
-{% endif %}{% endif %}
+{# The patched admin/js/actions.js (resources/admin/js/actions.js) auto-initializes
+   the change list actions via window.Actions once the DOM is ready, so no extra
+   script is needed here even when the wpadmin template is in use. #}
 {% endblock %}
 
 {% block bodyclass %}{{ block.super }} app-{{ opts.app_label }} model-{{ opts.model_name }} change-list{% endblock %}
