@@ -1,15 +1,31 @@
 {% extends "admin/base_site.html" %}
 
-{% block extrahead %}{{ block.super }}
+{% block pretitle %}{{ block.super }}
     <form style="display: none" id="empty-action-form" method="post">
         {% csrf_token %}
     </form>
+{% endblock %}
+
+{% block footer %}
+    {{ block.super }}
     <script>
-        django.jQuery(function ($) {
-            $('.action-link').on('click', function () {
-                $('#empty-action-form').attr('action', this.href).trigger('submit');
-                return false;
+    (function () {
+        function initActionLinks() {
+            if (typeof django === 'undefined' || typeof django.jQuery === 'undefined') {
+                return setTimeout(initActionLinks, 30);
+            }
+            django.jQuery(function ($) {
+                $('.action-link').on('click', function () {
+                    $('#empty-action-form').attr('action', this.href).trigger('submit');
+                    return false;
+                });
             });
-        });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initActionLinks);
+        } else {
+            initActionLinks();
+        }
+    })();
     </script>
 {% endblock %}
