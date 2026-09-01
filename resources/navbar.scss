@@ -1,23 +1,19 @@
 @use "vars" as *;
 
 // ─────────────────────────────────────────────────────────────
-// DESKTOP NAVBAR — Floating pill style (white, centered, sharp shadow)
+// DESKTOP NAVBAR — Floating pill (theme-aware, centered, sharp shadow)
 // ─────────────────────────────────────────────────────────────
 
+// Shared layout (no color declarations — those come from theme blocks below)
 #user-links {
     top: 0;
     right: 0;
     position: absolute;
-    color: #5c5954;
     padding-right: 10px;
     display: inline-flex;
     min-height: 100%;
     align-items: center;
     white-space: nowrap;
-
-    a {
-        color: #111827;
-    }
 
     li {
         text-transform: none;
@@ -44,11 +40,6 @@
                         border-radius: $widget_border_radius;
                         margin-right: 6px;
                     }
-
-                    & > span {
-                        vertical-align: middle;
-                        color: #111827;
-                    }
                 }
             }
 
@@ -68,7 +59,6 @@
 }
 
 #nav-container {
-    background: #ffffff;
     border: none;
     border-radius: 10px;
     height: auto;
@@ -76,7 +66,6 @@
     max-width: 1280px;
     margin: 10px auto;
     position: relative;
-    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.15);
 }
 
 nav {
@@ -94,7 +83,6 @@ nav {
 
         li {
             display: inline-block;
-            color: #111827;
             text-transform: uppercase;
             position: relative;
             font-family: 'Source Sans Pro', sans-serif;
@@ -112,25 +100,16 @@ nav {
             a, button {
                 text-decoration: none;
                 vertical-align: middle;
-                color: #111827;
                 padding: 14px 7px;
                 height: 20px;
                 display: inline-table;
                 transition: background 0.2s ease, color 0.2s ease;
 
-                &:link {
-                    color: #111827;
-                }
-
                 &:hover {
-                    color: #111827;
-                    background: rgba(0, 0, 0, 0.05);
                     margin: 0;
                 }
 
                 &.active {
-                    color: #111827;
-
                     border: 5px solid transparent;
                     border-bottom: 5px solid $highlight_blue;
                     padding: 9px 2px;
@@ -146,12 +125,9 @@ nav {
                 position: absolute;
                 left: 5px;
                 display: none;
-                color: #111827;
-                background: #ffffff;
                 border: none;
                 border-radius: 8px;
                 margin: 0 !important;
-                box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.15);
                 overflow: hidden;
 
                 li {
@@ -204,12 +180,196 @@ nav {
         display: inline-block;
         height: 32px;
         margin-right: 1px;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+// LIGHT MODE — body[data-theme="light"] (default)
+// ─────────────────────────────────────────────────────────────
+
+body[data-theme="light"],
+body:not([data-theme]) {
+    #nav-container {
+        background: #ffffff;
+        box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.15);
+    }
+
+    #user-links a,
+    #user-links > ul > li > a > span > span {
+        color: #111827;
+    }
+
+    nav ul li {
+        color: #111827;
+    }
+
+    nav ul li a, nav ul li button {
+        color: #111827;
+
+        &:link {
+            color: #111827;
+        }
+
+        &:hover {
+            color: #111827;
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        &.active {
+            color: #111827;
+        }
+    }
+
+    nav ul li ul {
+        color: #111827;
+        background: #ffffff;
+        box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.15);
+    }
+
+    nav .nav-divider {
         border-right: 3px solid rgba(0, 0, 0, 0.08);
     }
 }
 
 // ─────────────────────────────────────────────────────────────
-// MOBILE — Preserve hamburger menu + drawer
+// DARK MODE — body[data-theme="dark"]
+// ─────────────────────────────────────────────────────────────
+
+body[data-theme="dark"] {
+    #nav-container {
+        background: #121212;
+        box-shadow: 4px 4px 0px rgba(255, 255, 255, 0.2);
+    }
+
+    #user-links a,
+    #user-links > ul > li > a > span > span {
+        color: #f3f4f6;
+    }
+
+    nav ul li {
+        color: #f3f4f6;
+    }
+
+    nav ul li a, nav ul li button {
+        color: #f3f4f6;
+
+        &:link {
+            color: #f3f4f6;
+        }
+
+        &:hover {
+            color: #f3f4f6;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        &.active {
+            color: #f3f4f6;
+        }
+    }
+
+    nav ul li ul {
+        color: #f3f4f6;
+        background: #121212;
+        box-shadow: 4px 4px 0px rgba(255, 255, 255, 0.2);
+    }
+
+    nav .nav-divider {
+        border-right: 3px solid rgba(255, 255, 255, 0.12);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+// AUTO MODE — body[data-theme="auto"]
+// ─────────────────────────────────────────────────────────────
+
+body[data-theme="auto"] {
+    #nav-container {
+        background: #ffffff;
+        box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.15);
+    }
+
+    #user-links a,
+    #user-links > ul > li > a > span > span {
+        color: #111827;
+    }
+
+    nav ul li {
+        color: #111827;
+    }
+
+    nav ul li a, nav ul li button {
+        color: #111827;
+
+        &:link {
+            color: #111827;
+        }
+
+        &:hover {
+            color: #111827;
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        &.active {
+            color: #111827;
+        }
+    }
+
+    nav ul li ul {
+        color: #111827;
+        background: #ffffff;
+        box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.15);
+    }
+
+    nav .nav-divider {
+        border-right: 3px solid rgba(0, 0, 0, 0.08);
+    }
+
+    @media (prefers-color-scheme: dark) {
+        #nav-container {
+            background: #121212;
+            box-shadow: 4px 4px 0px rgba(255, 255, 255, 0.2);
+        }
+
+        #user-links a,
+        #user-links > ul > li > a > span > span {
+            color: #f3f4f6;
+        }
+
+        nav ul li {
+            color: #f3f4f6;
+        }
+
+        nav ul li a, nav ul li button {
+            color: #f3f4f6;
+
+            &:link {
+                color: #f3f4f6;
+            }
+
+            &:hover {
+                color: #f3f4f6;
+                background: rgba(255, 255, 255, 0.08);
+            }
+
+            &.active {
+                color: #f3f4f6;
+            }
+        }
+
+        nav ul li ul {
+            color: #f3f4f6;
+            background: #121212;
+            box-shadow: 4px 4px 0px rgba(255, 255, 255, 0.2);
+        }
+
+        nav .nav-divider {
+            border-right: 3px solid rgba(255, 255, 255, 0.12);
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+// MOBILE — Preserve hamburger menu + drawer (theme-aware)
 // ─────────────────────────────────────────────────────────────
 
 #navicon {
@@ -222,7 +382,6 @@ nav {
     }
 
     #nav-container {
-        background: #ffffff;
         border: none;
         border-radius: 0;
         width: 100%;
@@ -236,7 +395,6 @@ nav {
         display: block;
         line-height: 26px;
         font-size: 2em;
-        color: #111827;
         padding: 0 0.25em;
         margin: 4px 0.25em;
         white-space: nowrap;
@@ -255,7 +413,6 @@ nav {
         margin: 0;
         position: fixed;
         top: 36px;
-        background: #ffffff;
         border: none;
         border-radius: 0;
         bottom: 0;
@@ -273,8 +430,6 @@ nav {
 
             a {
                 display: block;
-                color: #111827;
-                border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 
                 .nav-expand {
                     float: right;
@@ -288,7 +443,6 @@ nav {
             ul {
                 left: 8em;
                 top: 0px;
-                background: #ffffff;
                 border: none;
                 border-radius: 0;
 
@@ -306,9 +460,120 @@ nav {
     #user-links > ul > li > a > span {
         padding: 6px 8px;
     }
+}
 
-    #user-links a {
-        color: #111827;
+// Mobile theme overrides
+@media (max-width: 760px) {
+    // Light mobile
+    body[data-theme="light"],
+    body:not([data-theme]) {
+        #nav-container {
+            background: #ffffff;
+        }
+
+        #navicon {
+            color: #111827;
+        }
+
+        #nav-list {
+            background: #ffffff;
+        }
+
+        #nav-list li a {
+            color: #111827;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        #nav-list li ul {
+            background: #ffffff;
+        }
+
+        #user-links a {
+            color: #111827;
+        }
+    }
+
+    // Dark mobile
+    body[data-theme="dark"] {
+        #nav-container {
+            background: #121212;
+        }
+
+        #navicon {
+            color: #f3f4f6;
+        }
+
+        #nav-list {
+            background: #121212;
+        }
+
+        #nav-list li a {
+            color: #f3f4f6;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        #nav-list li ul {
+            background: #121212;
+        }
+
+        #user-links a {
+            color: #f3f4f6;
+        }
+    }
+
+    // Auto mobile — light by default
+    body[data-theme="auto"] {
+        #nav-container {
+            background: #ffffff;
+        }
+
+        #navicon {
+            color: #111827;
+        }
+
+        #nav-list {
+            background: #ffffff;
+        }
+
+        #nav-list li a {
+            color: #111827;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        #nav-list li ul {
+            background: #ffffff;
+        }
+
+        #user-links a {
+            color: #111827;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            #nav-container {
+                background: #121212;
+            }
+
+            #navicon {
+                color: #f3f4f6;
+            }
+
+            #nav-list {
+                background: #121212;
+            }
+
+            #nav-list li a {
+                color: #f3f4f6;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            }
+
+            #nav-list li ul {
+                background: #121212;
+            }
+
+            #user-links a {
+                color: #f3f4f6;
+            }
+        }
     }
 }
 
