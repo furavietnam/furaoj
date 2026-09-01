@@ -14,6 +14,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='profile',
             name='display_rank',
-            field=models.CharField(choices=settings.VNOJ_DISPLAY_RANKS, default='user', max_length=10, verbose_name='display rank'),
+            field=models.CharField(choices=settings.FURAOJ_DISPLAY_RANKS, default='user', max_length=10, verbose_name='display rank'),
         ),
     ]

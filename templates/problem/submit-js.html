@@ -139,6 +139,10 @@
                 }
                 
                 obj = document.getElementById('id_language');
+                if (!obj || !obj.options) {
+                    $('#problem_submit').find(':submit').attr('disabled', false);
+                    return;
+                }
                 fileonly = obj.options[obj.selectedIndex].getAttribute('data-fileonly');
                 if (fileonly == 'True') {
                     file_size_limit = obj.options[obj.selectedIndex].getAttribute('data-file-size');
@@ -156,7 +160,8 @@
             });
 
             function on_language_change() {
-                obj = document.getElementById('id_language');
+                var obj = document.getElementById('id_language');
+                if (!obj || !obj.options) return;
                 fileonly = obj.options[obj.selectedIndex].getAttribute('data-fileonly');
                 if (fileonly == 'True') {
                     if (!$('#editor').hasClass('hidden')) {

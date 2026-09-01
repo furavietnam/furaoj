@@ -164,7 +164,7 @@ def rate_tc(apps, schema_editor):
     Profile = apps.get_model('judge', 'Profile')
 
     with schema_editor.connection.cursor() as cursor:
-        cursor.execute('TRUNCATE TABLE `%s`' % Rating._meta.db_table)
+        cursor.execute('TRUNCATE TABLE "%s"' % Rating._meta.db_table)
     Profile.objects.update(rating=None)
     for contest in Contest.objects.filter(is_rated=True, end_time__lte=timezone.now()).order_by('end_time'):
         tc_rate_contest(contest, Rating, Profile)
@@ -176,7 +176,7 @@ def rate_elo_mmr(apps, schema_editor):
     Profile = apps.get_model('judge', 'Profile')
 
     with schema_editor.connection.cursor() as cursor:
-        cursor.execute('TRUNCATE TABLE `%s`' % Rating._meta.db_table)
+        cursor.execute('TRUNCATE TABLE "%s"' % Rating._meta.db_table)
     Profile.objects.update(rating=None)
     # Don't populate Rating
 

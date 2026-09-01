@@ -2,7 +2,7 @@ window.MathJax = {
     loader: {
         load: ['[tex]/color'],
         paths: {
-            mathjax: '/static/vnoj/mathjax/3.2.0/es5'
+            mathjax: '/static/furaoj/mathjax/4.1.3'
         }
     },
     tex: {
@@ -10,7 +10,7 @@ window.MathJax = {
             '[+]': ['color']
         },
         inlineMath: [
-            ['~', '~'],
+            ['$', '$'],
             ['\\(', '\\)']
         ]
     },

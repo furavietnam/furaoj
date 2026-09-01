@@ -3,12 +3,12 @@ from django.db import migrations
 
 def update_contest_format(apps, schema_editor):
     Contest = apps.get_model('judge', 'Contest')
-    Contest.objects.filter(format='vnoj').update(format='furaoj')
+    Contest.objects.filter(format_name='vnoj').update(format_name='furaoj')
 
 
 def reverse_update(apps, schema_editor):
     Contest = apps.get_model('judge', 'Contest')
-    Contest.objects.filter(format='furaoj').update(format='vnoj')
+    Contest.objects.filter(format_name='furaoj').update(format_name='vnoj')
 
 
 class Migration(migrations.Migration):

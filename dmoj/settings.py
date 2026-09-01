@@ -180,7 +180,7 @@ MAX_CONTEST_PROBLEMS_COUNT = None
 
 FURAOJ_MAGAZINE_TAG_SLUG = None
 
-CELERY_TIMEZONE = 'UTC'
+TIMEZONE = 'UTC'
 
 # Some problems have a lot of testcases, and each testcase
 # has about 5~6 fields, so we need to raise this

@@ -219,7 +219,7 @@ def queue_time_stats():
     if webhook_config is None:
         return
 
-    end_time = (datetime.now(pytz.timezone(settings.CELERY_TIMEZONE))
+    end_time = (datetime.now(pytz.timezone(getattr(settings, 'TIMEZONE', getattr(settings, 'CELERY_TIMEZONE', 'UTC'))))
                 .replace(hour=0, minute=0, second=0, microsecond=0))
     start_time = end_time - timedelta(days=1)
 

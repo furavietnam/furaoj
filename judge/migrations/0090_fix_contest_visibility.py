@@ -9,11 +9,11 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunSQL("""
-            UPDATE `judge_contest`
-            SET `judge_contest`.`is_private` = 0, `judge_contest`.`is_organization_private` = 1
-            WHERE `judge_contest`.`is_private` = 1
+            UPDATE judge_contest
+            SET is_private = FALSE, is_organization_private = TRUE
+            WHERE is_private = TRUE
         """, """
-            UPDATE `judge_contest`
-            SET `judge_contest`.`is_private` = `judge_contest`.`is_organization_private`
+            UPDATE judge_contest
+            SET is_private = is_organization_private
         """),
     ]

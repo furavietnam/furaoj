@@ -11,18 +11,24 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunSQL(
             """
-            UPDATE judge_submission sub
-                INNER JOIN (
-                    SELECT MAX(stc.time) AS max_time, submission_id FROM judge_submissiontestcase stc GROUP BY stc.submission_id
-                ) tc ON sub.id = tc.submission_id
-            SET sub.time = tc.max_time
+            UPDATE judge_submission AS sub
+            SET time = tc.max_time
+            FROM (
+                SELECT MAX(stc.time) AS max_time, submission_id 
+                FROM judge_submissiontestcase stc 
+                GROUP BY stc.submission_id
+            ) AS tc
+            WHERE sub.id = tc.submission_id
         """,
             """
-            UPDATE judge_submission sub
-                INNER JOIN (
-                    SELECT SUM(stc.time) AS sum_time, submission_id FROM judge_submissiontestcase stc GROUP BY stc.submission_id
-                ) tc ON sub.id = tc.submission_id
-            SET sub.time = tc.sum_time
+            UPDATE judge_submission AS sub
+            SET time = tc.sum_time
+            FROM (
+                SELECT SUM(stc.time) AS sum_time, submission_id 
+                FROM judge_submissiontestcase stc 
+                GROUP BY stc.submission_id
+            ) AS tc
+            WHERE sub.id = tc.submission_id
         """,
         ),
     ]

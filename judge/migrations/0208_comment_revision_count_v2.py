@@ -13,14 +13,16 @@ def populate_revisions(apps, schema_editor):
         pass
     else:
         schema_editor.execute("""\
-UPDATE `judge_comment` INNER JOIN (
-    SELECT CAST(`reversion_version`.`object_id` AS INT) AS `id`, COUNT(*) AS `count`
-    FROM `reversion_version`
-    WHERE `reversion_version`.`content_type_id` = %s AND
-          `reversion_version`.`db` = %s
+UPDATE judge_comment
+SET revisions = subquery.count
+FROM (
+    SELECT CAST(reversion_version.object_id AS INT) AS id, COUNT(*) AS count
+    FROM reversion_version
+    WHERE reversion_version.content_type_id = %s AND
+          reversion_version.db = %s
     GROUP BY 1
-) `versions` ON (`judge_comment`.`id` = `versions`.`id`)
-SET `judge_comment`.`revisions` = `versions`.`count`;
+) AS subquery
+WHERE judge_comment.id = subquery.id;
 """, (content_type.id, db_alias))
 
 

@@ -53,7 +53,7 @@ def comet_location(request):
 
 
 def __nav_tab(path):
-    result = list(NavigationBar.objects.extra(where=['%s REGEXP BINARY regex'], params=[path])[:1])
+    result = list(NavigationBar.objects.extra(where=["%s ~ judge_navigationbar.regex"], params=[path])[:1])
     return result[0].get_ancestors(include_self=True).values_list('key', flat=True) if result else []
 
 

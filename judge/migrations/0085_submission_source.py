@@ -21,10 +21,11 @@ class Migration(migrations.Migration):
         ),
         migrations.RunSQL(
             ["""INSERT INTO judge_submissionsource (source, submission_id)
-                SELECT source, id AS 'submission_id' FROM judge_submission;"""],
-            ["""UPDATE judge_submission sub
-                INNER JOIN judge_submissionsource src ON sub.id = src.submission_id
-                SET sub.source = src.source;"""],
+                SELECT source, id FROM judge_submission;"""],
+            ["""UPDATE judge_submission AS sub
+                SET source = src.source
+                FROM judge_submissionsource AS src
+                WHERE sub.id = src.submission_id;"""],
             elidable=True,
         ),
         migrations.RemoveField(

@@ -1,4 +1,5 @@
 import logging
+import os
 import socket
 
 from celery import Celery
@@ -8,12 +9,21 @@ from celery.signals import task_failure
 app = Celery('dmoj')
 
 from django.conf import settings  # noqa: E402, I202, django must be imported here
-app.config_from_object(settings, namespace='CELERY')
 
-if hasattr(settings, 'CELERY_BROKER_URL_SECRET'):
-    app.conf.broker_url = settings.CELERY_BROKER_URL_SECRET
-if hasattr(settings, 'CELERY_RESULT_BACKEND_SECRET'):
-    app.conf.result_backend = settings.CELERY_RESULT_BACKEND_SECRET
+# Configure Celery explicitly to avoid Celery 6.0 deprecation warnings about
+# CELERY_RESULT_BACKEND and CELERY_TIMEZONE.
+app.conf.timezone = getattr(settings, 'TIMEZONE', 'UTC')
+app.conf.broker_url = (
+    getattr(settings, 'CELERY_BROKER_URL_SECRET', None)
+    or getattr(settings, 'CELERY_BROKER_URL', None)
+    or 'redis://localhost:6379//'
+)
+result_backend = (
+    getattr(settings, 'CELERY_RESULT_BACKEND_SECRET', None)
+    or getattr(settings, 'CELERY_RESULT_BACKEND', None)
+)
+if result_backend:
+    app.conf.result_backend = result_backend
 
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
