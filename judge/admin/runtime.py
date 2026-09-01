@@ -48,16 +48,16 @@ class GenerateKeyTextInput(TextInput):
         text = super(TextInput, self).render(name, value, attrs)
         return mark_safe(text + format_html(
             """\
-<a href="#" onclick="return false;" class="button" id="id_{0}_regen">{1}</a>
-<script type="text/javascript">
-django.jQuery(document).ready(function ($) {{
-    $('#id_{0}_regen').click(function () {{
+<a href="#" class="button" id="id_{0}_regen">{1}</a>
+<script>
+(function() {{
+    document.getElementById('id_{0}_regen').addEventListener('click', function () {{
         var rand = new Uint8Array(75);
         window.crypto.getRandomValues(rand);
         var key = btoa(String.fromCharCode.apply(null, rand));
-        $('#id_{0}').val(key);
+        document.getElementById('id_{0}').value = key;
     }});
-}});
+}})();
 </script>
 """, name, _('Regenerate')))
 

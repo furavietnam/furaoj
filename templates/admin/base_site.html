@@ -1,6 +1,6 @@
 {% extends "admin/base_site.html" %}
 
-{% block pretitle %}{{ block.super }}
+{% block extrahead %}{{ block.super }}
     <form style="display: none" id="empty-action-form" method="post">
         {% csrf_token %}
     </form>
