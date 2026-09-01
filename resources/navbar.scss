@@ -1,5 +1,9 @@
 @use "vars" as *;
 
+// ─────────────────────────────────────────────────────────────
+// DESKTOP NAVBAR — Floating pill style (white, centered, sharp shadow)
+// ─────────────────────────────────────────────────────────────
+
 #user-links {
     top: 0;
     right: 0;
@@ -12,7 +16,7 @@
     white-space: nowrap;
 
     a {
-        color: #FFF;
+        color: #111827;
     }
 
     li {
@@ -43,7 +47,7 @@
 
                     & > span {
                         vertical-align: middle;
-                        color: #eee;
+                        color: #111827;
                     }
                 }
             }
@@ -56,26 +60,23 @@
 }
 
 #nav-background {
-    position: absolute;
-    z-index: 3;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 56px;
-    background: #231f20;
+    display: none;
 }
 
 #nav-shadow {
-    height: 3px;
-    background: linear-gradient(rgba(0, 0, 0, 0.5), transparent);
+    display: none;
 }
 
 #nav-container {
-    background: #231f20;
-
-    // opacity: 0.77
-    // filter: alpha(opacity=77)
-    height: 100%;
+    background: #ffffff;
+    border: none;
+    border-radius: 10px;
+    height: auto;
+    width: 95%;
+    max-width: 1280px;
+    margin: 10px auto;
+    position: relative;
+    box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.15);
 }
 
 nav {
@@ -84,6 +85,7 @@ nav {
     left: 0;
     right: 0;
     z-index: 500;
+    background: transparent;
 
     ul {
         margin: 0 0 0 -5px;
@@ -92,7 +94,7 @@ nav {
 
         li {
             display: inline-block;
-            color: #FFF;
+            color: #111827;
             text-transform: uppercase;
             position: relative;
             font-family: 'Source Sans Pro', sans-serif;
@@ -110,23 +112,24 @@ nav {
             a, button {
                 text-decoration: none;
                 vertical-align: middle;
-                color: #FFF;
+                color: #111827;
                 padding: 14px 7px;
                 height: 20px;
                 display: inline-table;
+                transition: background 0.2s ease, color 0.2s ease;
 
                 &:link {
-                    color: #FFF;
+                    color: #111827;
                 }
 
                 &:hover {
-                    color: #FFF;
-                    background: rgba(255, 255, 255, 0.25);
+                    color: #111827;
+                    background: rgba(0, 0, 0, 0.05);
                     margin: 0;
                 }
 
                 &.active {
-                    color: #FFF;
+                    color: #111827;
 
                     border: 5px solid transparent;
                     border-bottom: 5px solid $highlight_blue;
@@ -143,10 +146,13 @@ nav {
                 position: absolute;
                 left: 5px;
                 display: none;
-                color: #fff;
-                background: #231f20;
+                color: #111827;
+                background: #ffffff;
+                border: none;
+                border-radius: 8px;
                 margin: 0 !important;
-                box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+                box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.15);
+                overflow: hidden;
 
                 li {
                     a.active {
@@ -198,9 +204,13 @@ nav {
         display: inline-block;
         height: 32px;
         margin-right: 1px;
-        border-right: 3px solid rgba(255, 255, 255, 0.15);
+        border-right: 3px solid rgba(0, 0, 0, 0.08);
     }
 }
+
+// ─────────────────────────────────────────────────────────────
+// MOBILE — Preserve hamburger menu + drawer
+// ─────────────────────────────────────────────────────────────
 
 #navicon {
     display: none;
@@ -211,19 +221,29 @@ nav {
         height: 36px;
     }
 
+    #nav-container {
+        background: #ffffff;
+        border: none;
+        border-radius: 0;
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        box-shadow: none;
+    }
+
     #navicon {
         transition-duration: 0.25s;
         display: block;
         line-height: 26px;
         font-size: 2em;
-        color: #FFF;
+        color: #111827;
         padding: 0 0.25em;
         margin: 4px 0.25em;
         white-space: nowrap;
         float: left;
 
         &.hover {
-            color: #4db7fe;
+            color: $highlight_blue;
             text-shadow: 0 0 5px $highlight_blue;
             transition-duration: 0.25s;
         }
@@ -235,10 +255,14 @@ nav {
         margin: 0;
         position: fixed;
         top: 36px;
-        background: #231f20;
+        background: #ffffff;
+        border: none;
+        border-radius: 0;
         bottom: 0;
         width: 8em;
         left: 0;
+        box-shadow: none;
+        z-index: 499;
 
         &.show-list {
             display: block;
@@ -249,6 +273,8 @@ nav {
 
             a {
                 display: block;
+                color: #111827;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 
                 .nav-expand {
                     float: right;
@@ -262,6 +288,9 @@ nav {
             ul {
                 left: 8em;
                 top: 0px;
+                background: #ffffff;
+                border: none;
+                border-radius: 0;
 
                 &.show-list {
                     display: block;
@@ -276,6 +305,10 @@ nav {
 
     #user-links > ul > li > a > span {
         padding: 6px 8px;
+    }
+
+    #user-links a {
+        color: #111827;
     }
 }
 
