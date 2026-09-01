@@ -353,7 +353,7 @@
                                 <li>
                                     <form action="{{ url('auth_logout') }}" method="POST">
                                         {% csrf_token %}
-                                        <button type="submit">{{ _('Log out') }}</button>
+                                        <button type="submit" class="nav-logout-btn">{{ _('Log out') }}</button>
                                     </form>
                                 </li>
                             {% endif %}

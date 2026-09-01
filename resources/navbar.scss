@@ -645,3 +645,64 @@ nav .settings-popup {
         color: $color_primary90;
     }
 }
+
+// ─────────────────────────────────────────────────────────────
+// LOGOUT BUTTON — Bright red accent via explicit class
+// DOM: nav#navigation > span#user-links > ul > li > ul > li > form > button.nav-logout-btn
+// ─────────────────────────────────────────────────────────────
+
+.nav-logout-btn {
+    color: #ff3b30 !important;
+
+    &:hover,
+    &:focus {
+        color: #dc2626 !important;
+        background: rgba(255, 59, 48, 0.1);
+    }
+
+    &:active {
+        color: #b91c1c !important;
+    }
+}
+
+body[data-theme="dark"] .nav-logout-btn {
+    color: #ff5252 !important;
+
+    &:hover,
+    &:focus {
+        color: #ef4444 !important;
+        background: rgba(255, 82, 82, 0.12);
+    }
+
+    &:active {
+        color: #dc2626 !important;
+    }
+}
+
+body[data-theme="auto"] .nav-logout-btn {
+    color: #ff3b30 !important;
+
+    &:hover,
+    &:focus {
+        color: #dc2626 !important;
+        background: rgba(255, 59, 48, 0.1);
+    }
+
+    &:active {
+        color: #b91c1c !important;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        color: #ff5252 !important;
+
+        &:hover,
+        &:focus {
+            color: #ef4444 !important;
+            background: rgba(255, 82, 82, 0.12);
+        }
+
+        &:active {
+            color: #dc2626 !important;
+        }
+    }
+}
