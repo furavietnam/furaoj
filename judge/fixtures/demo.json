@@ -129,7 +129,7 @@
             "global_post": true,
             "sticky": true,
             "publish_on": "2026-08-31T05:00:00Z",
-            "content": "Chào mừng bạn đến với FuraOJ.\r\n\r\nFuraOJ - Fura Online Judge - là hệ thống online judge chính thức của [Fura](https://team.vnoi.info/)",
+            "content": "Chào mừng bạn đến với FuraOJ.\r\n\r\nFuraOJ - Fura Online Judge - là hệ thống online judge chính thức của [Fura](https://fura.io.vn/)",
             "summary": "",
             "og_image": "",
             "authors": [
@@ -183,7 +183,7 @@
         "fields": {
             "url": "/about/",
             "title": "Thông tin",
-            "content": "FuraOJ - Fura Online Judge là hệ thống online judge chính thức của [Fura](https://team.vnoi.info/)\r\n\r\n\r\n\r\n\r\n# 1. Todo 1\r\n\r\n# 2. Todo 2",
+            "content": "FuraOJ - Fura Online Judge là hệ thống online judge chính thức của [Fura](https://fura.io.vn/)\r\n\r\n\r\n\r\n\r\n# 1. Todo 1\r\n\r\n# 2. Todo 2",
             "enable_comments": false,
             "template_name": "",
             "registration_required": false,
