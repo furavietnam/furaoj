@@ -21,9 +21,9 @@ from django.utils import timezone
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _, ngettext_lazy
 
-from judge.models import BlogPost, Contest, ContestAnnouncement, ContestParticipation, ContestProblem, Language, \
-    LanguageLimit, Organization, OrganizationProblemTag, Problem, Profile, Solution, Submission, Tag, \
-    WebAuthnCredential
+from judge.models import BlogPost, Contest, ContestAnnouncement, ContestParticipation, ContestProblem, EasterEgg, \
+    Language, LanguageLimit, Organization, OrganizationProblemTag, Problem, ProblemEasterEgg, Profile, Solution, \
+    Submission, Tag, WebAuthnCredential
 from judge.utils.subscription import newsletter_id
 from judge.widgets import AceWidget, HeavySelect2MultipleWidget, HeavySelect2Widget, MartorWidget, \
     Select2MultipleWidget, Select2Widget
@@ -271,6 +271,35 @@ class ProblemEditTypeGroupForm(ModelForm):
             'types': Select2MultipleWidget,
             'group': Select2Widget,
         }
+
+
+class ProblemEasterEggForm(ModelForm):
+    class Meta:
+        model = ProblemEasterEgg
+        fields = ('tag', 'easter_egg')
+        widgets = {
+            'tag': Select2Widget(attrs={'style': 'width:200px'}),
+            'easter_egg': Select2Widget(attrs={'style': 'width:300px'}),
+        }
+        help_texts = {
+            'tag': _('Select the submission result tag that triggers this Easter egg.'),
+            'easter_egg': _('Select an Easter egg to display. Leave empty for none.'),
+        }
+
+
+class ProblemEasterEggFormSet(inlineformset_factory(Problem, ProblemEasterEgg, form=ProblemEasterEggForm,
+                                                     can_delete=True, extra=1)):
+    def clean(self):
+        if any(self.errors):
+            return
+        tags = []
+        for form in self.forms:
+            if self.can_delete and self._should_delete_form(form):
+                continue
+            tag = form.cleaned_data.get('tag')
+            if tag in tags:
+                raise ValidationError(_('Each tag must be unique. Duplicate tag: %s') % tag)
+            tags.append(tag)
 
 
 class ProblemImportPolygonForm(Form):

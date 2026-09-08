@@ -11,8 +11,8 @@ from django.utils.translation import gettext, gettext_lazy as _, ngettext
 from reversion.admin import VersionAdmin
 
 from judge.admin.utils import AdminFastPaginationMixin
-from judge.models import LanguageLimit, OrganizationProblemTag, Problem, ProblemClarification, ProblemTranslation, \
-    Profile, Solution
+from judge.models import EasterEgg, LanguageLimit, OrganizationProblemTag, Problem, ProblemClarification, \
+    ProblemEasterEgg, ProblemTranslation, Profile, Solution
 from judge.utils.views import NoBatchDeleteMixin
 from judge.widgets import AdminHeavySelect2MultipleWidget, AdminHeavySelect2Widget, AdminMartorWidget, \
     AdminSelect2MultipleWidget, AdminSelect2Widget, CheckboxSelectMultipleWithSelectAll
@@ -119,6 +119,77 @@ class ProblemTranslationInline(admin.StackedInline):
     has_add_permission = has_change_permission = has_delete_permission = has_permission_full_markup
 
 
+class EasterEggAdmin(admin.ModelAdmin):
+    list_display = ['title', 'tag_display', 'is_active', 'show_html_preview']
+    list_display_links = ['title']
+    list_filter = ['tag', 'is_active']
+    list_editable = ['is_active']
+    list_per_page = 25
+    search_fields = ['title', 'tag', 'html']
+    ordering = ['tag', 'title']
+    readonly_fields = ['html_preview']
+    fieldsets = (
+        (None, {
+            'fields': ('title', 'tag', 'is_active'),
+        }),
+        (_('Content'), {
+            'fields': ('html',),
+        }),
+        (_('Preview'), {
+            'classes': ('collapse',),
+            'fields': ('html_preview',),
+        }),
+    )
+
+    @admin.display(description=_('Tag'))
+    def tag_display(self, obj):
+        return obj.get_tag_display()
+
+    @admin.display(description=_('Preview'))
+    def show_html_preview(self, obj):
+        if obj.html:
+            truncated = obj.html[:100] + '...' if len(obj.html) > 100 else obj.html
+            return format_html('<span style="font-size:11px;">{}</span>', truncated)
+        return '-'
+
+    @admin.display(description=_('HTML Preview'))
+    def html_preview(self, obj):
+        if obj.html:
+            return format_html('<div style="border:1px solid #ccc;padding:10px;max-height:200px;overflow:auto;">{}</div>', obj.html)
+        return '-'
+
+    actions = ['activate_eggs', 'deactivate_eggs']
+
+    @admin.display(description=_('Activate selected Easter Eggs'))
+    def activate_eggs(self, request, queryset):
+        count = queryset.update(is_active=True)
+        self.message_user(request, ngettext('%d Easter egg activated.',
+                                            '%d Easter eggs activated.', count) % count)
+
+    @admin.display(description=_('Deactivate selected Easter Eggs'))
+    def deactivate_eggs(self, request, queryset):
+        count = queryset.update(is_active=False)
+        self.message_user(request, ngettext('%d Easter egg deactivated.',
+                                            '%d Easter eggs deactivated.', count) % count)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related('problemeasteregg_set__problem')
+
+
+class ProblemEasterEggInlineForm(ModelForm):
+    class Meta:
+        widgets = {'easter_egg': AdminSelect2Widget}
+
+
+class ProblemEasterEggInline(admin.TabularInline):
+    model = ProblemEasterEgg
+    fields = ('tag', 'easter_egg')
+    form = ProblemEasterEggInlineForm
+    extra = 1
+    verbose_name = _('Easter Egg')
+    verbose_name_plural = _('Easter Eggs')
+
+
 class ProblemAdmin(AdminFastPaginationMixin, NoBatchDeleteMixin, VersionAdmin):
     fieldsets = (
         (None, {
@@ -140,7 +211,8 @@ class ProblemAdmin(AdminFastPaginationMixin, NoBatchDeleteMixin, VersionAdmin):
     list_display = ['code', 'name', 'show_authors', 'points', 'is_public', 'show_public']
     ordering = ['code']
     search_fields = ('code', 'name', 'authors__user__username', 'curators__user__username')
-    inlines = [LanguageLimitInline, ProblemClarificationInline, ProblemSolutionInline, ProblemTranslationInline]
+    inlines = [LanguageLimitInline, ProblemClarificationInline, ProblemSolutionInline, ProblemTranslationInline,
+               ProblemEasterEggInline]
     actions_on_top = True
     actions_on_bottom = True
     list_filter = ('is_public', ProblemCreatorListFilter)

@@ -23,7 +23,8 @@ from judge.user_translations import gettext as user_gettext
 from judge.utils.url import get_absolute_pdf_url
 
 __all__ = ['ProblemGroup', 'ProblemType', 'OrganizationProblemTag', 'Problem', 'ProblemTranslation',
-           'ProblemClarification', 'License', 'Solution', 'SubmissionSourceAccess', 'TranslatedProblemQuerySet']
+           'ProblemClarification', 'License', 'Solution', 'SubmissionSourceAccess', 'TranslatedProblemQuerySet',
+           'EasterEgg', 'ProblemEasterEgg']
 
 
 def disallowed_characters_validator(text):
@@ -741,3 +742,63 @@ class Solution(models.Model):
         )
         verbose_name = _('solution')
         verbose_name_plural = _('solutions')
+
+
+class EasterEgg(models.Model):
+    EASTER_EGG_TAG_CHOICES = (
+        ('IN_PROGRESS', _('In Progress')),
+        ('AC', _('Accepted')),
+        ('PAC', _('Partially Accepted')),
+        ('WA', _('Wrong Answer')),
+        ('TLE', _('Time Limit Exceeded')),
+        ('MLE', _('Memory Limit Exceeded')),
+        ('OLE', _('Output Limit Exceeded')),
+        ('IR', _('Invalid Return')),
+        ('RTE', _('Runtime Error')),
+        ('CE', _('Compile Error')),
+        ('IE', _('Internal Error')),
+        ('SC', _('Short Circuited')),
+        ('AB', _('Aborted')),
+    )
+
+    title = models.CharField(max_length=100, verbose_name=_('title'),
+                             help_text=_('A descriptive name for this Easter egg.'))
+    tag = models.CharField(max_length=50, verbose_name=_('trigger tag'),
+                           choices=EASTER_EGG_TAG_CHOICES,
+                           help_text=_('The submission result tag that triggers this Easter egg.'))
+    html = models.TextField(verbose_name=_('HTML content'),
+                            help_text=_('HTML content to display when this Easter egg is triggered. '
+                                        'You can use any valid HTML including images, videos, and styling.'))
+    is_active = models.BooleanField(default=True, verbose_name=_('active'),
+                                    help_text=_('Only active Easter eggs will be displayed.'))
+
+    def __str__(self):
+        return '%s (%s)' % (self.title, self.get_tag_display())
+
+    class Meta:
+        verbose_name = _('Easter egg')
+        verbose_name_plural = _('Easter eggs')
+        ordering = ['title']
+
+
+class ProblemEasterEgg(models.Model):
+    problem = models.ForeignKey(Problem, verbose_name=_('problem'), related_name='easter_eggs',
+                                on_delete=CASCADE,
+                                help_text=_('The problem this Easter egg is assigned to.'))
+    easter_egg = models.ForeignKey(EasterEgg, verbose_name=_('Easter egg'), on_delete=CASCADE,
+                                   null=True, blank=True,
+                                   help_text=_('Select an Easter egg, or leave empty for none.'))
+    tag = models.CharField(max_length=50, verbose_name=_('trigger tag'),
+                           help_text=_('The submission result tag that triggers this Easter egg '
+                                       '(e.g. IN_PROGRESS, AC, WA, TLE).'))
+
+    def __str__(self):
+        if self.easter_egg:
+            return '%s - %s: %s' % (self.problem.code, self.tag, self.easter_egg.title)
+        return '%s - %s: None' % (self.problem.code, self.tag)
+
+    class Meta:
+        unique_together = ('problem', 'tag')
+        verbose_name = _('Problem Easter Egg')
+        verbose_name_plural = _('Problem Easter Eggs')
+        ordering = ['tag']

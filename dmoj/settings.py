@@ -411,6 +411,7 @@ else:
                         'judge.ProblemGroup',
                         'judge.ProblemType',
                         'judge.License',
+                        'judge.EasterEgg',
                     ],
                 },
                 {

@@ -33,18 +33,48 @@
                         $("html, body").animate({scrollTop: $(document).height()}, 0);
                 }
 
+                function showEasterEgg(html) {
+                    if (html) {
+                        $('#easter-egg-content').html(html);
+                        $('#easter-egg-container').fadeIn(500);
+                    }
+                }
+
+                function hideEasterEgg() {
+                    $('#easter-egg-container').hide();
+                    $('#easter-egg-content').empty();
+                }
+
                 event_dispatcher.on('sub_{{ submission.id_secret }}', function (message) {
                         switch (message.type) {
                             case 'aborted':
                             case 'internal-error':
-                            case 'grading-end':
                             case 'compile-error':
                                 $('#abort-button').remove();
                                 $('#grading-label').remove();
-                            case 'test-case':
+                                hideEasterEgg();
+                                update();
+                                break;
+                            case 'grading-end':
+                                $('#abort-button').remove();
+                                $('#grading-label').remove();
+                                hideEasterEgg();
+                                if (message.easter_egg_html) {
+                                    showEasterEgg(message.easter_egg_html);
+                                }
+                                update();
+                                break;
                             case 'grading-begin':
+                                hideEasterEgg();
+                                if (message.easter_egg_html) {
+                                    showEasterEgg(message.easter_egg_html);
+                                }
+                                update();
+                                break;
+                            case 'test-case':
                             case 'processing':
                                 update();
+                                break;
                         }
                     }
                 )
@@ -103,6 +133,10 @@
     <br>
     <hr class="half-hr">
     <br>
+
+    <div id="easter-egg-container" style="display:none;">
+        <div id="easter-egg-content"></div>
+    </div>
 
     <div id="test-cases">{% include "submission/status-testcases.html" %}</div>
 

@@ -13,7 +13,7 @@ from django.utils import timezone
 from judge import event_poster as event
 from judge.bridge.base_handler import ZlibPacketHandler, proxy_list
 from judge.caching import finished_submission
-from judge.models import Judge, Language, LanguageLimit, Problem, Profile, \
+from judge.models import Judge, Language, LanguageLimit, Problem, ProblemEasterEgg, Profile, \
     RuntimeVersion, Submission, SubmissionTestCase
 from judge.models.problem import ProblemTestcaseResultAccess
 from judge.utils.url import get_absolute_submission_file_url
@@ -394,7 +394,21 @@ class JudgeHandler(ZlibPacketHandler):
                 status='G', is_pretested=packet['pretested'], current_testcase=1,
                 batch=False, judged_date=timezone.now()):
             SubmissionTestCase.objects.filter(submission_id=packet['submission-id']).delete()
-            event.post('sub_%s' % Submission.get_id_secret(packet['submission-id']), {'type': 'grading-begin'})
+            # Check for IN_PROGRESS Easter egg
+            easter_egg_html = None
+            try:
+                submission = Submission.objects.select_related('problem').get(id=packet['submission-id'])
+                problem_easter_egg = ProblemEasterEgg.objects.select_related('easter_egg').filter(
+                    problem=submission.problem,
+                    tag='IN_PROGRESS',
+                    easter_egg__is_active=True
+                ).first()
+                if problem_easter_egg and problem_easter_egg.easter_egg:
+                    easter_egg_html = problem_easter_egg.easter_egg.html
+            except Submission.DoesNotExist:
+                pass
+            event.post('sub_%s' % Submission.get_id_secret(packet['submission-id']),
+                       {'type': 'grading-begin', 'easter_egg_html': easter_egg_html})
             self._post_update_submission(packet['submission-id'], 'grading-begin')
             json_log.info(self._make_json_log(packet, action='grading-begin'))
         else:
@@ -478,7 +492,20 @@ class JudgeHandler(ZlibPacketHandler):
 
         finished_submission(submission)
 
-        event.post('sub_%s' % submission.id_secret, {'type': 'grading-end'})
+        # Check for Easter egg based on final result
+        easter_egg_html = None
+        try:
+            problem_easter_egg = ProblemEasterEgg.objects.select_related('easter_egg').filter(
+                problem=problem,
+                tag=submission.result,
+                easter_egg__is_active=True
+            ).first()
+            if problem_easter_egg and problem_easter_egg.easter_egg:
+                easter_egg_html = problem_easter_egg.easter_egg.html
+        except Exception:
+            pass
+
+        event.post('sub_%s' % submission.id_secret, {'type': 'grading-end', 'easter_egg_html': easter_egg_html})
         if hasattr(submission, 'contest'):
             participation = submission.contest.participation
             event.post('contest_%d' % participation.contest_id, {'type': 'update'})
