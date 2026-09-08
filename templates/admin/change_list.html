@@ -23,9 +23,6 @@
 {% block extrahead %}
 {{ block.super }}
 {{ media.js }}
-{# The patched admin/js/actions.js (resources/admin/js/actions.js) auto-initializes
-   the change list actions via window.Actions once the DOM is ready, so no extra
-   script is needed here even when the wpadmin template is in use. #}
 {% endblock %}
 
 {% block bodyclass %}{{ block.super }} app-{{ opts.app_label }} model-{{ opts.model_name }} change-list{% endblock %}
