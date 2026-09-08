@@ -43,6 +43,7 @@
                 function hideEasterEgg() {
                     $('#easter-egg-container').hide();
                     $('#easter-egg-content').empty();
+                    $('#easter-egg-static').hide();
                 }
 
                 event_dispatcher.on('sub_{{ submission.id_secret }}', function (message) {
@@ -137,6 +138,12 @@
     <div id="easter-egg-container" style="display:none;">
         <div id="easter-egg-content"></div>
     </div>
+
+    {% if easter_egg_html %}
+        <div id="easter-egg-static" style="margin: 10px 0;">
+            {{ easter_egg_html|safe }}
+        </div>
+    {% endif %}
 
     <div id="test-cases">{% include "submission/status-testcases.html" %}</div>
 

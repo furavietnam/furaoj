@@ -25,8 +25,8 @@ from judge.models import BlogPost, Contest, ContestAnnouncement, ContestParticip
     Language, LanguageLimit, Organization, OrganizationProblemTag, Problem, ProblemEasterEgg, Profile, Solution, \
     Submission, Tag, WebAuthnCredential
 from judge.utils.subscription import newsletter_id
-from judge.widgets import AceWidget, HeavySelect2MultipleWidget, HeavySelect2Widget, MartorWidget, \
-    Select2MultipleWidget, Select2Widget
+from judge.widgets import AceWidget, EasterEggMatrixFormField, HeavySelect2MultipleWidget, HeavySelect2Widget, \
+    MartorWidget, Select2MultipleWidget, Select2Widget
 
 TOTP_CODE_LENGTH = 6
 
@@ -169,12 +169,24 @@ class ProblemEditForm(ModelForm):
         widget=forms.FileInput(attrs={'accept': 'application/pdf'}),
         label=_('Statement file'),
     )
+    easter_eggs = EasterEggMatrixFormField(
+        required=False,
+        label=_('Easter Eggs'),
+        help_text=_('Configure which Easter egg to display for each submission result tag.'),
+    )
     required_css_class = 'required'
 
     def __init__(self, *args, **kwargs):
         self.org_pk = org_pk = kwargs.pop('org_pk', None)
         self.user = kwargs.pop('user', None)
         super(ProblemEditForm, self).__init__(*args, **kwargs)
+
+        # Load current Easter egg mappings for editing
+        if self.instance and self.instance.pk:
+            easter_egg_data = {}
+            for pe in ProblemEasterEgg.objects.filter(problem=self.instance):
+                easter_egg_data[pe.tag] = pe.easter_egg_id
+            self.fields['easter_eggs'].initial = easter_egg_data
 
         # Only allow to public/private problem in organization
         if org_pk is None:
@@ -231,7 +243,7 @@ class ProblemEditForm(ModelForm):
         model = Problem
         fields = ['is_public', 'code', 'name', 'time_limit', 'memory_limit', 'points', 'partial',
                   'statement_file', 'source', 'types', 'group', 'tags', 'submission_source_visibility_mode',
-                  'testcase_visibility_mode', 'description', 'testers']
+                  'testcase_visibility_mode', 'description', 'testers', 'easter_eggs']
         widgets = {
             'types': Select2MultipleWidget,
             'tags': Select2MultipleWidget(),

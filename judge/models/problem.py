@@ -773,7 +773,7 @@ class EasterEgg(models.Model):
                                     help_text=_('Only active Easter eggs will be displayed.'))
 
     def __str__(self):
-        return '%s (%s)' % (self.title, self.get_tag_display())
+        return self.title
 
     class Meta:
         verbose_name = _('Easter egg')
@@ -789,6 +789,7 @@ class ProblemEasterEgg(models.Model):
                                    null=True, blank=True,
                                    help_text=_('Select an Easter egg, or leave empty for none.'))
     tag = models.CharField(max_length=50, verbose_name=_('trigger tag'),
+                           choices=EasterEgg.EASTER_EGG_TAG_CHOICES,
                            help_text=_('The submission result tag that triggers this Easter egg '
                                        '(e.g. IN_PROGRESS, AC, WA, TLE).'))
 

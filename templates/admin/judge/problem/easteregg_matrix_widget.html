@@ -1,0 +1,164 @@
+{% load i18n %}
+
+<script type="text/javascript">
+(function($) {
+    'use strict';
+    
+    var eggsData = {{ eggs_json|safe }};
+    
+    function initRandomButtons() {
+        $(document).on('click', '.ee-random-btn', function(e) {
+            e.preventDefault();
+            var $btn = $(this);
+            var tag = $btn.data('tag');
+            var $select = $btn.closest('.ee-row').find('.ee-egg-select');
+            
+            if (!eggsData[tag] || eggsData[tag].length === 0) {
+                return;
+            }
+            
+            var randomIndex = Math.floor(Math.random() * eggsData[tag].length);
+            var randomEgg = eggsData[tag][randomIndex];
+            
+            $select.val(randomEgg.id).trigger('change');
+        });
+    }
+    
+    $(document).ready(function() {
+        initRandomButtons();
+    });
+    
+})(django.jQuery);
+</script>
+
+<style>
+    .ee-matrix-container {
+        width: 100%;
+        margin: 10px 0;
+    }
+    
+    .ee-matrix-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+    
+    .ee-matrix-table th {
+        background: #f5f5f5;
+        padding: 8px 12px;
+        text-align: left;
+        border: 1px solid #ddd;
+        font-weight: bold;
+    }
+    
+    .ee-matrix-table td {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        vertical-align: middle;
+    }
+    
+    .ee-matrix-table tr:hover {
+        background: #f9f9f9;
+    }
+    
+    .ee-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .ee-tag-label {
+        min-width: 140px;
+        font-weight: 500;
+        color: #333;
+    }
+    
+    .ee-egg-select {
+        flex: 1;
+        min-width: 200px;
+        padding: 4px 8px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+    }
+    
+    .ee-random-btn {
+        padding: 4px 12px;
+        background: #666;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+        white-space: nowrap;
+    }
+    
+    .ee-random-btn:hover {
+        background: #555;
+    }
+    
+    .ee-status-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: bold;
+    }
+    
+    .ee-status-badge.configured {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .ee-status-badge.not-configured {
+        background: #f8d7da;
+        color: #721c24;
+    }
+</style>
+
+<div class="ee-matrix-container">
+    <p class="help">{% trans "Configure which Easter egg to display for each submission result tag. Leave empty to show nothing." %}</p>
+    
+    <table class="ee-matrix-table">
+        <thead>
+            <tr>
+                <th>{% trans "Trigger Tag" %}</th>
+                <th>{% trans "Easter Egg" %}</th>
+                <th>{% trans "Status" %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in tag_rows %}
+            <tr>
+                <td>
+                    <div class="ee-row">
+                        <span class="ee-tag-label">{{ row.label }}</span>
+                    </div>
+                </td>
+                <td>
+                    <div class="ee-row">
+                        <select class="ee-egg-select" data-tag="{{ row.code }}" name="{{ field_name }}[{{ row.code }}]">
+                            <option value="">{% trans "None" %}</option>
+                            {% if row.code == 'IN_PROGRESS' %}
+                                <option value="random" {% if row.current_egg_id == 'random' %}selected{% endif %}>{% trans "Random" %}</option>
+                            {% endif %}
+                            {% for egg in row.eggs %}
+                                <option value="{{ egg.id }}" {% if row.current_egg_id == egg.id %}selected{% endif %}>{{ egg.title }}</option>
+                            {% endfor %}
+                        </select>
+                        {% if row.has_random %}
+                            <button type="button" class="ee-random-btn" data-tag="{{ row.code }}">{% trans "Random" %}</button>
+                        {% endif %}
+                    </div>
+                </td>
+                <td>
+                    {% if row.current_egg_id %}
+                        <span class="ee-status-badge configured">{% trans "Configured" %}</span>
+                    {% else %}
+                        <span class="ee-status-badge not-configured">{% trans "Not configured" %}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

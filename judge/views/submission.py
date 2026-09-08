@@ -274,6 +274,23 @@ class SubmissionStatus(SubmissionDetailBase):
             pass
         else:
             context['time_limit'] = lang_limit.time_limit
+
+        # Add Easter egg for graded submissions
+        easter_egg_html = None
+        if submission.is_graded and submission.result:
+            from judge.models import ProblemEasterEgg, EasterEgg
+            try:
+                pe = ProblemEasterEgg.objects.select_related('easter_egg').get(
+                    problem=submission.problem,
+                    tag=submission.result,
+                    easter_egg__is_active=True,
+                )
+                if pe.easter_egg:
+                    easter_egg_html = pe.easter_egg.html
+            except ProblemEasterEgg.DoesNotExist:
+                pass
+        context['easter_egg_html'] = easter_egg_html
+
         return context
 
 

@@ -953,6 +953,9 @@ class ProblemCreate(PermissionRequiredMixin, TitleMixin, CreateView):
             self.save_statement(form, problem)
             problem.save()
 
+            from judge.utils.easter_egg import save_problem_easter_eggs
+            save_problem_easter_eggs(problem, form.cleaned_data.get('easter_eggs', {}))
+
             revisions.set_comment(_('Created on site'))
             revisions.set_user(self.request.user)
 
@@ -1119,6 +1122,9 @@ class ProblemEdit(ProblemMixin, TitleMixin, UpdateView):
                 problem.save()
                 form_lang_limit.save()
                 form_edit.save()
+
+                from judge.utils.easter_egg import save_problem_easter_eggs
+                save_problem_easter_eggs(problem, form.cleaned_data.get('easter_eggs', {}))
 
                 revisions.set_comment(_('Edited from site'))
                 revisions.set_user(self.request.user)

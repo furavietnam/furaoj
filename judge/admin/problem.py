@@ -13,13 +13,23 @@ from reversion.admin import VersionAdmin
 from judge.admin.utils import AdminFastPaginationMixin
 from judge.models import EasterEgg, LanguageLimit, OrganizationProblemTag, Problem, ProblemClarification, \
     ProblemEasterEgg, ProblemTranslation, Profile, Solution
+from judge.utils.easter_egg import save_problem_easter_eggs
 from judge.utils.views import NoBatchDeleteMixin
 from judge.widgets import AdminHeavySelect2MultipleWidget, AdminHeavySelect2Widget, AdminMartorWidget, \
-    AdminSelect2MultipleWidget, AdminSelect2Widget, CheckboxSelectMultipleWithSelectAll
+    AdminSelect2MultipleWidget, AdminSelect2Widget, CheckboxSelectMultipleWithSelectAll, \
+    EasterEggMatrixFormField, EasterEggMatrixWidget
 
 
 class ProblemForm(ModelForm):
     change_message = forms.CharField(max_length=256, label='Edit reason', required=False)
+    easter_eggs = EasterEggMatrixFormField(
+        widget=EasterEggMatrixWidget(
+            template_name='admin/judge/problem/easteregg_matrix_widget.html'
+        ),
+        required=False,
+        label=_('Easter Eggs'),
+        help_text=_('Configure which Easter egg to display for each submission result tag.'),
+    )
 
     def __init__(self, *args, **kwargs):
         super(ProblemForm, self).__init__(*args, **kwargs)
@@ -30,8 +40,25 @@ class ProblemForm(ModelForm):
         self.fields['change_message'].widget.attrs.update({
             'placeholder': gettext('Describe the changes you made (optional)'),
         })
+        # Load current Easter egg mappings for editing
+        if self.instance and self.instance.pk:
+            easter_egg_data = {}
+            for pe in ProblemEasterEgg.objects.filter(problem=self.instance):
+                easter_egg_data[pe.tag] = pe.easter_egg_id
+            self.fields['easter_eggs'].initial = easter_egg_data
+        else:
+            self.fields['easter_eggs'].initial = {}
 
     class Meta:
+        model = Problem
+        fields = (
+            'code', 'name', 'is_public', 'is_manually_managed', 'date', 'authors', 'curators', 'testers',
+            'is_organization_private', 'organization', 'submission_source_visibility_mode',
+            'testcase_visibility_mode', 'testcase_result_visibility_mode', 'allow_view_feedback',
+            'is_full_markup', 'pdf_url', 'source', 'description', 'license', 'types', 'group', 'tags',
+            'points', 'partial', 'short_circuit', 'time_limit', 'memory_limit', 'allowed_languages',
+            'banned_users', 'og_image', 'summary',
+        )
         widgets = {
             'authors': AdminHeavySelect2MultipleWidget(data_view='profile_select2'),
             'curators': AdminHeavySelect2MultipleWidget(data_view='profile_select2'),
@@ -176,20 +203,6 @@ class EasterEggAdmin(admin.ModelAdmin):
         return super().get_queryset(request).prefetch_related('problemeasteregg_set__problem')
 
 
-class ProblemEasterEggInlineForm(ModelForm):
-    class Meta:
-        widgets = {'easter_egg': AdminSelect2Widget}
-
-
-class ProblemEasterEggInline(admin.TabularInline):
-    model = ProblemEasterEgg
-    fields = ('tag', 'easter_egg')
-    form = ProblemEasterEggInlineForm
-    extra = 1
-    verbose_name = _('Easter Egg')
-    verbose_name_plural = _('Easter Eggs')
-
-
 class ProblemAdmin(AdminFastPaginationMixin, NoBatchDeleteMixin, VersionAdmin):
     fieldsets = (
         (None, {
@@ -206,13 +219,13 @@ class ProblemAdmin(AdminFastPaginationMixin, NoBatchDeleteMixin, VersionAdmin):
         (_('Limits'), {'fields': ('time_limit', 'memory_limit')}),
         (_('Language'), {'fields': ('allowed_languages',)}),
         (_('Justice'), {'fields': ('banned_users',)}),
+        (_('Easter Eggs'), {'fields': ('easter_eggs',)}),
         (_('History'), {'fields': ('change_message',)}),
     )
     list_display = ['code', 'name', 'show_authors', 'points', 'is_public', 'show_public']
     ordering = ['code']
     search_fields = ('code', 'name', 'authors__user__username', 'curators__user__username')
-    inlines = [LanguageLimitInline, ProblemClarificationInline, ProblemSolutionInline, ProblemTranslationInline,
-               ProblemEasterEggInline]
+    inlines = [LanguageLimitInline, ProblemClarificationInline, ProblemSolutionInline, ProblemTranslationInline]
     actions_on_top = True
     actions_on_bottom = True
     list_filter = ('is_public', ProblemCreatorListFilter)
@@ -305,6 +318,12 @@ class ProblemAdmin(AdminFastPaginationMixin, NoBatchDeleteMixin, VersionAdmin):
             any(f in form.changed_data for f in ('is_public', 'is_organization_private', 'partial'))
         ):
             self._rescore(request, obj.id)
+        # Save Easter egg configurations
+        if 'easter_eggs' in form.changed_data:
+            save_problem_easter_eggs(obj, form.cleaned_data.get('easter_eggs', {}))
+
+    def save_formset(self, request, form, formset, change):
+        super().save_formset(request, form, formset, change)
 
     def construct_change_message(self, request, form, *args, **kwargs):
         if form.cleaned_data.get('change_message'):
