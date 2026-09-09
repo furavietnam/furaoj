@@ -56,21 +56,18 @@
 
 #content-left,
 #content-right {
-    background: $color_primary0;
+    background: none;
     border: none;
-    border-radius: 10px;
+    border-radius: 0;
     position: relative;
     box-sizing: border-box;
-    box-shadow: 4px 4px 0px $color_card_shadow;
+    box-shadow: none;
 }
 
 #content-left {
-    padding: 1.5rem 1.75rem;
 }
 
 #content-right {
-    padding: 1.5rem 1.75rem;
-
     .info-float,
     .sidebox {
         margin: 0;
@@ -91,13 +88,6 @@
     .sidebox-content select,
     .sidebox-content button {
         margin-bottom: 0.75rem;
-    }
-}
-
-@media (max-width: 760px) {
-    #content-left,
-    #content-right {
-        box-shadow: none;
     }
 }
 
