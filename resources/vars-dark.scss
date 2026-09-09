@@ -92,6 +92,9 @@ $color_blog_tag_hover_text: #d0d0d0;
 $color_blog_tag_active_bg: #3b82f6;
 $color_blog_hero_bg: #252525;
 
+// Content card shadow color
+$color_card_shadow: rgba(255, 255, 255, 0.2);
+
 $path_to_root: '..';    // relative path from style.css to STATIC_ROOT
 
 @mixin vars-img {

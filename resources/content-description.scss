@@ -56,6 +56,22 @@
     }
 }
 
+#content-left,
+#content-right {
+    background: $color_primary0;
+    border: none;
+    border-radius: 10px;
+    position: relative;
+    box-shadow: 4px 4px 0px $color_card_shadow;
+}
+
+@media (max-width: 760px) {
+    #content-left,
+    #content-right {
+        box-shadow: none;
+    }
+}
+
 a.view-pdf {
     padding-top: 0.6em;
     display: inline-block;
