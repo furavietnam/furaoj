@@ -432,49 +432,24 @@
     {% block bodyend %}{% endblock %}
 
     <footer>
-        <div class="footer-columns">
-            <div class="footer-col">
-                <h4>FuraOJ</h4>
-                <p>{{ _('An open-source competitive programming platform built for learning and practice.') }}</p>
-                <p class="footer-copyright">&copy; {{ _('2024 FuraOJ. All rights reserved.') }}</p>
-            </div>
-            <div class="footer-col">
-                <h4>{{ _('Navigation') }}</h4>
-                <ul>
-                    <li><a href="{{ url('problem_list') }}">{{ _('Problems') }}</a></li>
-                    <li><a href="{{ url('submission_list') }}">{{ _('Submissions') }}</a></li>
-                    <li><a href="{{ url('user_list') }}">{{ _('Users') }}</a></li>
-                    <li><a href="{{ url('contest_list') }}">{{ _('Contests') }}</a></li>
-                </ul>
-            </div>
-            <div class="footer-col">
-                <h4>{{ _('Resources') }}</h4>
-                <ul>
-                    <li><a href="https://github.com/furavietnam/furaoj" target="_blank">{{ _('GitHub') }}</a></li>
-                    <li><a href="https://www.facebook.com/" target="_blank">{{ _('Facebook') }}</a></li>
-                    <li><a href="https://dmoj.ca" target="_blank">DMOJ</a></li>
-                </ul>
-                {% if misc_config.footer %}
-                    <div class="footer-custom">{{ misc_config.footer|safe }}</div>
-                {% endif %}
-            </div>
-            <div class="footer-col">
-                <h4>{{ _('Settings') }}</h4>
-                <form id="set_language" action="{{ url('set_language') }}" method="post">
-                    {% csrf_token %}
-                    <input name="next" type="hidden" value="{{ request.get_full_path() }}">
-                    <input name="language" type="hidden" value="{{ LANGUAGE_CODE }}">
-                </form>
-                <form id="set_theme" action="{{ url('set_theme') }}" method="post">
-                    {% csrf_token %}
-                    <input name="next" type="hidden" value="{{ request.get_full_path() }}">
-                    <input name="theme" type="hidden" value="{{ SITE_THEME_NAME }}">
-                </form>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p>{{_('proudly powered by %(dmoj)s', dmoj=safe('<a href="https://dmoj.ca"><b>DMOJ</b></a>'))}}</p>
-        </div>
+        <span id="footer-content">
+            <br>
+            {{_('proudly powered by %(dmoj)s', dmoj=safe('<a style="color: #808080" href="https://dmoj.ca"><b>DMOJ</b></a>'))}} |
+            {{_('follow us on %(github)s and %(facebook)s', github=safe('<a style="color: #808080" href="https://github.com/furavietnam/furaoj"><b>Github</b></a>'), facebook=safe('<a style="color: #808080" href="https://www.facebook.com/"><b>Facebook</b></a>'))}}
+            {% if misc_config.footer %}
+                {{ misc_config.footer|safe }} |
+            {% endif %}
+            <form id="set_language" action="{{ url('set_language') }}" method="post" style="display: inline">
+                {% csrf_token %}
+            <input name="next" type="hidden" value="{{ request.get_full_path() }}">
+            <input name="language" type="hidden" value="{{LANGUAGE_CODE}}">
+          </form>
+            <form id="set_theme" action="{{ url('set_theme') }}" method="post" style="display: inline">
+                {% csrf_token %}
+                <input name="next" type="hidden" value="{{ request.get_full_path() }}">
+                <input name="theme" type="hidden" value="{{ SITE_THEME_NAME }}">
+            </form>
+        </span>
     </footer>
 </div>
 </body>
