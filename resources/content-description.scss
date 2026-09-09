@@ -61,7 +61,7 @@
     border-radius: 10px;
     position: relative;
     box-sizing: border-box;
-    box-shadow: 4px 4px 0px $color_card_shadow, -4px -4px 0px $color_card_shadow, 4px -4px 0px $color_card_shadow, -4px 4px 0px $color_card_shadow;
+    box-shadow: 0px 0px 0px 3px $color_card_shadow;
 }
 
 #content-left {
