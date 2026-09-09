@@ -154,10 +154,84 @@ div.info-float {
 
 footer {
     color: $color_primary50;
-    display: block;
     width: 100%;
-    position: absolute;
-    bottom: 0;
+    border-top: 1px solid $color_primary25;
+    background: $color_primary10;
+    padding: 2em 0 0;
+}
+
+.footer-columns {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 2em;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2em 2em;
+}
+
+.footer-col {
+    h4 {
+        color: $color_primary90;
+        font-size: 1em;
+        margin: 0 0 0.8em;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    p {
+        margin: 0 0 0.5em;
+        line-height: 1.6;
+    }
+
+    ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+
+        li {
+            margin-bottom: 0.4em;
+
+            a {
+                color: $color_primary50;
+                text-decoration: none;
+                transition: color 0.2s;
+
+                &:hover {
+                    color: $color_link75;
+                }
+            }
+        }
+    }
+}
+
+.footer-copyright {
+    font-size: 0.85em;
+    margin-top: 1em !important;
+}
+
+.footer-custom {
+    margin-top: 1em;
+    font-size: 0.9em;
+}
+
+.footer-bottom {
+    border-top: 1px solid $color_primary25;
+    text-align: center;
+    padding: 1em 2em;
+    font-size: 0.85em;
+
+    p {
+        margin: 0;
+    }
+
+    a {
+        color: $color_link75;
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
 }
 
 body {
@@ -226,13 +300,6 @@ hr {
     .title {
         color: $color_primary75;
     }
-}
-
-footer {
-    text-align: center;
-    height: 40px;
-    border-top: 1px solid $color_primary25;
-    background: $color_primary10;
 }
 
 html {
@@ -367,5 +434,15 @@ math {
     #content {
         width: auto;
         padding: 0 5px;
+    }
+
+    .footer-columns {
+        grid-template-columns: 1fr;
+        gap: 1.5em;
+        padding: 0 1.5em 1.5em;
+    }
+
+    .footer-bottom {
+        padding: 1em 1.5em;
     }
 }
