@@ -72,14 +72,25 @@
     padding: 1.5rem 1.75rem;
 
     .info-float,
-    .sidebox,
+    .sidebox {
+        margin: 0;
+        padding: 0;
+    }
+
     .sidebox-content {
-        margin: 0 !important;
-        padding: 0 !important;
+        margin: 0 -5px;
+        padding: 0.5rem 5px;
     }
 
     h3 {
+        margin-top: 0;
         margin-bottom: 1rem;
+    }
+
+    .sidebox-content input,
+    .sidebox-content select,
+    .sidebox-content button {
+        margin-bottom: 0.75rem;
     }
 }
 
