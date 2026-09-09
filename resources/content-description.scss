@@ -35,12 +35,10 @@
     #content-right {
         flex: 1;
         max-width: 12.5em;
-        padding-left: 1.5em;
-        padding-top: 1em;
 
         .info-float {
             float: none;
-            padding: 0.25rem 0;
+            padding: 0;
             position: sticky;
             top: 70px;
             width: 100%;
@@ -72,7 +70,7 @@
 }
 
 #content-right {
-    padding: 1.25rem 1.5rem;
+    padding: 1.5rem 1.75rem;
 }
 
 @media (max-width: 760px) {
