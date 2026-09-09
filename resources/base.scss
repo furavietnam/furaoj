@@ -334,11 +334,8 @@ noscript #noscript {
 #page-container {
     min-height: 100%;
     position: relative;
-    margin: 0 auto;
-    border-right: 1px solid $color_primary25;
-    border-left: 1px solid $color_primary25;
-    background: $color_pageBg;
-    max-width: 100em;
+    max-width: none;
+    margin: 0;
 }
 
 // border-bottom: 1px solid rgb(204, 204, 204)
@@ -363,15 +360,6 @@ math {
 .MathJax {
     &:focus {
         outline: none;
-    }
-}
-
-@media(max-width: 1498px) {
-    #page-container {
-        border-left: none;
-        border-right: none;
-        border-bottom-left-radius: 0;
-        border-bottom-right-radius: 0;
     }
 }
 
