@@ -8,6 +8,11 @@
     color: $color_primary100 !important;
 }
 
+#submit-modal .select2-dropdown,
+#submit-modal .select2-container--open {
+    z-index: 99999 !important;
+}
+
 .select2-container--dmoj {
     @include select2.single;
     @include select2.multiple;

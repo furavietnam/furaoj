@@ -1,4 +1,12 @@
 <script type="text/javascript" src="{{ ACE_URL }}/ace.js"></script>
+<script type="text/javascript">
+    // Reset ace config — martor's bundled ace.js may overwrite basePath
+    if (typeof ace !== 'undefined' && ace.config) {
+        ace.config.set("basePath", "{{ ACE_URL }}");
+        ace.config.set("modePath", "{{ ACE_URL }}");
+        ace.config.set("themePath", "{{ ACE_URL }}");
+    }
+</script>
 {{ form.media.js }}
 {% compress js %}
     <script type="text/javascript">
@@ -65,11 +73,14 @@
 
             var customAdapter = $.fn.select2.amd.require('select2/data/customAdapter');
 
+            var $modalParent = $('#submit-modal').length ? $('#submit-modal') : $(document.body);
+
             $("#id_language").select2({
                 theme: '{{ DMOJ_SELECT2_THEME }}',
                 templateResult: format,
                 templateSelection: formatSelection,
-                resultsAdapter: customAdapter
+                resultsAdapter: customAdapter,
+                dropdownParent: $modalParent
             });
 
             $('#id_language').on('select2:open', function (evt) {
@@ -92,6 +103,7 @@
             });
 
             $('#ace_source').on('ace_load', function (e, editor) {
+                editor.$blockScrolling = Infinity;
                 update_language_template();
                 editor.commands.addCommand({
                     name: 'save',
