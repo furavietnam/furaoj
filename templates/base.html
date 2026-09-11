@@ -141,9 +141,9 @@
             }
 
             $widget.find('.contest-info-titlebar').mousedown(function (e) {
-                selected = $(this);
-                x_elem = e.clientX - selected.offset().left;
-                y_elem = e.clientY - selected.offset().top + $(window).scrollTop();
+                selected = $widget;
+                x_elem = e.clientX - $widget.offset().left;
+                y_elem = e.clientY - $widget.offset().top + $(window).scrollTop();
                 return false;
             });
 
