@@ -1,8 +1,5 @@
-from django.db import connections
 from django.db.models.sql.constants import INNER, LOUTER
 from django.db.models.sql.datastructures import Join
-
-from judge.utils.cachedict import CacheDict
 
 
 class RawSQLJoin(Join):
@@ -35,7 +32,7 @@ def join_sql_subquery(
         parent_alias = parent_model._meta.db_table
     else:
         parent_alias = queryset.query.get_initial_alias()
-    if isinstance(queryset.query.external_aliases, dict):  # Django 3.x
+    if isinstance(queryset.query.external_aliases, dict):
         queryset.query.external_aliases[alias] = True
     else:
         queryset.query.external_aliases.add(alias)
@@ -45,26 +42,6 @@ def join_sql_subquery(
     join.table_alias = alias
 
 
-def make_straight_join_query(QueryType):
-    class Query(QueryType):
-        def join(self, join, *args, **kwargs):
-            alias = super().join(join, *args, **kwargs)
-            join = self.alias_map[alias]
-            if join.join_type == INNER:
-                join.join_type = 'STRAIGHT_JOIN'
-            return alias
-
-    return Query
-
-
-straight_join_cache = CacheDict(make_straight_join_query)
-
-
 def use_straight_join(queryset):
-    if connections[queryset.db].vendor != 'mysql':
-        return
-    try:
-        cloner = queryset.query.chain
-    except AttributeError:
-        cloner = queryset.query.clone
-    queryset.query = cloner(straight_join_cache[type(queryset.query)])
+    # No-op: STRAIGHT_JOIN is MySQL-specific and not needed on PostgreSQL
+    pass

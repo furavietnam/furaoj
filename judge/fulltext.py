@@ -1,6 +1,5 @@
-# From: http://www.mercurytide.co.uk/news/article/django-full-text-search/
-
-from django.db import connection, models
+from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
+from django.db import models
 from django.db.models.query import QuerySet
 
 
@@ -20,25 +19,12 @@ class SearchQuerySet(QuerySet):
         return queryset
 
     def search(self, query, mode=DEFAULT):
-        meta = self.model._meta
-
-        # Get the table name and column names from the model
-        # in `table_name`.`column_name` style
-        columns = [meta.get_field(name).column for name in self._search_fields]
-        full_names = ['%s.%s' %
-                      (connection.ops.quote_name(meta.db_table),
-                       connection.ops.quote_name(column))
-                      for column in columns]
-
-        # Create the MATCH...AGAINST expressions
-        fulltext_columns = ', '.join(full_names)
-        match_expr = ('MATCH(%s) AGAINST (%%s%s)' % (fulltext_columns, mode))
-
-        # Add the extra SELECT and WHERE options
-        return self.extra(select={'relevance': match_expr},
-                          select_params=[query],
-                          where=[match_expr],
-                          params=[query])
+        search_vector = SearchVector(*self._search_fields)
+        search_query = SearchQuery(query)
+        return self.annotate(
+            search=search_vector,
+            relevance=SearchRank(search_vector, search_query),
+        ).filter(search=search_query)
 
 
 class SearchManager(models.Manager):

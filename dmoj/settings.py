@@ -522,6 +522,7 @@ INSTALLED_APPS += (
     'martor',
     'adminsortable2',
     'django_cleanup.apps.CleanupConfig',
+    'django.contrib.postgres',
 )
 
 MIDDLEWARE = (

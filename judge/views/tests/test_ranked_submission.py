@@ -25,15 +25,9 @@ class RankedSubmissionsQueryTestCase(SimpleTestCase):
 
         return join_sql.call_args.kwargs['subquery']
 
-    def test_postgresql_rank_query_uses_standard_inner_joins(self):
+    def test_rank_query_uses_standard_inner_joins(self):
         query = self._build_query('postgresql')
 
         self.assertNotIn('STRAIGHT_JOIN', query)
         self.assertEqual(query.count('INNER JOIN'), 2)
         self.assertIn('SELECT MIN(sub.id) AS id', query)
-
-    def test_mysql_rank_query_keeps_straight_joins(self):
-        query = self._build_query('mysql')
-
-        self.assertEqual(query.count('STRAIGHT_JOIN'), 2)
-        self.assertNotIn('INNER JOIN', query)

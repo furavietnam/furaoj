@@ -357,7 +357,7 @@ class ContestAdmin(AdminFastPaginationMixin, NoBatchDeleteMixin, SortableAdminBa
             raise PermissionDenied()
         with transaction.atomic():
             with connection.cursor() as cursor:
-                cursor.execute('TRUNCATE TABLE `%s`' % Rating._meta.db_table)
+                cursor.execute('TRUNCATE TABLE "%s"' % Rating._meta.db_table)
             Profile.objects.update(rating=None)
             for contest in Contest.objects.filter(is_rated=True, end_time__lte=timezone.now()).order_by('end_time'):
                 rate_contest(contest)

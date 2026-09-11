@@ -154,8 +154,7 @@ class JudgeHandler(ZlibPacketHandler):
         try:
             Judge.objects.filter(name=self.name).update(ping=self.latency, load=self.load)
         except Exception as e:
-            # What can I do? I don't want to tie this to MySQL.
-            if e.__class__.__name__ == 'OperationalError' and e.__module__ == '_mysql_exceptions' and e.args[0] == 2006:
+            if e.__class__.__name__ == 'OperationalError':
                 db.connection.close()
 
     def send(self, data):

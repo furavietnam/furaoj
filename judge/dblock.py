@@ -1,23 +1,22 @@
-from itertools import chain
-
 from django.db import connection, transaction
 
 
 class LockModel(object):
     def __init__(self, write, read=()):
-        self.tables = ', '.join(chain(
-            ('`%s` WRITE' % model._meta.db_table for model in write),
-            ('`%s` READ' % model._meta.db_table for model in read),
-        ))
-        self.cursor = connection.cursor()
+        self.write_tables = [model._meta.db_table for model in write]
+        self.read_tables = [model._meta.db_table for model in read]
 
     def __enter__(self):
-        self.cursor.execute('LOCK TABLES ' + self.tables)
+        self._exit_stack = transaction.atomic()
+        self._exit_stack.__enter__()
+        cursor = connection.cursor()
+        for table in self.write_tables + self.read_tables:
+            cursor.execute(
+                "SELECT pg_advisory_xact_lock(%s)",
+                [hash(table) % (2**31)],
+            )
+        cursor.close()
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_type is None:
-            transaction.commit()
-        else:
-            transaction.rollback()
-        self.cursor.execute('UNLOCK TABLES')
-        self.cursor.close()
+        return self._exit_stack.__exit__(exc_type, exc_val, exc_tb)

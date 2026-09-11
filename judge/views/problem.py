@@ -647,12 +647,12 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, Infinite
     @staticmethod
     def apply_full_text(queryset, query):
         if recjk.search(query):
-            # MariaDB can't tokenize CJK properly, fallback to LIKE '%term%' for each term.
+            # CJK tokenization is poor with PostgreSQL default dictionary, fallback to LIKE for each term.
             for term in query.split():
                 queryset = queryset.filter(Q(code__icontains=term) | Q(name__icontains=term) |
                                            Q(description__icontains=term))
             return queryset
-        return queryset.search(query, queryset.BOOLEAN).extra(order_by=['-relevance'])
+        return queryset.search(query, queryset.BOOLEAN).order_by('-relevance')
 
     def get_filter(self):
         _filter = Q(is_public=True) & Q(is_organization_private=False)

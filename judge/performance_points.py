@@ -14,8 +14,6 @@ PPBreakdown = namedtuple('PPBreakdown', 'points weight scaled_points problem_nam
 
 
 def get_pp_breakdown(user, start=0, end=settings.DMOJ_PP_ENTRIES):
-    join_type = 'STRAIGHT_JOIN' if connection.vendor == 'mysql' else 'INNER JOIN'
-
     with connection.cursor() as cursor:
         cursor.execute(f"""
             SELECT max_points_table.problem_code,
@@ -42,12 +40,12 @@ def get_pp_breakdown(user, start=0, end=settings.DMOJ_PP_ENTRIES):
                 GROUP BY judge_problem.id, judge_problem.name, judge_problem.code
                 HAVING MAX(judge_submission.points) > 0.0
             ) AS max_points_table
-            {join_type} judge_submission ON (
+            INNER JOIN judge_submission ON (
                 judge_submission.problem_id = max_points_table.problem_id AND
                 judge_submission.points = max_points_table.max_points AND
                 judge_submission.user_id = %s
             )
-            {join_type} judge_language ON (judge_submission.language_id = judge_language.id)
+            INNER JOIN judge_language ON (judge_submission.language_id = judge_language.id)
             GROUP BY max_points_table.problem_id, max_points_table.problem_code,
                    max_points_table.problem_name, max_points_table.max_points,
                    judge_submission.id, judge_submission.date,

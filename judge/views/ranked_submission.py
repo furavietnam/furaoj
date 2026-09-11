@@ -1,4 +1,3 @@
-from django.db import connection
 from django.urls import reverse
 from django.utils.html import escape, format_html
 from django.utils.safestring import mark_safe
@@ -17,7 +16,6 @@ class RankedSubmissions(ProblemSubmissions):
     dynamic_update = False
 
     def get_queryset(self):
-        join_type = 'STRAIGHT_JOIN' if connection.vendor == 'mysql' else 'INNER JOIN'
         params = [self.problem.id]
         if self.is_contest_scoped:
             contest_join = 'INNER JOIN judge_contestsubmission AS cs ON (sub.id = cs.submission_id)'
@@ -46,17 +44,17 @@ class RankedSubmissions(ProblemSubmissions):
                     FROM judge_submission AS sub {contest_join}
                     WHERE sub.problem_id = %s AND {points} > 0 {constraint}
                     GROUP BY sub.user_id
-                ) AS highscore {join_type} (
+                ) AS highscore INNER JOIN (
                     SELECT sub.user_id AS uid, sub.points, MIN(sub.time) as time
                     FROM judge_submission AS sub {contest_join}
                     WHERE sub.problem_id = %s AND {points} > 0 {constraint}
                     GROUP BY sub.user_id, {points}
                 ) AS fastest ON (highscore.uid = fastest.uid AND highscore.points = fastest.points)
-                    {join_type} judge_submission AS sub
+                    INNER JOIN judge_submission AS sub
                         ON (sub.user_id = fastest.uid AND sub.time = fastest.time)
                 WHERE sub.problem_id = %s {constraint}
                 GROUP BY sub.user_id
-            """.format(points=points, join_type=join_type, contest_join=contest_join, constraint=constraint),
+            """.format(points=points, contest_join=contest_join, constraint=constraint),
             params=params * 3, alias='best_subs', join_fields=[('id', 'id')], related_model=Submission,
         )
 

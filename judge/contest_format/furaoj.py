@@ -11,12 +11,12 @@ from judge.timezone import from_database_time, to_database_time
 ParticipationInfo = namedtuple('ParticipationInfo', 'cumtime score tiebreaker format_data')
 
 DEFAULT_RANKING_SQL = """
-SELECT MAX(cs.points) as `points`, (
+SELECT MAX(cs.points) as points, (
     SELECT MIN(csub.date)
         FROM judge_contestsubmission ccs LEFT OUTER JOIN
                 judge_submission csub ON (csub.id = ccs.submission_id)
         WHERE ccs.problem_id = cp.id AND ccs.participation_id = %s AND ccs.points = MAX(cs.points)
-) AS `time`, cp.id AS `prob`
+) AS time, cp.id AS prob
 FROM judge_contestproblem cp INNER JOIN
         judge_contestsubmission cs ON (cs.problem_id = cp.id AND cs.participation_id = %s) LEFT OUTER JOIN
         judge_submission sub ON (sub.id = cs.submission_id)
@@ -24,12 +24,12 @@ GROUP BY cp.id
 """
 
 FROZEN_RANKING_SQL = """
-SELECT MAX(cs.points) as `points`, (
+SELECT MAX(cs.points) as points, (
     SELECT MIN(csub.date)
         FROM judge_contestsubmission ccs LEFT OUTER JOIN
                 judge_submission csub ON (csub.id = ccs.submission_id)
         WHERE ccs.problem_id = cp.id AND ccs.participation_id = %s AND ccs.points = MAX(cs.points) AND csub.date < %s
-) AS `time`, cp.id AS `prob`
+) AS time, cp.id AS prob
 FROM judge_contestproblem cp INNER JOIN
         judge_contestsubmission cs ON (cs.problem_id = cp.id AND cs.participation_id = %s) LEFT OUTER JOIN
         judge_submission sub ON (sub.id = cs.submission_id)

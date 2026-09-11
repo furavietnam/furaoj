@@ -53,6 +53,7 @@ def comet_location(request):
 
 
 def __nav_tab(path):
+    # PostgreSQL regex match: path ~ regex_field (does path match the stored regex?)
     result = list(NavigationBar.objects.extra(where=["%s ~ judge_navigationbar.regex"], params=[path])[:1])
     return result[0].get_ancestors(include_self=True).values_list('key', flat=True) if result else []
 
