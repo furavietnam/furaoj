@@ -22,12 +22,12 @@ class IOIContestFormat(LegacyIOIContestFormat):
         with connection.cursor() as cursor:
             cursor.execute("""
                 SELECT q.prob,
-                       MIN(q.date) as date,
+                       MIN(q.date) as "date",
                        q.batch_points
                 FROM (
                          SELECT cp.id          as prob,
                                 sub.id         as subid,
-                                sub.date       as date,
+                                sub.date       as "date",
                                 tc.points      as points,
                                 tc.batch       as batch,
                                 MIN(tc.points) as batch_points
