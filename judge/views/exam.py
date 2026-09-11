@@ -1,7 +1,6 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.db.models import FloatField, Q, Sum, Max, Value
-from django.db.models.functions import Coalesce
+from django.db.models import FloatField, Q, Max
 from django.http import HttpResponseRedirect
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import ListView, DetailView
@@ -62,22 +61,20 @@ class ExamList(TitleMixin, InfinitePaginationMixin, ListView):
         if self.request.user.is_authenticated:
             profile = self.request.profile
             for exam in context['exams']:
-                stats = exam.exam_problems.aggregate(
-                    user_earned=Coalesce(
-                        Max('problem__submission__points',
-                            filter=Q(problem__submission__user=profile),
-                            output_field=FloatField()),
-                        Value(0.0),
-                        output_field=FloatField(),
-                    ),
-                    total=Coalesce(
-                        Sum('problem__points', output_field=FloatField(), distinct=True),
-                        Value(0.0),
-                        output_field=FloatField(),
-                    ),
+                exam_problems = exam.exam_problems.select_related('problem')
+                problems = [ep.problem for ep in exam_problems]
+                submissions = (
+                    Submission.objects.filter(
+                        user=profile,
+                        problem__in=problems,
+                        points__isnull=False,
+                    )
+                    .values('problem_id')
+                    .annotate(best_points=Max('points', output_field=FloatField()))
                 )
-                exam.user_earned = stats['user_earned']
-                exam.display_total = stats['total'] or exam.total_points
+                problem_scores = {s['problem_id']: s['best_points'] for s in submissions}
+                exam.user_earned = sum(problem_scores.get(ep.problem.id, 0) for ep in exam_problems)
+                exam.display_total = exam.total_points
         else:
             for exam in context['exams']:
                 exam.user_earned = 0
