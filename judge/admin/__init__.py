@@ -5,6 +5,7 @@ from django.contrib.flatpages.models import FlatPage
 
 from judge.admin.comments import CommentAdmin
 from judge.admin.contest import ContestAdmin, ContestParticipationAdmin, ContestTagAdmin
+from judge.admin.exam import ExamAdmin, ExamCategoryAdmin, ExamProvinceAdmin
 from judge.admin.interface import BlogPostAdmin, BlogPostTagAdmin, FlatPageAdmin, LicenseAdmin, LogEntryAdmin, \
     NavigationBarAdmin
 from judge.admin.organization import OrganizationAdmin, OrganizationRequestAdmin
@@ -16,9 +17,9 @@ from judge.admin.tag import TagAdmin, TagGroupAdmin, TagProblemAdmin
 from judge.admin.taxon import OrganizationProblemTagAdmin, ProblemGroupAdmin, ProblemTypeAdmin
 from judge.admin.ticket import TicketAdmin
 from judge.models import Badge, BlogPost, BlogPostTag, Comment, CommentLock, Contest, ContestParticipation, \
-    ContestTag, EasterEgg, Judge, Language, License, MiscConfig, NavigationBar, Organization, \
-    OrganizationProblemTag, OrganizationRequest, Problem, ProblemGroup, ProblemType, Profile, Submission, Tag, \
-    TagGroup, TagProblem, Ticket
+    ContestTag, EasterEgg, Exam, ExamCategory, ExamProvince, Judge, Language, License, MiscConfig, NavigationBar, \
+    Organization, OrganizationProblemTag, OrganizationRequest, Problem, ProblemGroup, ProblemType, Profile, \
+    Submission, Tag, TagGroup, TagProblem, Ticket
 
 admin.site.register(BlogPost, BlogPostAdmin)
 admin.site.register(BlogPostTag, BlogPostTagAdmin)
@@ -28,6 +29,9 @@ admin.site.register(Contest, ContestAdmin)
 admin.site.register(ContestParticipation, ContestParticipationAdmin)
 admin.site.register(ContestTag, ContestTagAdmin)
 admin.site.register(EasterEgg, EasterEggAdmin)
+admin.site.register(Exam, ExamAdmin)
+admin.site.register(ExamCategory, ExamCategoryAdmin)
+admin.site.register(ExamProvince, ExamProvinceAdmin)
 admin.site.unregister(FlatPage)
 admin.site.register(FlatPage, FlatPageAdmin)
 admin.site.register(Judge, JudgeAdmin)

@@ -1,0 +1,11 @@
+{% extends "tabs-base.html" %}
+
+{% block tabs %}
+    {% if request.user.has_perm('judge.add_exam') %}
+        {{ make_tab('create', 'fa-plus', url('exam_create'), _('Create new exam')) }}
+    {% endif %}
+    {{ make_tab('list', 'fa-list', url('exam_list'), _('List')) }}
+    {% if request.user.is_superuser %}
+        {{ make_tab('admin', 'fa-edit', url('admin:judge_exam_changelist'), _('Admin')) }}
+    {% endif %}
+{% endblock %}

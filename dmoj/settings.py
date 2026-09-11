@@ -438,6 +438,14 @@ else:
                         'judge.ContestTag',
                     ],
                 },
+                {
+                    'model': 'judge.Exam',
+                    'icon': 'fa-file-text-o',
+                    'children': [
+                        'judge.ExamCategory',
+                        'judge.ExamProvince',
+                    ],
+                },
                 ('judge.Ticket', 'fa-bell'),
                 {
                     'model': 'auth.User',

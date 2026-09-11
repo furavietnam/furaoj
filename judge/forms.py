@@ -22,8 +22,8 @@ from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _, ngettext_lazy
 
 from judge.models import BlogPost, Contest, ContestAnnouncement, ContestParticipation, ContestProblem, EasterEgg, \
-    Language, LanguageLimit, Organization, OrganizationProblemTag, Problem, ProblemEasterEgg, Profile, Solution, \
-    Submission, Tag, WebAuthnCredential
+    Exam, ExamProblem, Language, LanguageLimit, Organization, OrganizationProblemTag, Problem, ProblemEasterEgg, \
+    Profile, Solution, Submission, Tag, WebAuthnCredential
 from judge.utils.subscription import newsletter_id
 from judge.widgets import AceWidget, EasterEggMatrixFormField, HeavySelect2MultipleWidget, HeavySelect2Widget, \
     MartorWidget, Select2MultipleWidget, Select2Widget
@@ -947,3 +947,38 @@ class CompareSubmissionsForm(Form):
     user = forms.ChoiceField(
         widget=HeavySelect2MultipleWidget(data_view='profile_select2', attrs={'style': 'width: 100%'}),
     )
+
+
+class ExamForm(ModelForm):
+    required_css_class = 'required'
+
+    class Meta:
+        model = Exam
+        fields = ('name', 'slug', 'category', 'province', 'year', 'date', 'description', 'is_public')
+        widgets = {
+            'description': MartorWidget(attrs={'data-markdownfy-url': reverse_lazy('blog_preview')}),
+            'date': DateInput(format='%Y-%m-%d', attrs={'class': 'datetimefield'}),
+            'category': Select2Widget,
+            'province': Select2Widget,
+        }
+
+
+class ExamProblemForm(ModelForm):
+    class Meta:
+        model = ExamProblem
+        fields = ('problem', 'order')
+        widgets = {
+            'problem': HeavySelect2Widget(data_view='problem_select2', attrs={'style': 'width: 100%'}),
+        }
+        error_messages = {
+            'problem': {'invalid_choice': _('No such problem.')},
+        }
+
+
+ExamProblemFormSet = inlineformset_factory(
+    Exam,
+    ExamProblem,
+    form=ExamProblemForm,
+    can_delete=True,
+    extra=1,
+)

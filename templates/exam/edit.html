@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if object %}{{ _('Editing exam') }} - {{ object.name }}{% else %}{{ _('Create new exam') }}{% endif %} - {{ _('Exam Library') }}
+{% endblock %}
+
+{% block title_row %}
+    {% if object %}
+        {% set tab = 'edit' %}
+        {% set exam = object %}
+        {% include "exam/exam-tabs.html" %}
+    {% else %}
+        <h2>{{ title }}</h2>
+    {% endif %}
+{% endblock %}
+
+{% block js_media %}
+    {% include "leave-warning.html" %}
+    <script src="/static/furaoj/flatpickr/flatpickr.js"></script>
+    <script type="text/javascript">
+        window.django = {jQuery: $};
+    </script>
+    <script>
+        window.addEventListener("DOMContentLoaded", function () {
+            flatpickr(".datetimefield", {
+                enableTime: false,
+                dateFormat: "Y-m-d",
+            });
+        });
+    </script>
+
+    <script src="{{ static('furaoj/jquery.formset.js') }}"></script>
+    <script type="text/javascript">
+        $(function() {
+            $('#form_set tr').formset({
+                prefix: '{{ exam_problem_formset.prefix }}',
+                addText: '{{ _("add another") }}',
+                deleteText: '<i class="fa fa-trash" aria-hidden="true"></i>',
+            });
+        });
+    </script>
+    {{ form.media.js }}
+{% endblock %}
+
+{% block media %}
+    <link rel="stylesheet" href="/static/furaoj/flatpickr/dist/flatpickr.min.css">
+    {{ form.media.css }}
+    <link rel="stylesheet" type="text/css" href="{{ static('ui_form.css') }}">
+{% endblock %}
+
+{% block body %}
+<div>
+    {% if request.user.is_staff and object %}
+        <div class="alert alert-warning alert-dismissable">
+            <a class="close">x</a>
+            <a href="{{ url('admin:judge_exam_change', object.id) }}">{{ _('Edit exam in admin panel for more options') }}</a>
+        </div>
+    {% endif %}
+    <form action="" method="post" class="form-area" style="display: flex; justify-content: center; flex-direction: column;">
+        {% if form.errors or exam_problem_formset.errors %}
+            <p class="errornote"> {{ _('Please correct the error below.') }}</p>
+        {% endif %}
+        {% csrf_token %}
+        {{ exam_problem_formset.management_form }}
+        {% if exam_problem_formset.non_form_errors() %}
+            {{ exam_problem_formset.non_form_errors() }}
+        {% endif %}
+        <table class="django-as-table">{{ form.as_table() }}</table>
+        <hr>
+        <center>
+            <h3> {{ _('Problems') }} </h3>
+        </center>
+        <table class="table" id="problem-table">
+            <thead>
+                <tr>
+                    <th class="problem-column" style="width: 20em;"> {{ _('Problems') }} </th>
+                    <th class="order-column"> {{ _('Order') }} </th>
+                    <th> {{ _('Delete') }} </th>
+                </tr>
+            </thead>
+            <tbody id="form_set">
+                {% for form in exam_problem_formset %}
+                    {{ form.id }}
+                    <tr>
+                        <td>{{ form.problem.errors }}{{ form.problem }}</td>
+                        <td>{{ form.order.errors }}{{ form.order }}</td>
+                        <td>
+                        {% if exam_problem_formset.can_delete and form.instance.pk %}
+                            {{ form.DELETE }}
+                        {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div style="display: flex; justify-content: flex-end;">
+            <button class="submit-bar" type="submit">
+                {% if object %}{{ _('Update') }}{% else %}{{ _('Create') }}{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

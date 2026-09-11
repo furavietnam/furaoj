@@ -1,0 +1,11 @@
+{% extends "tabs-base.html" %}
+
+{% block tabs %}
+    {{ make_tab('detail', 'fa-info-circle', url('exam_detail', exam.slug), _('Info')) }}
+    {% if request.user.is_authenticated and exam.is_editable_by(request.user) %}
+        {{ make_tab('edit', 'fa-edit', url('exam_edit', exam.slug), _('Edit')) }}
+    {% endif %}
+    {% if request.user.is_superuser %}
+        {{ make_tab('admin', 'fa-cog', url('admin:judge_exam_change', exam.id), _('Admin')) }}
+    {% endif %}
+{% endblock %}
