@@ -308,19 +308,44 @@ noscript #noscript {
 }
 
 #contest-info {
-    font-size: 1.25em;
-    border: 5px solid $highlight_blue;
-    border-left: 5px dotted white;
-    border-radius: 0 $widget_border_radius $widget_border_radius 0;
+    border: none;
+    border-radius: 10px;
+    overflow: hidden;
     background: rgba(0, 0, 0, 0.77);
     z-index: 100000;
-    padding: 10px 12px;
     color: white;
     cursor: move;
     position: fixed;
     left: 20px;
     top: 90%;
     display: none;
+    box-shadow: 4px 4px 0px $color_card_shadow;
+}
+
+.contest-info-titlebar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    cursor: move;
+}
+
+.window-btn {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+
+    &.red { background: #ff5f56; }
+    &.yellow { background: #ffbd2e; }
+    &.green { background: #27c93f; }
+}
+
+.contest-info-body {
+    padding: 10px 12px;
+    font-size: 1.25em;
 
     a {
         height: 1.4em;
@@ -328,6 +353,14 @@ noscript #noscript {
         margin: 0;
         color: white;
         display: block;
+    }
+
+    .contest-rankings-link {
+        text-align: center;
+        font-size: 0.7em;
+        color: #DCD427;
+        height: auto;
+        margin-top: 4px;
     }
 }
 
@@ -371,6 +404,10 @@ math {
     #content {
         width: auto;
         padding: 0 5px;
+        box-shadow: none;
+    }
+
+    #contest-info {
         box-shadow: none;
     }
 }
