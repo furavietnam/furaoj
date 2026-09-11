@@ -317,7 +317,7 @@ noscript #noscript {
     cursor: move;
     position: fixed;
     left: 20px;
-    top: 90%;
+    height: auto;
     display: none;
     box-shadow: 4px 4px 0px $color_card_shadow;
 }
