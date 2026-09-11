@@ -59,7 +59,7 @@ def problem_update(sender, instance, **kwargs):
 
     # Update search_vector for full-text search indexing
     Problem.objects.filter(pk=instance.pk).update(
-        search_vector=SearchVector('code', 'name', 'description')
+        search_vector=SearchVector('code', 'name', 'description', config='simple')
     )
 
 

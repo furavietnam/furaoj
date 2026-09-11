@@ -12,7 +12,7 @@ def backfill_search_vector(apps, schema_editor):
     with schema_editor.connection.cursor() as cursor:
         cursor.execute("""
             UPDATE judge_problem
-            SET search_vector = to_tsvector('english',
+            SET search_vector = to_tsvector('simple',
                 coalesce(code, '') || ' ' ||
                 coalesce(name, '') || ' ' ||
                 coalesce(description, '')

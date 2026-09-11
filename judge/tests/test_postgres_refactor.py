@@ -185,6 +185,38 @@ class FullTextSearchTest(TestCase):
         index_name = gin_indexes[0][0]
         self.assertEqual(index_name, 'problem_search_vector_gin_idx')
 
+    def test_single_letter_search_returns_results(self):
+        """
+        Verify single-letter query 'a' returns matching problems.
+        With 'simple' config, 'a' is NOT a stopword and should match.
+        """
+        from judge.models import ProblemGroup
+        group = ProblemGroup.objects.create(name='test')
+        problem = Problem.objects.create(
+            code='a',
+            name='A Test Problem',
+            time_limit=1,
+            memory_limit=256,
+            points=1,
+            partial=False,
+            is_public=True,
+            group=group,
+            description='Test description with letter a',
+        )
+        Problem.objects.filter(pk=problem.pk).update(
+            search_vector=SearchVector('code', 'name', 'description', config='simple')
+        )
+        qs = SearchQuerySet(model=Problem, fields=('code', 'name', 'description'))
+        result = qs.search('a')
+        matching_ids = list(result.values_list('id', flat=True))
+        self.assertIn(
+            problem.id, matching_ids,
+            f"Single-letter 'a' search should find problem '{problem.code}', "
+            f"but got {len(matching_ids)} results"
+        )
+        problem.delete()
+        group.delete()
+
 
 # =============================================================================
 # 3. ANTI-FLAKY BARRIER CONCURRENCY LOCK TEST

@@ -20,7 +20,7 @@ class SearchQuerySet(QuerySet):
         return queryset
 
     def search(self, query, mode=DEFAULT):
-        search_query = SearchQuery(query)
+        search_query = SearchQuery(query, config='simple')
         return self.annotate(
             relevance=SearchRank(F('search_vector'), search_query),
         ).filter(search_vector=search_query)
