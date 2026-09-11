@@ -652,7 +652,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, Infinite
                 queryset = queryset.filter(Q(code__icontains=term) | Q(name__icontains=term) |
                                            Q(description__icontains=term))
             return queryset
-        return queryset.search(query, queryset.BOOLEAN).order_by('-relevance')
+        return queryset.search(query).order_by('-relevance')
 
     def get_filter(self):
         _filter = Q(is_public=True) & Q(is_organization_private=False)

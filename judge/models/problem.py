@@ -4,6 +4,8 @@ from operator import attrgetter
 
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
@@ -262,6 +264,8 @@ class Problem(models.Model):
         help_text=_('Allow user to view checker feedback.'),
         default=False,
     )
+
+    search_vector = SearchVectorField(verbose_name=_('search vector'), null=True, editable=False)
 
     __original_points = None
 
@@ -669,6 +673,7 @@ class Problem(models.Model):
             models.Index(fields=['is_public', 'is_organization_private', '-date']),
             # The archived problem list is always scoped to one organization.
             models.Index(fields=['organization', '-archived_at']),
+            GinIndex(fields=['search_vector'], name='problem_search_vector_gin_idx'),
         ]
         verbose_name = _('problem')
         verbose_name_plural = _('problems')

@@ -1,5 +1,6 @@
-from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
+from django.contrib.postgres.search import SearchQuery, SearchRank
 from django.db import models
+from django.db.models import F
 from django.db.models.query import QuerySet
 
 
@@ -19,12 +20,10 @@ class SearchQuerySet(QuerySet):
         return queryset
 
     def search(self, query, mode=DEFAULT):
-        search_vector = SearchVector(*self._search_fields)
         search_query = SearchQuery(query)
         return self.annotate(
-            search=search_vector,
-            relevance=SearchRank(search_vector, search_query),
-        ).filter(search=search_query)
+            relevance=SearchRank(F('search_vector'), search_query),
+        ).filter(search_vector=search_query)
 
 
 class SearchManager(models.Manager):

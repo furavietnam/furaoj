@@ -4,6 +4,7 @@ from typing import Optional
 
 from django.conf import settings
 from django.contrib.flatpages.models import FlatPage
+from django.contrib.postgres.search import SearchVector
 from django.core.cache import cache
 from django.core.cache.utils import make_template_fragment_key
 from django.db import transaction
@@ -55,6 +56,11 @@ def problem_update(sender, instance, **kwargs):
         cached_pdf_filename = get_pdf_path('%s.%s.pdf' % (instance.code, lang))
         if cached_pdf_filename is not None:
             unlink_if_exists(cached_pdf_filename)
+
+    # Update search_vector for full-text search indexing
+    Problem.objects.filter(pk=instance.pk).update(
+        search_vector=SearchVector('code', 'name', 'description')
+    )
 
 
 @receiver(post_save, sender=Profile)

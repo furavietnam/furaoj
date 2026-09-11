@@ -70,9 +70,10 @@ class DBIsolationGuardTest(TestCase):
 
 class FullTextSearchTest(TestCase):
     """
-    Validate PostgreSQL full-text search using SearchVector/SearchQuery/SearchRank.
-    NOTE: No SearchVectorField exists on Problem model. Search is done via
-    django.contrib.postgres.search.SearchVector on raw fields (code, name, description).
+    Validate PostgreSQL full-text search using stored SearchVectorField with GIN index.
+    The Problem model has a `search_vector` SearchVectorField that is automatically
+    updated via post_save signal. Queries filter against this field using @@ operator,
+    which leverages the GIN index for fast lookups.
     """
 
     @classmethod
@@ -80,23 +81,25 @@ class FullTextSearchTest(TestCase):
         super().setUpClass()
         cls.search_fields = ('code', 'name', 'description')
 
-    def test_search_vector_field_absence(self):
-        """Report clearly that no SearchVectorField exists on Problem model."""
+    def test_search_vector_field_exists(self):
+        """Verify SearchVectorField is present on Problem model."""
         has_search_vector_field = any(
             f.name == 'search_vector' for f in Problem._meta.get_fields()
         )
-        self.assertFalse(
+        self.assertTrue(
             has_search_vector_field,
-            "SearchVectorField found on Problem model. If added, create a migration with GIN index."
+            "SearchVectorField must exist on Problem model for GIN-indexed full-text search."
         )
 
-    def test_search_queryset_uses_postgres_search(self):
-        """Verify SearchQuerySet.search() returns a queryset with search annotations."""
+    def test_search_queryset_filters_on_search_vector(self):
+        """Verify SearchQuerySet.search() filters using search_vector field and annotates relevance."""
         qs = SearchQuerySet(model=Problem, fields=self.search_fields)
         result = qs.search('test')
         annotations = result.query.annotations
-        self.assertIn('search', annotations)
         self.assertIn('relevance', annotations)
+        # The WHERE clause should reference the search_vector field with @@ operator
+        sql = str(result.query)
+        self.assertIn('search_vector', sql.lower())
 
     def test_search_vector_creation(self):
         """Verify SearchVector can be created from model fields."""
@@ -116,12 +119,13 @@ class FullTextSearchTest(TestCase):
         self.assertIsNotNone(sr)
 
     def test_search_annotations_on_queryset(self):
-        """Verify search() annotates with both search and relevance."""
+        """Verify search() annotates with relevance and filters on search_vector."""
         qs = SearchQuerySet(model=Problem, fields=self.search_fields)
         result = qs.search('algorithm')
         annotations = result.query.annotations
-        self.assertIn('search', annotations)
         self.assertIn('relevance', annotations)
+        sql = str(result.query)
+        self.assertIn('search_vector', sql.lower())
 
     def test_search_with_empty_string(self):
         """Verify search handles empty string without crashing."""
@@ -160,11 +164,10 @@ class FullTextSearchTest(TestCase):
         cloned = qs._clone()
         self.assertEqual(cloned._search_fields, self.search_fields)
 
-    def test_gin_index_check(self):
+    def test_gin_index_exists(self):
         """
-        Query pg_indexes to check for GIN index on judge_problem.
-        NOTE: Since no SearchVectorField exists, there should be no GIN index.
-        This test documents the current state.
+        Verify GIN index exists on judge_problem.search_vector.
+        This index is required for efficient @@ operator lookups.
         """
         with connection.cursor() as cursor:
             cursor.execute("""
@@ -172,14 +175,15 @@ class FullTextSearchTest(TestCase):
                 FROM pg_indexes
                 WHERE tablename = 'judge_problem'
                 AND indexdef LIKE '%gin%'
+                AND indexdef LIKE '%search_vector%'
             """)
             gin_indexes = cursor.fetchall()
-        # No GIN index expected since no SearchVectorField exists
         self.assertEqual(
-            len(gin_indexes), 0,
-            f"Unexpected GIN indexes found on judge_problem: {gin_indexes}. "
-            "If SearchVectorField is added, create a migration with GIN index."
+            len(gin_indexes), 1,
+            f"Expected exactly one GIN index on search_vector, found {len(gin_indexes)}: {gin_indexes}"
         )
+        index_name = gin_indexes[0][0]
+        self.assertEqual(index_name, 'problem_search_vector_gin_idx')
 
 
 # =============================================================================
@@ -603,15 +607,14 @@ class NavigationBarRegexTest(TestCase):
 class FullTextSearchExplainTest(TransactionTestCase):
     """
     Run EXPLAIN ANALYZE on SearchQuerySet queries with enable_seqscan=off
-    to verify no sequential scans on small datasets.
+    to verify GIN index is used for full-text search queries.
     """
 
-    def test_explain_analyze_search_query(self):
+    def test_explain_analyze_uses_gin_index(self):
         """
         Execute EXPLAIN ANALYZE on a SearchQuerySet query inside an atomic
-        transaction with enable_seqscan=off. Check for index usage.
-        NOTE: On empty tables, Seq Scan is expected since there's no data to index.
-        This test verifies the query executes without error and the planner runs.
+        transaction with enable_seqscan=off. With GIN index on search_vector,
+        the planner should use Index Scan instead of Seq Scan.
         """
         qs = SearchQuerySet(model=Problem, fields=('code', 'name', 'description'))
         query_sql, params = qs.search('test').query.sql_with_params()
@@ -626,31 +629,34 @@ class FullTextSearchExplainTest(TransactionTestCase):
 
         self.assertIsInstance(explain_text, str)
         self.assertTrue(len(explain_text) > 0, "EXPLAIN ANALYZE returned empty")
-        # On empty tables, Seq Scan is expected. The key is that the query executes.
-        # When data exists with proper indexes, Index Scan should be used.
+        # With GIN index and seqscan disabled, Index Scan should be used
         self.assertIn('judge_problem', explain_text.lower(),
                        f"EXPLAIN output does not reference judge_problem:\n{explain_text}")
+        # Check for index-related keywords (GIN index scan or Index Scan)
+        has_index_scan = any(kw in explain_text.lower() for kw in ['index scan', 'bitmap', 'gin', 'idx'])
+        self.assertTrue(
+            has_index_scan,
+            f"Expected index-based scan with enable_seqscan=off, got:\n{explain_text}"
+        )
 
     def test_search_query_generates_valid_sql(self):
-        """Verify SearchQuerySet generates valid PostgreSQL SQL."""
+        """Verify SearchQuerySet generates valid PostgreSQL SQL using stored search_vector."""
         qs = SearchQuerySet(model=Problem, fields=('code', 'name', 'description'))
         query = qs.search('algorithm')
         sql_str = str(query.query)
         self.assertIn('SELECT', sql_str)
-        # PostgreSQL uses TO_TSVECTOR and PLAINTO_TSQUERY, not MySQL's MATCH...AGAINST
-        self.assertIn('TO_TSVECTOR', sql_str.upper())
+        # The stored search_vector field is used directly (no TO_TSVECTOR in SQL),
+        # but PLAINTO_TSQUERY is used to build the search query
         self.assertIn('PLAINTO_TSQUERY', sql_str.upper())
+        self.assertIn('SEARCH_VECTOR', sql_str.upper())
 
     def test_search_annotations_are_postgres_compatible(self):
-        """Verify search annotations use PostgreSQL search functions."""
+        """Verify search annotations use PostgreSQL search functions with relevance."""
         qs = SearchQuerySet(model=Problem, fields=('code', 'name', 'description'))
         result = qs.search('test')
         annotations = result.query.annotations
-        self.assertIn('search', annotations)
         self.assertIn('relevance', annotations)
-        search_annotation = annotations['search']
         relevance_annotation = annotations['relevance']
-        self.assertIsNotNone(search_annotation)
         self.assertIsNotNone(relevance_annotation)
 
 
