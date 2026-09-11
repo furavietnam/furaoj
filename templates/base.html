@@ -140,7 +140,7 @@
                 });
             }
 
-            $widget.mousedown(function (e) {
+            $widget.find('.contest-info-titlebar').mousedown(function (e) {
                 selected = $(this);
                 x_elem = e.clientX - selected.offset().left;
                 y_elem = e.clientY - selected.offset().top + $(window).scrollTop();
