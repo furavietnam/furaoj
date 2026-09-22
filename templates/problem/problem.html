@@ -34,11 +34,6 @@
             padding-left: 3em;
         }
 
-        #content-right {
-            max-width: 12.5em;
-            min-width: 12.5em;
-        }
-
         #problem-types, #allowed-langs, #available-judges {
             padding-top: 1em;
         }
@@ -170,8 +165,8 @@
 {% block info_float %}
     {% if request.user.is_authenticated and request.in_contest and submission_limit %}
         {% if submissions_left > 0 %}
-            <a href="javascript:void(0)" onclick="openSubmitModal()" class="unselectable button full">
-                {{ _('Submit solution') }}
+            <a href="javascript:void(0)" onclick="openSubmitModal()" class="unselectable button full submit-solution-btn">
+                <i class="fa fa-paper-plane"></i> <span>{{ _('Submit solution') }}</span>
             </a>
             <div class="submissions-left">
                 {% trans trimmed counter=submissions_left %}
@@ -181,16 +176,20 @@
                 {% endtrans %}
             </div>
         {% else %}
-            <a class="unselectable button full disabled">{{ _('Submit solution') }}</a>
+            <a class="unselectable button full submit-solution-btn disabled">
+                <i class="fa fa-paper-plane"></i> <span>{{ _('Submit solution') }}</span>
+            </a>
             <div class="no-submissions-left submissions-left">{{ _('0 submissions left') }}</div>
         {% endif %}
     {% elif request.user.is_authenticated %}
-        <a href="javascript:void(0)" onclick="openSubmitModal()" class="unselectable button full">
-            {{ _('Submit solution') }}
+        <a href="javascript:void(0)" onclick="openSubmitModal()" class="unselectable button full submit-solution-btn">
+            <i class="fa fa-paper-plane"></i> <span>{{ _('Submit solution') }}</span>
         </a>
     {% endif %}
 
-    <hr style="padding-bottom: 0.3em">
+    {% if request.user.is_authenticated %}
+        <hr style="padding-bottom: 0.3em">
+    {% endif %}
     {% if request.in_contest and contest_problem %}
         {% set contest = contest_problem.contest %}
         <div><a href="{{ url('contest_user_submissions', contest.key, request.user.username, problem.code) }}">{{ _('My submissions') }}</a></div>
@@ -396,6 +395,12 @@
 {% block description %}
     <iframe name="raw_problem" id="raw_problem"></iframe>
     {% include "problem/problem-detail.html" %}
+{% endblock %}
+
+{% block description_end %}
+    {% if request.user.is_authenticated and not request.profile.mute %}
+        <hr>
+    {% endif %}
 {% endblock %}
 
 {% block post_description_end %}

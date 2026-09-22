@@ -1,44 +1,889 @@
+@use "vars" as *;
+
 .AB {
-    background-color: #CCC;
-    color: black;
+    background-color: #f1f5f9;
+    color: #64748b;
 }
 
 .AC {
-    background-color: #53f23f;
-    color: green;
+    background-color: #ecfdf5;
+    color: #059669;
 }
 
 ._AC {
-    background-color: #DFFF00;
-    color: green;
+    background-color: #fefce8;
+    color: #ca8a04;
 }
 
 .WA {
-    background-color: #CCC;
-    color: #ef1b53;
+    background-color: #fef2f2;
+    color: #dc2626;
 }
 
 .TLE, .MLE {
-    background-color: #CCC;
-    color: black;
+    background-color: #fffbeb;
+    color: #d97706;
 }
 
 .OLE, .IR, .RTE, .OTH {
-    background-color: #FAB623;
-    color: black;
+    background-color: #fff7ed;
+    color: #ea580c;
 }
 
 .CE {
-    background-color: #CCC;
-    color: black;
+    background-color: #f1f5f9;
+    color: #64748b;
 }
 
 .IE {
-    background-color: red;
-    color: black;
+    background-color: #fef2f2;
+    color: #b91c1c;
 }
 
 .QU, .G {
-    background: white;
-    color: black;
+    background-color: #eff6ff;
+    color: #2563eb;
 }
+
+// ─────────────────────────────────────────────────────────────
+// RUNTIMES LIST / DASHBOARD — Modern, Card-based, Interactive
+// ─────────────────────────────────────────────────────────────
+
+.runtimes-page-wrapper {
+    margin-top: 15px;
+}
+
+// 1. Filter and search control bar
+.runtimes-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 20px;
+
+    .runtimes-category-pills {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+
+        .category-pill-btn {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 7px 16px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #475569 !important;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+
+            @if not $is_light_theme {
+                background: #1e293b;
+                border-color: #334155;
+                color: #94a3b8 !important;
+            }
+
+            i {
+                font-size: 13px;
+                color: #64748b !important;
+
+                @if not $is_light_theme {
+                    color: #94a3b8 !important;
+                }
+            }
+
+            &:hover {
+                border-color: #cbd5e1;
+                color: #2563eb !important;
+                background: #f8fafc;
+
+                @if not $is_light_theme {
+                    border-color: #475569;
+                    background: #334155;
+                    color: #38bdf8 !important;
+                }
+
+                i {
+                    color: #2563eb !important;
+                    @if not $is_light_theme { color: #38bdf8 !important; }
+                }
+            }
+
+            &.active {
+                background: #2563eb !important;
+                border-color: #2563eb !important;
+                color: #ffffff !important;
+                box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25);
+
+                i {
+                    color: #ffffff !important;
+                }
+            }
+        }
+    }
+
+    .runtimes-toolbar-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+
+        .runtimes-search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+
+            .search-icon {
+                position: absolute;
+                left: 14px;
+                color: #94a3b8;
+                font-size: 14px;
+                pointer-events: none;
+            }
+
+            input.runtime-search-input {
+                padding: 8px 14px 8px 38px;
+                font-size: 13.5px;
+                border-radius: 10px;
+                border: 1px solid #e2e8f0;
+                background: #ffffff;
+                color: #1e293b;
+                min-width: 250px;
+                box-sizing: border-box;
+                outline: none;
+                transition: all 0.15s ease;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+
+                @if not $is_light_theme {
+                    background: #1e293b;
+                    border-color: #334155;
+                    color: #f1f5f9;
+                }
+
+                &:focus {
+                    border-color: #2563eb;
+                    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+
+                    @if not $is_light_theme {
+                        border-color: #38bdf8;
+                        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+                    }
+                }
+
+                &::placeholder {
+                    color: #94a3b8;
+                }
+            }
+        }
+
+        .runtimes-count-badge {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 7px 14px;
+            border-radius: 10px;
+            white-space: nowrap;
+
+            @if not $is_light_theme {
+                background: #1e293b;
+                color: #94a3b8;
+            }
+        }
+    }
+}
+
+// 2. Runtimes Card Container
+.runtimes-container-card {
+    background: #ffffff;
+    border: 1px solid #edf2f7;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+
+    @if not $is_light_theme {
+        background: #1e293b;
+        border-color: #334155;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.3);
+    }
+}
+
+// 3. Runtimes Table Styling
+.runtimes-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+
+    thead tr {
+        background: #f8fafc;
+        border-bottom: 1px solid #edf2f7;
+
+        @if not $is_light_theme {
+            background: #0f172a;
+            border-bottom-color: #334155;
+        }
+
+        th {
+            padding: 14px 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #64748b;
+            text-align: left;
+
+            @if not $is_light_theme {
+                color: #94a3b8;
+            }
+
+            &.th-lang {
+                width: 250px;
+            }
+
+            &.th-version {
+                width: 210px;
+            }
+
+            &.th-command {
+                width: auto;
+            }
+        }
+    }
+
+    tbody tr.runtime-row {
+        border-bottom: 1px solid #f1f5f9;
+        transition: background 0.15s ease;
+
+        @if not $is_light_theme {
+            border-bottom-color: #334155;
+        }
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        &:hover {
+            background: #f8fafc;
+
+            @if not $is_light_theme {
+                background: rgba(51, 65, 85, 0.35);
+            }
+        }
+
+        td {
+            padding: 16px 20px;
+            vertical-align: middle;
+        }
+    }
+}
+
+// 4. Language Info Cell
+.lang-info-cell {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    .lang-icon-badge {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+        &.lang-cpp {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: #ffffff;
+        }
+
+        &.lang-python {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: #ffffff;
+        }
+
+        &.lang-java {
+            background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+            color: #ffffff;
+        }
+
+        &.lang-pascal {
+            background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+            color: #ffffff;
+        }
+
+        &.lang-other {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+            color: #ffffff;
+        }
+    }
+
+    .lang-details {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+
+        .runtime-lang-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1.3;
+
+            &:after {
+                content: none !important;
+            }
+
+            @if not $is_light_theme {
+                color: #f8fafc;
+            }
+        }
+
+        .lang-id-pill {
+            display: inline-flex;
+            align-items: center;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 2px 8px;
+            border-radius: 6px;
+            width: fit-content;
+
+            @if not $is_light_theme {
+                background: #0f172a;
+                color: #94a3b8;
+            }
+        }
+    }
+}
+
+// 5. Compiler / Runtime Environment Badge
+.runtime-version-cell {
+    .compiler-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 8px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #1e293b;
+
+        @if not $is_light_theme {
+            background: #0f172a;
+            border-color: #334155;
+            color: #38bdf8;
+        }
+
+        i {
+            color: #2563eb;
+            font-size: 13px;
+
+            @if not $is_light_theme {
+                color: #38bdf8;
+            }
+        }
+
+        &.empty-version {
+            color: #94a3b8;
+            font-style: italic;
+            border-style: dashed;
+        }
+    }
+}
+
+// 6. Terminal Command Cell (Compile Options & Code Blocks)
+.terminal-command-cell {
+    .content-description {
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .terminal-box {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-width: 780px;
+
+        .terminal-box-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .compile-options-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 4px 10px;
+            border-radius: 6px;
+            white-space: nowrap;
+
+            @if not $is_light_theme {
+                background: #0f172a;
+                color: #94a3b8;
+            }
+
+            i {
+                color: #64748b;
+                font-size: 11px;
+                @if not $is_light_theme { color: #94a3b8; }
+            }
+        }
+
+        .terminal-box-code {
+            code {
+                display: block !important;
+                background: #0f172a !important;
+                color: #38bdf8 !important;
+                border: 1px solid #1e293b !important;
+                border-radius: 8px !important;
+                padding: 8px 14px !important;
+                font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+                font-size: 12.5px !important;
+                line-height: 1.5 !important;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+                word-break: break-all !important;
+                white-space: pre-wrap !important;
+
+                @if not $is_light_theme {
+                    background: #090d16 !important;
+                    border-color: #1e293b !important;
+                    color: #38bdf8 !important;
+                }
+            }
+        }
+    }
+
+    .copy-cmd-btn {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 5px !important;
+        padding: 4px 10px !important;
+        border-radius: 6px !important;
+        background: #f1f5f9 !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #475569 !important;
+        font-size: 11.5px !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        flex-shrink: 0 !important;
+        transition: all 0.15s ease !important;
+        height: 26px !important;
+        box-shadow: none !important;
+
+        @if not $is_light_theme {
+            background: #334155 !important;
+            border-color: #475569 !important;
+            color: #cbd5e1 !important;
+        }
+
+        i {
+            font-size: 11px !important;
+            color: #64748b !important;
+
+            @if not $is_light_theme {
+                color: #cbd5e1 !important;
+            }
+        }
+
+        &:hover {
+            background: #e2e8f0 !important;
+            color: #2563eb !important;
+
+            @if not $is_light_theme {
+                background: #475569 !important;
+                color: #38bdf8 !important;
+            }
+
+            i {
+                color: #2563eb !important;
+                @if not $is_light_theme { color: #38bdf8 !important; }
+            }
+        }
+
+        &.copied {
+            background: #ecfdf5 !important;
+            border-color: #10b981 !important;
+            color: #059669 !important;
+
+            i {
+                color: #059669 !important;
+            }
+        }
+    }
+
+    .empty-desc {
+        color: #94a3b8;
+        font-size: 12.5px;
+        font-style: italic;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        background: #f8fafc;
+        border-radius: 6px;
+        border: 1px dashed #cbd5e1;
+
+        @if not $is_light_theme {
+            background: #0f172a;
+            border-color: #334155;
+            color: #64748b;
+        }
+    }
+}
+
+// 7. Empty state when search finds nothing
+.no-runtimes-match {
+    padding: 48px 20px;
+    text-align: center;
+
+    .no-match-icon {
+        font-size: 36px;
+        color: #cbd5e1;
+        margin-bottom: 12px;
+
+        @if not $is_light_theme {
+            color: #475569;
+        }
+    }
+
+    .no-match-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 6px;
+
+        @if not $is_light_theme {
+            color: #e2e8f0;
+        }
+    }
+
+    .no-match-desc {
+        font-size: 13.5px;
+        color: #64748b;
+
+        @if not $is_light_theme {
+            color: #94a3b8;
+        }
+    }
+}
+
+// Date range picker bar on OJ Status page
+#daterange {
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px 18px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1e293b;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+
+    i.fa-calendar {
+        color: #0066ff;
+        font-size: 15px;
+        margin-right: 8px;
+    }
+
+    i.fa-caret-down {
+        margin-left: auto;
+        color: #94a3b8;
+        font-size: 13px;
+    }
+
+    &:hover {
+        border-color: #0066ff;
+        box-shadow: 0 2px 8px rgba(0, 102, 255, 0.12);
+    }
+}
+
+// ------------------------------------------
+// Runtimes / Status Dark Mode Overrides
+// ------------------------------------------
+@mixin status-dark-mode-rules {
+    #stats-table {
+        background: #111a2e !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+
+        th {
+            background: #0d1527 !important;
+            color: #94a3b8 !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+        }
+
+        td {
+            background: #111a2e !important;
+            border-color: rgba(255, 255, 255, 0.06) !important;
+            color: #cbd5e1 !important;
+        }
+    }
+
+    #daterange {
+        background: #111a2e !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+        color: #f1f5f9 !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+
+        i.fa-calendar {
+            color: #38bdf8 !important;
+        }
+
+        i.fa-caret-down {
+            color: #64748b !important;
+        }
+
+        &:hover {
+            border-color: #38bdf8 !important;
+        }
+    }
+
+    .daterangepicker {
+        background-color: #111a2e !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+        color: #f1f5f9 !important;
+
+        &:before {
+            border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        &:after {
+            border-bottom-color: #111a2e !important;
+        }
+
+        .calendar-table {
+            background-color: #111a2e !important;
+            border-color: #111a2e !important;
+
+            th, td {
+                color: #cbd5e1 !important;
+
+                &.available:hover {
+                    background-color: #1e293b !important;
+                    color: #ffffff !important;
+                }
+
+                &.off, &.off.in-range {
+                    background-color: #111a2e !important;
+                    color: #475569 !important;
+                }
+
+                &.in-range {
+                    background-color: #172554 !important;
+                    color: #93c5fd !important;
+                }
+
+                &.active, &.active:hover {
+                    background-color: #2563eb !important;
+                    color: #ffffff !important;
+                }
+            }
+
+            .next span, .prev span {
+                border-color: #cbd5e1 !important;
+            }
+        }
+
+        .drp-buttons {
+            border-top-color: rgba(255, 255, 255, 0.08) !important;
+
+            .drp-selected {
+                color: #94a3b8 !important;
+            }
+
+            .btn {
+                font-weight: 600 !important;
+            }
+
+            .applyBtn {
+                background: #2563eb !important;
+                border-color: #2563eb !important;
+                color: #ffffff !important;
+            }
+
+            .cancelBtn {
+                background: #1e293b !important;
+                border-color: rgba(255, 255, 255, 0.1) !important;
+                color: #cbd5e1 !important;
+            }
+        }
+
+        .ranges li {
+            color: #cbd5e1 !important;
+
+            &:hover {
+                background-color: #1e293b !important;
+                color: #ffffff !important;
+            }
+
+            &.active {
+                background-color: #2563eb !important;
+                color: #ffffff !important;
+            }
+        }
+
+        select.hourselect, select.minuteselect, select.secondselect, select.ampmselect {
+            background: #0d1527 !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+            color: #f1f5f9 !important;
+        }
+    }
+
+    .runtimes-toolbar {
+        .runtimes-category-pills .category-pill-btn {
+            background: #131d31 !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+            color: #94a3b8 !important;
+
+            i {
+                color: #94a3b8 !important;
+            }
+
+            &:hover {
+                background: #17233c !important;
+                border-color: #3b82f6 !important;
+                color: #60a5fa !important;
+
+                i {
+                    color: #60a5fa !important;
+                }
+            }
+
+            &.active {
+                background: #2563eb !important;
+                border-color: #2563eb !important;
+                color: #ffffff !important;
+
+                i {
+                    color: #ffffff !important;
+                }
+            }
+        }
+
+        .runtimes-toolbar-right {
+            .runtimes-search-box input.runtime-search-input {
+                background: #0d1527 !important;
+                border-color: rgba(255, 255, 255, 0.08) !important;
+                color: #f8fafc !important;
+
+                &:focus {
+                    border-color: #3b82f6 !important;
+                }
+            }
+
+            .runtimes-count-badge {
+                background: #131d31 !important;
+                color: #94a3b8 !important;
+            }
+        }
+    }
+
+    .runtimes-container-card {
+        background: #111a2e !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35) !important;
+    }
+
+    .runtimes-table {
+        thead tr {
+            background: #0d1527 !important;
+            border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+
+            th {
+                color: #94a3b8 !important;
+            }
+        }
+
+        tbody tr.runtime-row {
+            border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+
+            &:hover {
+                background: #17233c !important;
+            }
+        }
+
+        .runtime-lang-title {
+            color: #f8fafc !important;
+        }
+
+        .lang-id-pill {
+            background: #0d1527 !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+            color: #94a3b8 !important;
+        }
+
+        .compiler-badge {
+            background: #0d1527 !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+            color: #cbd5e1 !important;
+        }
+
+        .terminal-command-bar {
+            background: #090e17 !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+
+            .cmd-prefix {
+                color: #34d399 !important;
+            }
+
+            .cmd-code {
+                color: #e2e8f0 !important;
+            }
+
+            .copy-cmd-btn {
+                background: #131d31 !important;
+                border-color: rgba(255, 255, 255, 0.08) !important;
+                color: #94a3b8 !important;
+
+                &:hover {
+                    background: #2563eb !important;
+                    color: #ffffff !important;
+                    border-color: #2563eb !important;
+                }
+            }
+        }
+    }
+}
+
+@if not $is_light_theme {
+    @include status-dark-mode-rules;
+}
+
+body[data-theme="dark"] {
+    @include status-dark-mode-rules;
+}
+
+body[data-theme="auto"] {
+    @media (prefers-color-scheme: dark) {
+        @include status-dark-mode-rules;
+    }
+}
+

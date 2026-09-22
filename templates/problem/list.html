@@ -134,13 +134,13 @@
 {% endblock %}
 
 {% block body %}
-    {% if page_obj.has_other_pages() %}
+    {% if page_obj and page_obj.paginator %}
         <div class="top-pagination-bar">{% include "list-pages.html" %}</div>
     {% endif %}
 
     <div id="common-content">
         {% block before_table %}{% endblock %}
-        <div id="content-right" class="problems">
+        <div id="content-right" class="problems filter-collapsible">
             <div class="info-float">
                 {% include "problem/search-form.html" %}
                 {% if hot_problems %}
@@ -158,121 +158,125 @@
             </div>
         </div>
         <div id="content-left" class="problems h-scrollable-table">
-            <table id="problem-table" class="table striped">
-                <thead>
-                <tr>
-                    {% if request.user.is_authenticated %}
-                        <th class="solved">
-                            <a href="{{ sort_links.solved }}">
-                                <i class="fa fa-check"></i>{{ sort_order.solved }}
-                            </a>
-                        </th>
-                    {% endif %}
-                    <th class="problem-code">
-                        <a href="{{ sort_links.code }}">{{ _('ID') }}{{ sort_order.code}}</a>
-                    </th>
-                    <th class="problem-name">
-                        <a href="{{ sort_links.name }}">{{ _('Problem') }}{{ sort_order.name }}</a>
-                    </th>
-                    {% if not show_org_tags %}
-                    <th class="category">
-                        <a href="{{ sort_links.group }}">{{ _('Category') }}{{ sort_order.group }}</a>
-                    </th>
-                    {% endif %}
-                    {% if show_types %}
-                        <th class="types">
-                            <a href="{{ sort_links.type }}">{{ _('Types') }}{{ sort_order.type }}</a>
-                        </th>
-                    {% endif %}
-                    <th class="points">
-                        <a href="{{ sort_links.points }}">{{ _('Points') }}{{ sort_order.points }}</a>
-                    </th>
-                    <th class="ac-rate">
-                        <a href="{{ sort_links.ac_rate }}">{{ _('%% AC') }}{{ sort_order.ac_rate }}</a>
-                    </th>
-                    <th class="users">
-                        <a href="{{ sort_links.user_count }}">{{ _('# AC') }}{{ sort_order.user_count }}</a>
-                    </th>
-                    <th class="editorial" title="{{ _('Editorial') }}">
-                        <a href="{{ sort_links.editorial }}">
-                            <i class="fa fa-book"></i>{{ sort_order.editorial }}
-                        </a>
-                    </th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for problem in problems %}
+            <div class="problem-table-card">
+                <table id="problem-table" class="table striped">
+                    <thead>
                     <tr>
-                        {% if request.user.is_authenticated %}
-                            {% if problem.id in completed_problem_ids %}
-                                <td class="solved" solved="1">
-                                    <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
-                                        {% if problem.is_public %}
-                                            <i class="solved-problem-color fa fa-check-circle"></i>
-                                        {% else %}
-                                            <i class="solved-problem-color fa fa-lock"></i>
-                                        {% endif %}
-                                    </a>
-                                </td>
-                            {% elif problem.id in attempted_problems %}
-                                <td class="solved" solved="0">
-                                    <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
-                                        {% if problem.is_public %}
-                                            <i class="attempted-problem-color fa fa-frown-o"></i>
-                                        {% else %}
-                                            <i class="attempted-problem-color fa fa-lock"></i>
-                                        {% endif %}
-                                    </a>
-                                </td>
-                            {% else %}
-                                <td class="solved" solved="-1">
-                                    {% if problem.is_public %}
-                                        <i class="unsolved-problem-color fa"></i>
-                                    {% else %}
-                                        <i class="unsolved-problem-color fa fa-lock"></i>
-                                    {% endif %}
-                                </td>
-                            {% endif %}
-                        {% endif %}
-                        <td class="problem-code">
-                            <a href="{{ url('problem_detail', problem.code) }}">{{ problem.code}}</a>
-                        </td>
-                        <td class="problem-name">
-                            <a href="{{ url('problem_detail', problem.code) }}">{{ problem.i18n_name or problem.name }}</a>
-                        </td>
+                        <th class="status-col">
+                            <span class="status-circle-th"></span>
+                        </th>
+                        <th class="problem-code">
+                            <a href="{{ sort_links.code }}">{{ _('ID') }}{{ sort_order.code}}</a>
+                        </th>
+                        <th class="problem-name">
+                            <a href="{{ sort_links.name }}">{{ _('Problem') }} <i class="fa fa-sort sort-caret"></i></a>
+                        </th>
                         {% if not show_org_tags %}
-                        <td class="category">{{ problem.group.full_name }}</td>
+                        <th class="category">
+                            <a href="{{ sort_links.group }}">{{ _('Category') }}{{ sort_order.group }}</a>
+                        </th>
                         {% endif %}
                         {% if show_types %}
-                            <td class="types">
-                                {% for type in problem.types_list %}
-                                    <span class="type-tag">{{ type }}</span>{% if not loop.last %}, {% endif %}
-                                {% endfor %}
-                            </td>
+                            <th class="types">
+                                <a href="{{ sort_links.type }}">{{ _('Types') }}{{ sort_order.type }}</a>
+                            </th>
                         {% endif %}
-                        <td class="p">{{ problem.points|floatformat(2) }}</td>
-                        <td class="ac-rate">{{ problem.ac_rate|floatformat(1) }}%</td>
-                        <td class="users">
-                            <a href="{{ url('ranked_submissions', problem.code) }}">
-                                {{ problem.user_count }}
+                        <th class="points">
+                            <a href="{{ sort_links.points }}">{{ _('Points') }} <i class="fa fa-sort sort-caret"></i></a>
+                        </th>
+                        <th class="ac-rate">
+                            <a href="{{ sort_links.ac_rate }}">{{ _('%% AC') }} <i class="fa fa-sort sort-caret"></i></a>
+                        </th>
+                        <th class="users">
+                            <a href="{{ sort_links.user_count }}">{{ _('# AC') }} <i class="fa fa-sort sort-caret"></i></a>
+                        </th>
+                        <th class="editorial" title="{{ _('Editorial') }}">
+                            <a href="{{ sort_links.editorial }}">
+                                <svg class="book-open-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
                             </a>
-                        </td>
-                        <td>
-                            {% if problem.has_public_editorial %}
-                                <a href="{{ url('problem_editorial', problem.code) }}">
-                                    <i class="has-editorial-color fa fa-check-circle"></i>
-                                </a>
-                            {% else %}
-                                <i class="no-editorial-color fa fa-minus-circle"></i>
-                            {% endif %}
-                        </td>
+                        </th>
                     </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                    {% for problem in problems %}
+                        <tr>
+                            <td class="status-col">
+                                {% if request.user.is_authenticated %}
+                                    {% if problem.id in completed_problem_ids %}
+                                        <a href="{{ url('user_submissions', problem.code, request.user.username) }}" class="status-circle solved" title="{{ _('Solved') }}">
+                                            <i class="fa fa-check"></i>
+                                        </a>
+                                    {% elif problem.id in attempted_problems %}
+                                        <a href="{{ url('user_submissions', problem.code, request.user.username) }}" class="status-circle attempted" title="{{ _('Attempted') }}"></a>
+                                    {% else %}
+                                        <span class="status-circle unsolved" title="{{ _('Unsolved') }}"></span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="status-circle unsolved" title="{{ _('Unsolved') }}"></span>
+                                {% endif %}
+                            </td>
+                            <td class="problem-code">
+                                <a href="{{ url('problem_detail', problem.code) }}">{{ problem.code}}</a>
+                            </td>
+                            <td class="problem-name">
+                                <a href="{{ url('problem_detail', problem.code) }}" class="problem-title-link">{{ problem.i18n_name or problem.name }}</a>
+                            </td>
+                            {% if not show_org_tags %}
+                            <td class="category">{{ problem.group.full_name }}</td>
+                            {% endif %}
+                            {% if show_types %}
+                                <td class="types">
+                                    {% for type in problem.types_list %}
+                                        <span class="type-tag">{{ type }}</span>{% if not loop.last %}, {% endif %}
+                                    {% endfor %}
+                                </td>
+                            {% endif %}
+                            <td class="points points-val">{{ problem.points|floatformat(0) if problem.points == problem.points|int else problem.points|floatformat(2) }}</td>
+                            <td class="ac-rate {% if problem.ac_rate >= 50 %}ac-high{% elif problem.ac_rate >= 20 %}ac-med{% else %}ac-low{% endif %}">{{ problem.ac_rate|floatformat(1) }}%</td>
+                            <td class="users">
+                                <a href="{{ url('ranked_submissions', problem.code) }}" class="ac-count-link">
+                                    {{ problem.user_count }}
+                                </a>
+                            </td>
+                            <td class="editorial-col">
+                                {% if problem.has_public_editorial %}
+                                    <a href="{{ url('problem_editorial', problem.code) }}" title="{{ _('Editorial') }}">
+                                        <svg class="book-open-icon has-editorial" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                                    </a>
+                                {% else %}
+                                    <svg class="book-open-icon no-editorial" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" title="{{ _('No editorial available') }}"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-   {% if page_obj.has_other_pages() %}
-       <div class="bottom-pagination-bar">{% include "list-pages.html" %}</div>
-   {% endif %}
+    {% if page_obj and page_obj.has_other_pages() %}
+        <div class="bottom-pagination-bar">{% include "list-pages.html" %}</div>
+    {% endif %}
+    <script>
+        $(function() {
+            var hasFilter = window.location.search.indexOf('search=') !== -1 ||
+                            window.location.search.indexOf('category=') !== -1 ||
+                            window.location.search.indexOf('type=') !== -1 ||
+                            window.location.search.indexOf('point_start=') !== -1;
+            if (hasFilter) {
+                $('#content-right').show();
+                $('#toggle-filter-btn').addClass('active');
+            }
+
+            $('#toggle-filter-btn').on('click', function(e) {
+                e.preventDefault();
+                $('#content-right').slideToggle(200);
+                $(this).toggleClass('active');
+            });
+            $('#recommend-btn').on('click', function(e) {
+                e.preventDefault();
+                $('#random').click();
+            });
+        });
+    </script>
 {% endblock %}

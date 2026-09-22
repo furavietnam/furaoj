@@ -1,11 +1,45 @@
 {% extends "tabs-base.html" %}
 
-{% block tabs %}
-    {% if user.user == request.user and not request.official_contest_mode %}
-        {{ make_tab('create', 'fa-plus', url('blog_post_new'), _('Create new blog post')) }}
+{% block header_icon %}fa-user{% endblock %}
+
+{% block header_title %}
+    {% if user.display_name %}
+        {{ user.display_name }}
+    {% else %}
+        {{ user.user.username }}
     {% endif %}
+{% endblock %}
+
+{% block header_subtitle %}
+    <span class="problem-header-subtitle">
+        {% if user.display_name and user.display_name != user.user.username %}
+            <span style="font-weight: 600; color: #64748b;">@{{ user.user.username }}</span>
+            &bull;
+        {% endif %}
+        {{ _('Joined %(date)s', date=user.user.date_joined|date(_("F Y"))) }}
+        {% with orgs=user.organizations.filter(is_unlisted=False) %}
+            {% if orgs %}
+                &bull;
+                <i class="fa fa-building-o"></i>
+                {% for org in orgs -%}
+                    <a href="{{ org.get_absolute_url() }}" style="color: #64748b; font-weight: 500;">{{ org.name }}</a>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </span>
+{% endblock %}
+
+{% block extra_header_actions %}
+    {% if user.user == request.user and not request.official_contest_mode %}
+        <a href="{{ url('blog_post_new') }}" class="user-header-btn btn-primary">
+            <i class="fa fa-plus"></i> {{ _('Create new blog post') }}
+        </a>
+    {% endif %}
+{% endblock %}
+
+{% block tabs %}
     {{ make_tab('about', 'fa-info-circle', url('user_page', user.user.username), _('About')) }}
-    {{ make_tab('problems', 'fa-puzzle-piece', url('user_problems', user.user.username), _('Statistics')) }}
+    {{ make_tab('problems', 'fa-bar-chart', url('user_problems', user.user.username), _('Statistics')) }}
     {% if not request.official_contest_mode %}
         {{ make_tab('blogs', 'fa-rss', url('user_blog', user.user.username), _('Blogs')) }}
     {% endif %}
@@ -23,12 +57,12 @@
         {% endif %}
     {% endif %}
     {% if perms.auth.change_user %}
-        {{ make_tab('admin', 'fa-edit', url('admin:auth_user_change', user.user.id), _('Admin User')) }}
+        {{ make_tab('admin', 'fa-user-secret', url('admin:auth_user_change', user.user.id), _('Admin User')) }}
     {% endif %}
     {% if perms.judge.change_profile %}
-        {{ make_tab('admin', 'fa-edit', url('admin:judge_profile_change', user.id), _('Admin Profile')) }}
+        {{ make_tab('admin_profile', 'fa-cogs', url('admin:judge_profile_change', user.id), _('Admin Profile')) }}
     {% endif %}
     {% if user.user == request.user %}
-        {{ make_tab('edit', 'fa-edit', url('user_edit_profile'), _('Edit profile')) }}
+        {{ make_tab('edit', 'fa-pencil', url('user_edit_profile'), _('Edit profile')) }}
     {% endif %}
 {% endblock %}

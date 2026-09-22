@@ -49,45 +49,49 @@
     {% endif %}
 
     {% if can_view %}
-        <div class="sub-prop"><div>
-            <a href="{{ url('submission_status', submission.id) }}">
-                <i class="fa fa-eye fa-fw"></i><span class="label">{{ _('view') }}</span>
-            </a> ·
-            {% if not submission.language.file_only %}
-                <a href="{{ url('submission_source', submission.id) }}">
-                    <i class="fa fa-file-code-o fa-fw"></i><span class="label">{{ _('source') }}</span>
+        <div class="sub-prop sub-actions-dropdown">
+            <button type="button" class="sub-actions-btn" title="{{ _('Actions') }}" aria-label="{{ _('Actions') }}">
+                <i class="fa fa-ellipsis-v"></i>
+            </button>
+            <div class="sub-actions-menu">
+                <a href="{{ url('submission_status', submission.id) }}" class="sub-menu-item">
+                    <i class="fa fa-eye fa-fw"></i> <span>{{ _('view') }}</span>
                 </a>
-            {% else %}
-                <a href="{{ url('submission_source_download', submission.id) }}">
-                    <i class="fa fa-download fa-fw"></i><span class="label">{{ _('download') }}</span>
-                </a>
-            {% endif %}
-            {% if perms.judge.rejudge_submission and can_edit %} ·
-                {% if not submission.is_locked %}
-                    <a href="#" onclick="rejudge_submission({{ submission.id }}, event);return false">
-                        <i class="fa fa-refresh fa-fw"></i><span class="label">{{ _('rejudge') }}</span>
+                {% if not submission.language.file_only %}
+                    <a href="{{ url('submission_source', submission.id) }}" class="sub-menu-item">
+                        <i class="fa fa-file-code-o fa-fw"></i> <span>{{ _('source') }}</span>
                     </a>
                 {% else %}
-                    <i class="fa fa-refresh fa-fw grey-icon"></i>
-                    <span class="label grey-label"
-                          title="{{ _('This submission has been locked, and cannot be rejudged.') }}">
-                        {{ _('locked') }}
-                    </span>
-                {% endif %}
-            {% endif %}
-            {% if can_edit %}
-                {% if not submission.language.file_only %} ·
-                    <a href="{{ url('problem_submission_diff', submission.problem.code) }}?username={{ submission.user.user.username }}&highlight={{ submission.id }}">
-                        <i class="fa fa-files-o fa-fw"></i><span class="label">{{ _('diff') }}</span>
+                    <a href="{{ url('submission_source_download', submission.id) }}" class="sub-menu-item">
+                        <i class="fa fa-download fa-fw"></i> <span>{{ _('download') }}</span>
                     </a>
                 {% endif %}
-                {% if request.user.is_superuser %} ·
-                    <a href="{{ url('admin:judge_submission_change', submission.id) }}">
-                        <i class="fa fa-cog fa-fw"></i><span class="label">{{ _('admin') }}</span>
-                    </a>
+                {% if can_edit %}
+                    {% if not submission.language.file_only %}
+                        <a href="{{ url('problem_submission_diff', submission.problem.code) }}?username={{ submission.user.user.username }}&highlight={{ submission.id }}" class="sub-menu-item">
+                            <i class="fa fa-files-o fa-fw"></i> <span>{{ _('diff') }}</span>
+                        </a>
+                    {% endif %}
+                    {% if perms.judge.rejudge_submission %}
+                        {% if not submission.is_locked %}
+                            <a href="#" onclick="rejudge_submission({{ submission.id }}, event);return false" class="sub-menu-item">
+                                <i class="fa fa-refresh fa-fw"></i> <span>{{ _('rejudge') }}</span>
+                            </a>
+                        {% else %}
+                            <span class="sub-menu-item disabled" title="{{ _('This submission has been locked, and cannot be rejudged.') }}">
+                                <i class="fa fa-refresh fa-fw grey-icon"></i> <span class="grey-label">{{ _('locked') }}</span>
+                            </span>
+                        {% endif %}
+                    {% endif %}
+                    {% if request.user.is_superuser %}
+                        <div class="sub-menu-divider"></div>
+                        <a href="{{ url('admin:judge_submission_change', submission.id) }}" class="sub-menu-item">
+                            <i class="fa fa-cog fa-fw"></i> <span>{{ _('admin') }}</span>
+                        </a>
+                    {% endif %}
                 {% endif %}
-            {% endif %}
-        </div></div>
+            </div>
+        </div>
     {% endif %}
 </div>
 

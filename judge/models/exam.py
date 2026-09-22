@@ -108,3 +108,14 @@ class ExamProblem(models.Model):
         exam = self.exam
         super().delete(*args, **kwargs)
         exam.update_stats()
+
+
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+
+
+@receiver([post_save, post_delete], sender=Problem)
+def update_exams_on_problem_change(sender, instance, **kwargs):
+    for exam in Exam.objects.filter(exam_problems__problem=instance).distinct():
+        exam.update_stats()
+

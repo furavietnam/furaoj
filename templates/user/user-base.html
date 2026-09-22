@@ -10,57 +10,85 @@
 
 {% block body %}
     <div class="user-info-page">
-        <div class="user-sidebar">
-            <img src="{{ gravatar(user, 135) }}" class="user-gravatar">
-            <br>
-            {% if user.user == request.user or request.user.is_superuser %}
-                <div>
-                    <b class="semibold">{{ _('Email:') }}</b>
-                    <span style="word-wrap: break-word;">{{ user.user.email }}</span>
+        <aside class="user-sidebar">
+            <div class="user-profile-card">
+                <div class="user-avatar-wrapper">
+                    <img src="{{ gravatar(user, 180) }}" class="user-gravatar" alt="{{ user.user.username }}">
                 </div>
-            {% endif %}
-            <div><b>
-                    {{ _('Problems solved:') }} {{ user.problem_count }}
-            </b></div>
+                <div class="user-identity">
+                    <h2 class="user-name-title">{{ user.display_name or user.user.username }}</h2>
+                    <span class="user-username-handle">@{{ user.user.username }}</span>
+                </div>
 
-            {% if not user.is_unlisted %}
-                <div><b class="semibold">{{ _('Rank by points:') }}</b> #{{ rank }}</div>
-            {% endif %}
-            <div>
-                <b class="semibold">{{ _('Total points:') }}</b>
-                <span title="{{ user.performance_points|floatformat(2) }}">
-                    {{ user.performance_points|floatformat(2) }}
-                </span>
-            </div>
-            <div>
-                <b class="semibold">{{ _('Contribution points:') }}</b>
-                <span title="{{ user.contribution_points }}">
-                    {{ user.contribution_points }}
-                </span>
-            </div>
+                <div class="user-stats-list">
+                    {% if user.user == request.user or request.user.is_superuser %}
+                        {% if user.user.email %}
+                            <div class="user-stat-row">
+                                <span class="stat-label"><i class="fa fa-envelope-o"></i> {{ _('Email:') }}</span>
+                                <span class="stat-value email-val" title="{{ user.user.email }}">{{ user.user.email }}</span>
+                            </div>
+                        {% endif %}
+                    {% endif %}
 
-            <br>
-            <div>
-                <a href="{{ url('all_user_submissions', user.user.username) }}">{{ _('View submissions') }}</a>
-            </div>
+                    <div class="user-stat-row">
+                        <span class="stat-label"><i class="fa fa-check-circle-o"></i> {{ _('Problems solved:') }}</span>
+                        <span class="stat-value highlight-val">{{ user.problem_count }}</span>
+                    </div>
 
-            {% if ratings %}
-                <br>
-                <div><b>
-                    {%- trans trimmed counter=ratings|length %}
-                        {{ counter }} contest written
-                    {% pluralize %}
-                        {{ counter }} contests written
-                    {% endtrans -%}
-                </b></div>
-                {% if not user.is_unlisted %}
-                    <div><b class="semibold">{{ _('Rank by rating:') }}</b> #{{ rating_rank }}</div>
-                {% endif %}
-                <div><b class="semibold">{{ _('Rating:') }}</b> {{ rating_number(rating) }}</div>
-                <div><b class="semibold">{{ _('Min. rating:') }}</b> {{ rating_number(min_rating) }}</div>
-                <div><b class="semibold">{{ _('Max rating:') }}</b> {{ rating_number(max_rating) }}</div>
-            {% endif %}
-        </div>
-        <div class="user-content">{% block user_content %}{% endblock %}</div>
+                    {% if not user.is_unlisted %}
+                        <div class="user-stat-row">
+                            <span class="stat-label"><i class="fa fa-trophy"></i> {{ _('Rank by points:') }}</span>
+                            <span class="stat-value">#{{ rank }}</span>
+                        </div>
+                    {% endif %}
+
+                    <div class="user-stat-row">
+                        <span class="stat-label"><i class="fa fa-star-o"></i> {{ _('Total points:') }}</span>
+                        <span class="stat-value" title="{{ user.performance_points|floatformat(2) }}">
+                            {{ user.performance_points|floatformat(2) }}
+                        </span>
+                    </div>
+
+                    <div class="user-stat-row">
+                        <span class="stat-label"><i class="fa fa-heart-o"></i> {{ _('Contribution points:') }}</span>
+                        <span class="stat-value" title="{{ user.contribution_points }}">
+                            {{ user.contribution_points }}
+                        </span>
+                    </div>
+
+                    {% if ratings %}
+                        <div class="user-stat-divider"></div>
+                        <div class="user-stat-row">
+                            <span class="stat-label"><i class="fa fa-flag-checkered"></i> {{ _('Contests:') }}</span>
+                            <span class="stat-value">{{ ratings|length }}</span>
+                        </div>
+                        {% if not user.is_unlisted %}
+                            <div class="user-stat-row">
+                                <span class="stat-label"><i class="fa fa-line-chart"></i> {{ _('Rank by rating:') }}</span>
+                                <span class="stat-value">#{{ rating_rank }}</span>
+                            </div>
+                        {% endif %}
+                        <div class="user-stat-row">
+                            <span class="stat-label"><i class="fa fa-bolt"></i> {{ _('Rating:') }}</span>
+                            <span class="stat-value rating-val">{{ rating_number(rating) }}</span>
+                        </div>
+                        <div class="user-stat-row">
+                            <span class="stat-label"><i class="fa fa-arrow-up"></i> {{ _('Max rating:') }}</span>
+                            <span class="stat-value">{{ rating_number(max_rating) }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="user-actions-area">
+                    <a href="{{ url('all_user_submissions', user.user.username) }}" class="btn-user-submissions">
+                        <i class="fa fa-list-alt"></i> {{ _('View submissions') }}
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <section class="user-content">
+            {% block user_content %}{% endblock %}
+        </section>
     </div>
 {% endblock %}

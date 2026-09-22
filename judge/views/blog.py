@@ -1,3 +1,5 @@
+import random
+
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
@@ -7,7 +9,8 @@ from django.db.models.expressions import F, Value
 from django.db.models.functions import Coalesce
 from django.http import (Http404, HttpResponse, HttpResponseBadRequest,
                          HttpResponseForbidden, HttpResponseNotFound,
-                         HttpResponseRedirect)
+                         HttpResponseRedirect, JsonResponse)
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _
@@ -24,6 +27,7 @@ from judge.tasks.webhook import on_new_blogpost
 from judge.utils.cachedict import CacheDict
 from judge.utils.diggpaginator import DiggPaginator
 from judge.utils.opengraph import generate_opengraph
+from judge.utils.problems import user_completed_ids, user_attempted_ids
 from judge.utils.tickets import filter_visible_tickets
 from judge.utils.unicode import remove_accents
 from judge.utils.views import TitleMixin, generic_message
@@ -197,6 +201,81 @@ class ModernBlogList(PostListBase):
         return context
 
 
+def get_recommended_problem_ids(request, refresh=False):
+    current_uid = request.profile.id if request.user.is_authenticated else None
+    cached_uid = request.session.get('recommended_problem_user')
+    session_ids = request.session.get('recommended_problem_ids')
+
+    if refresh or session_ids is None or cached_uid != current_uid:
+        qs = Problem.get_public_problems()
+        if request.user.is_authenticated:
+            completed = user_completed_ids(request.profile)
+            if completed:
+                qs = qs.exclude(id__in=completed)
+        session_ids = list(qs.values_list('id', flat=True))
+        random.shuffle(session_ids)
+        request.session['recommended_problem_ids'] = session_ids
+        request.session['recommended_problem_user'] = current_uid
+    return session_ids
+
+
+def fetch_recommended_problems_chunk(request, chunk_ids):
+    if not chunk_ids:
+        return []
+
+    qs = (Problem.get_public_problems()
+          .filter(id__in=chunk_ids)
+          .select_related('group')
+          .prefetch_related('types'))
+
+    prob_map = {p.id: p for p in qs}
+    problems = [prob_map[pid] for pid in chunk_ids if pid in prob_map]
+
+    attempted_ids = user_attempted_ids(request.profile) if request.user.is_authenticated else set()
+    lang = getattr(request, 'LANGUAGE_CODE', 'vi')
+    for p in problems:
+        p.is_attempted = p.id in attempted_ids
+        p.display_name = p.translated_name(lang)
+
+    return problems
+
+
+class RecommendedProblemsAjax(View):
+    def get(self, request, *args, **kwargs):
+        try:
+            offset = max(0, int(request.GET.get('offset', 0)))
+        except (ValueError, TypeError):
+            offset = 0
+
+        try:
+            limit = max(1, min(int(request.GET.get('limit', 10)), 30))
+        except (ValueError, TypeError):
+            limit = 10
+
+        refresh = request.GET.get('refresh') == '1'
+        session_ids = get_recommended_problem_ids(request, refresh=refresh)
+        total = len(session_ids)
+
+        chunk_ids = session_ids[offset:offset + limit]
+        problems = fetch_recommended_problems_chunk(request, chunk_ids)
+        next_offset = offset + len(chunk_ids)
+        has_more = next_offset < total
+
+        rendered_html = render_to_string(
+            'blog/recommended-problem-cards.html',
+            {'problems': problems, 'request': request},
+            request=request,
+        )
+
+        return JsonResponse({
+            'html': rendered_html,
+            'count': len(problems),
+            'total': total,
+            'has_more': has_more,
+            'next_offset': next_offset,
+        })
+
+
 class PostList(PostListBase):
     template_name = 'blog/list.html'
     show_all_blogs = False
@@ -207,13 +286,28 @@ class PostList(PostListBase):
 
         queryset = queryset.filter(organization=None)
 
-        if 'show_all_blogs' in self.request.GET:
-            self.show_all_blogs = self.request.session['show_all_blogs'] = self.request.GET['show_all_blogs'] == 'true'
-        else:
-            self.show_all_blogs = self.request.session.get('show_all_blogs', False)
-
-        if self.show_all_blogs:
+        tab_param = self.request.GET.get('tab')
+        if tab_param in ('home', 'news'):
+            self.tab = 'home'
+            self.show_all_blogs = False
+            self.request.session['home_tab'] = 'home'
+        elif tab_param in ('blog', 'blog_list'):
             self.tab = 'blog_list'
+            self.show_all_blogs = True
+            self.request.session['home_tab'] = 'blog_list'
+        elif tab_param == 'recommended':
+            self.tab = 'recommended'
+            self.show_all_blogs = False
+            self.request.session['home_tab'] = 'recommended'
+        elif 'show_all_blogs' in self.request.GET:
+            self.show_all_blogs = self.request.GET['show_all_blogs'] == 'true'
+            self.tab = 'blog_list' if self.show_all_blogs else 'home'
+            self.request.session['home_tab'] = self.tab
+        else:
+            self.tab = self.request.session.get('home_tab', 'home')
+            self.show_all_blogs = (self.tab == 'blog_list')
+
+        if self.tab == 'blog_list':
             queryset = queryset.order_by('-publish_on')
         else:
             queryset = queryset.filter(global_post=True).order_by('-sticky', '-publish_on')
@@ -224,8 +318,20 @@ class PostList(PostListBase):
         context = super(PostList, self).get_context_data(**kwargs)
         context['first_page_href'] = reverse('home')
 
-        context['newsfeed_link'] = f"{reverse('home')}?show_all_blogs=false"
-        context['all_blogs_link'] = f"{reverse('home')}?show_all_blogs=true"
+        context['newsfeed_link'] = f"{reverse('home')}?tab=news"
+        context['all_blogs_link'] = f"{reverse('home')}?tab=blog"
+        context['recommended_link'] = f"{reverse('home')}?tab=recommended"
+
+        if self.tab == 'recommended':
+            refresh = self.request.GET.get('refresh') == '1'
+            session_ids = get_recommended_problem_ids(self.request, refresh=refresh)
+            initial_limit = 10
+            initial_chunk = session_ids[:initial_limit]
+            initial_problems = fetch_recommended_problems_chunk(self.request, initial_chunk)
+            context['recommended_problems'] = initial_problems
+            context['recommended_total'] = len(session_ids)
+            context['recommended_has_more'] = len(session_ids) > len(initial_problems)
+            context['recommended_next_offset'] = len(initial_problems)
 
         context['show_all_blogs'] = self.show_all_blogs
         context['gcse_url'] = settings.GOOGLE_SEARCH_ENGINE_URL

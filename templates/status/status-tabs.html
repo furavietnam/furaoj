@@ -1,8 +1,14 @@
 {% extends "tabs-base.html" %}
 
+{% block header_icon %}fa-server{% endblock %}
+
+{% block header_subtitle %}
+    <span class="problem-header-subtitle">{{ _('Real-time operational status of judging servers and execution environments') }}</span>
+{% endblock %}
+
 {% block tabs %}
     {{ make_tab('judges', 'fa-server', url('status_all'), _('Judges')) }}
-    {% if request.user.is_superuser %}{{ make_tab('OJ', 'fa-server', url('status_oj'), _('OJ')) }}{% endif %}
+    {% if request.user.is_superuser %}{{ make_tab('OJ', 'fa-cogs', url('status_oj'), _('OJ')) }}{% endif %}
     {{ make_tab('runtimes', 'fa-code', url('runtime_list'), _('Runtimes')) }}
     {{ make_tab('matrix', 'fa-table', url('version_matrix'), _('Versions')) }}
 {% endblock %}

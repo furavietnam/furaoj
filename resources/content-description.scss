@@ -1,8 +1,26 @@
 @use "vars" as *;
 @use "base-description";
 
-.content-description {
+.content, .content-description {
     @include base-description.content-description;
+    background: #ffffff;
+    border: 1px solid #edf2f7;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    box-sizing: border-box;
+}
+
+// Reset nested content inside card
+.content .content,
+.content-description .content-description {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
 }
 
 .display-math {
@@ -12,44 +30,94 @@
     margin-right: auto;
 }
 
-@media (min-width: 700px) {
+@media (min-width: 961px) {
     #common-content {
         display: flex;
         flex-direction: row-reverse;
         gap: 1.5rem;
+        align-items: flex-start;
     }
 
     #content-left {
-        flex: 5;
+        flex: 1;
+        min-width: 0;
         width: 100%;
 
         &.split-common-content {
-            width: 70%;
+            width: auto;
         }
 
-        .content-description {
+        .content, .content-description {
             width: 100%;
         }
     }
 
     #content-right {
-        flex: 1;
-        max-width: 12.5em;
+        width: 290px;
+        min-width: 270px;
+        max-width: 320px;
+        flex-shrink: 0;
 
         .info-float {
             float: none;
             position: sticky;
-            top: 70px;
+            top: 76px;
             width: 100%;
+            background: #ffffff;
+            border: 1px solid #edf2f7;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+            padding: 24px !important;
+            box-sizing: border-box;
+            overflow: visible;
         }
     }
 }
 
-@media not all and (min-width: 700px) {
-    #content-right .info-float {
-        float: none;
-        width: 100% !important;
-        position: static !important;
+@media (max-width: 960px) {
+    #common-content {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        width: 100%;
+    }
+
+    #content-left {
+        display: contents;
+    }
+
+    .content.content-description {
+        order: 1;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    #content-right {
+        order: 2;
+        width: 100%;
+        max-width: 100%;
+        flex-shrink: 0;
+
+        .info-float {
+            float: none;
+            width: 100% !important;
+            position: static !important;
+            box-sizing: border-box;
+            background: #ffffff;
+            border: 1px solid #edf2f7;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+            padding: 20px !important;
+            margin: 0;
+        }
+    }
+
+    #comments,
+    .comments-container {
+        order: 3;
+        width: 100%;
+        max-width: 100%;
         box-sizing: border-box;
     }
 }
@@ -65,60 +133,328 @@
     overflow: visible;
 }
 
-#content-left {
-}
-
 #content-right {
-    .info-float,
     .sidebox {
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
+        margin-bottom: 20px;
     }
-
-    .sidebox-content {
-        margin: 0 !important;
-        padding: 0.5rem 5px;
-    }
-
-    h3 {
-        margin: 0 !important;
-        padding: 5px 7px !important;
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    .sidebox-content input,
-    .sidebox-content select,
-    .sidebox-content button {
-        margin-bottom: 0.75rem;
-    }
-}
-
-a.view-pdf {
-    padding-top: 0.6em;
-    display: inline-block;
 }
 
 .problem-title {
-    display: -webkit-box;
-    display: -webkit-flex;
-    display: -ms-flexbox;
     display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+
+    h2 {
+        font-size: 26px;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+    }
 
     .spacer {
         display: inline-block;
         flex: 1 1 1px;
     }
+
+    a.view-pdf {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #ef4444;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        padding: 6px 14px;
+        border-radius: 8px;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        transition: all 0.15s ease;
+
+        &:hover {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .pdf-icon-logo {
+            font-size: 14px;
+        }
+    }
 }
 
-.info-float .fa {
-    color: $color_primary100;
-    padding-right: 0.2em;
+.info-float {
+    background: #ffffff;
+    border: 1px solid #edf2f7;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+    padding: 24px !important;
+    box-sizing: border-box;
+
+    .button.full,
+    .submit-solution-btn {
+        box-sizing: border-box !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        color: #ffffff !important;
+        font-weight: 600;
+        font-size: 14px;
+        letter-spacing: 0.2px;
+        border-radius: 10px;
+        border: none;
+        padding: 11px 16px;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-align: center;
+        text-decoration: none !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28);
+        margin: 0 0 14px 0;
+        cursor: pointer;
+
+        i, .fa {
+            color: #ffffff !important;
+            font-size: 13.5px;
+            margin: 0;
+        }
+
+        &:hover {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            color: #ffffff !important;
+            text-decoration: none !important;
+            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.38);
+            transform: translateY(-1px);
+
+            i, .fa {
+                color: #ffffff !important;
+            }
+        }
+
+        &:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+        }
+
+        &.disabled {
+            background: #94a3b8 !important;
+            color: #ffffff !important;
+            cursor: not-allowed !important;
+            box-shadow: none !important;
+            transform: none !important;
+            opacity: 0.8;
+        }
+    }
+
+    .submissions-left {
+        font-size: 12px;
+        color: #64748b;
+        text-align: center;
+        margin-top: -6px;
+        margin-bottom: 12px;
+        font-weight: 500;
+    }
+
+    hr {
+        border: none;
+        border-top: 1px solid #f1f5f9;
+        margin: 14px 0;
+    }
+
+    .problem-info-entry {
+        display: flex;
+        align-items: center;
+        padding: 7px 0;
+        font-size: 13.5px;
+        color: #334155;
+
+        .fa {
+            color: #64748b;
+            margin-right: 8px;
+            width: 16px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .pi-name {
+            color: #64748b;
+            font-weight: 500;
+            margin-right: 8px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .pi-value {
+            font-weight: 600;
+            color: #1e293b;
+            margin-left: auto;
+            text-align: right;
+            white-space: nowrap;
+        }
+    }
+
+    a:not(.button):not(.submit-solution-btn) {
+        color: #2563eb;
+        font-weight: 600;
+        font-size: 13.5px;
+        text-decoration: none;
+        display: inline-block;
+        padding: 3px 0;
+        transition: color 0.15s ease;
+
+        &:hover {
+            color: #1d4ed8;
+            text-decoration: underline;
+        }
+    }
 }
 
-#problem-types, #allowed-langs {
+#comments {
+    background: #ffffff;
+    border: 1px solid #edf2f7;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+    padding: 28px 32px;
+    margin-top: 24px;
+    box-sizing: border-box;
+
+    #comments,
+    .comment-area {
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+}
+
+#problem-types, #allowed-langs, #available-judges {
+    margin-top: 10px;
+    padding-top: 4px;
+
+    .toggle {
+        font-weight: 600;
+        font-size: 13.5px;
+        color: #1e293b;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 0;
+
+        .fa {
+            font-size: 11px;
+            color: #64748b;
+        }
+    }
+
     .toggled {
-        margin-left: 1.3em;
+        margin-top: 6px;
+        margin-left: 18px;
+        font-size: 13px;
+        color: #64748b;
+        line-height: 1.5;
+    }
+}
+
+// ------------------------------------------
+// Content Description Dark Mode Overrides
+// ------------------------------------------
+@mixin content-description-dark-mode-rules {
+    .content, .content-description {
+        background: #111a2e !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35) !important;
+        color: #cbd5e1 !important;
+    }
+
+    .problem-title h2 {
+        color: #f8fafc !important;
+    }
+
+    .problem-title a.view-pdf {
+        background: rgba(239, 68, 68, 0.15) !important;
+        border-color: rgba(239, 68, 68, 0.3) !important;
+        color: #f87171 !important;
+
+        &:hover {
+            background: rgba(239, 68, 68, 0.25) !important;
+            color: #fca5a5 !important;
+        }
+    }
+
+    .info-float,
+    #content-right .info-float {
+        background: #111a2e !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35) !important;
+
+        hr {
+            border-top-color: rgba(255, 255, 255, 0.08) !important;
+        }
+
+        .submissions-left {
+            color: #94a3b8 !important;
+        }
+
+        .problem-info-entry {
+            color: #cbd5e1 !important;
+
+            .fa {
+                color: #94a3b8 !important;
+            }
+
+            .pi-name {
+                color: #94a3b8 !important;
+            }
+
+            .pi-value {
+                color: #f8fafc !important;
+            }
+        }
+
+        a:not(.button):not(.submit-solution-btn) {
+            color: #60a5fa !important;
+
+            &:hover {
+                color: #93c5fd !important;
+            }
+        }
+    }
+
+    #comments {
+        background: #111a2e !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35) !important;
+    }
+
+    #problem-types, #allowed-langs, #available-judges {
+        .toggle {
+            color: #cbd5e1 !important;
+
+            .fa {
+                color: #94a3b8 !important;
+            }
+        }
+
+        .toggled {
+            color: #94a3b8 !important;
+        }
+    }
+}
+
+@if not $is_light_theme {
+    @include content-description-dark-mode-rules;
+}
+
+body[data-theme="dark"] {
+    @include content-description-dark-mode-rules;
+}
+
+body[data-theme="auto"] {
+    @media (prefers-color-scheme: dark) {
+        @include content-description-dark-mode-rules;
     }
 }

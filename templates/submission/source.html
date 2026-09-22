@@ -1,4 +1,5 @@
 {% extends "submission/info-base.html" %}
+
 {% block media %}
     <style>
         .line {
@@ -32,15 +33,14 @@
             $(function () {
                 $(document).find('pre code').each(function () {
                     var copyButton;
-                    $(this).closest('.source-wrap').before($('<div>', {'class': 'copy-clipboard'})
-                        .append(copyButton = $('<span>', {
-                            'class': 'btn-clipboard',
-                            'data-clipboard-text': $(this).text(),
-                            'title': 'Click to copy'
-                        }).text('Copy')));
+                    $('#editor-copy-slot').append(copyButton = $('<span>', {
+                        'class': 'btn-clipboard source-copy-btn',
+                        'data-clipboard-text': $(this).text(),
+                        'title': {{ _('Copy source')|htmltojs }}
+                    }).html('<i class="fa fa-copy"></i> ' + {{ _('Copy')|htmltojs }}));
 
                     $(copyButton.get(0)).mouseleave(function () {
-                        $(this).attr('class', 'btn-clipboard');
+                        $(this).attr('class', 'btn-clipboard source-copy-btn');
                         $(this).removeAttr('aria-label');
                     });
 
@@ -48,7 +48,7 @@
 
                     curClipboard.on('success', function (e) {
                         e.clearSelection();
-                        showTooltip(e.trigger, 'Copied!');
+                        showTooltip(e.trigger, {{ _('Copied!')|htmltojs }});
                     });
 
                     curClipboard.on('error', function (e) {
@@ -61,40 +61,72 @@
     {% block content_js_media %}{% endblock %}
 {% endblock %}
 
-{% block body %}
-    <br>
-    <div><a href="{{ url('submission_status', submission.id) }}">{{ _('View status') }}</a></div>
-    <div><a href="{{ url('submission_source_raw', submission.id) }}">{{ _('View raw source') }}</a></div>
+{% block sub_nav_tabs %}
+    <a href="{{ url('submission_status', submission.id) }}" class="seg-btn">
+        <i class="fa fa-dashboard"></i> <span>{{ _('Status') }}</span>
+    </a>
+
+    <span class="seg-btn active">
+        <i class="fa fa-code"></i> <span>{{ _('Source') }}</span>
+    </span>
+
+    <a href="{{ url('submission_source_raw', submission.id) }}" class="seg-btn" target="_blank">
+        <i class="fa fa-file-text-o"></i> <span>{{ _('Raw') }}</span>
+    </a>
+
     {% if (request.user == submission.user.user or perms.judge.resubmit_other) and not submission.language.file_only %}
-        <div><a href="{{ url('problem_submit', submission.problem.code, submission.id) }}">{{ _('Resubmit') }}</a></div>
+        <a href="{{ url('problem_submit', submission.problem.code, submission.id) }}" class="seg-btn">
+            <i class="fa fa-repeat"></i> <span>{{ _('Resubmit') }}</span>
+        </a>
     {% endif %}
+
     {% set can_edit = submission.problem.is_editable_by(request.user) %}
     {% if perms.judge.rejudge_submission and can_edit and not submission.is_locked %}
-        <div>
-            <form action="{{ url('submission_rejudge') }}" method="post">
-                {% csrf_token %}
-                <a href="#" onclick="parentNode.submit()">{{ _('Rejudge') }}</a>
-                <input type="hidden" name="id" value="{{ submission.id }}">
-                <input type="hidden" name="path" value="{{ url('submission_status', submission.id) }}">
-            </form>
-        </div>
+        <script type="text/javascript">
+            window.confirm_and_rejudge = function () {
+                if (confirm({{ _('Are you sure you want to rejudge?')|htmltojs }})) {
+                    document.getElementById('header-rejudge-form').submit();
+                }
+            };
+        </script>
+        <form id="header-rejudge-form" action="{{ url('submission_rejudge') }}" method="post" style="display:none">
+            {% csrf_token %}
+            <input type="hidden" name="id" value="{{ submission.id }}">
+            <input type="hidden" name="path" value="{{ url('submission_status', submission.id) }}">
+        </form>
+        <a href="#" onclick="confirm_and_rejudge(); return false;" class="seg-btn">
+            <i class="fa fa-refresh"></i> <span>{{ _('Rejudge') }}</span>
+        </a>
     {% endif %}
-    <br>
-    <hr>
-    <div class="source-wrap">
-        <table>
-            <tr>
-                <td class="source-ln">
-                    <div>
-                        {% for line in raw_source.split('\n') %}
-                            <a href="#line-{{ loop.index }}" name="line-{{ loop.index }}">
-                                <pre class="line">{{ loop.index }}</pre>
-                            </a>
-                        {% endfor %}
-                    </div>
-                </td>
-                <td class="source-code">{{ highlighted_source }}</td>
-            </tr>
-        </table>
+{% endblock %}
+
+{% block body %}
+    <div class="source-editor-card">
+        <div class="editor-top-bar">
+            <div class="editor-file-tab">
+                <i class="fa fa-file-code-o"></i>
+                <span class="editor-filename">solution.{{ submission.language.extension or 'code' }}</span>
+                <span class="editor-lang-tag">{{ submission.language.name }}</span>
+            </div>
+            <div class="editor-actions" id="editor-copy-slot">
+            </div>
+        </div>
+
+        <div class="source-wrap">
+            <table>
+                <tr>
+                    <td class="source-ln">
+                        <div>
+                            {% for line in raw_source.split('\n') %}
+                                <a href="#line-{{ loop.index }}" name="line-{{ loop.index }}">
+                                    <pre class="line">{{ loop.index }}</pre>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td class="source-code">{{ highlighted_source }}</td>
+                </tr>
+            </table>
+        </div>
     </div>
 {% endblock %}

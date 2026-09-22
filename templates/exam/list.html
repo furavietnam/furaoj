@@ -18,64 +18,86 @@
                 {% include "exam/search-form.html" %}
             </div>
         </div>
-        <div id="content-left" class="exams h-scrollable-table">
-            <table id="exam-table" class="table striped">
-                <thead>
-                <tr>
-                    <th class="exam-name">
-                        <a href="">{{ _('Exam') }}</a>
-                    </th>
-                    <th class="category">
-                        <a href="">{{ _('Category') }}</a>
-                    </th>
-                    <th class="province">
-                        <a href="">{{ _('Province') }}</a>
-                    </th>
-                    <th class="year">
-                        <a href="">{{ _('Year') }}</a>
-                    </th>
-                    <th class="problems">{{ _('Problems') }}</th>
-                    <th class="progress">{{ _('Progress') }}</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for exam in exams %}
+        <div id="content-left" class="exams">
+            <div class="h-scrollable-table">
+                <table id="exam-table" class="table striped">
+                    <thead>
                     <tr>
-                        <td class="exam-name">
-                            <a href="{{ url('exam_detail', exam.slug) }}">{{ exam.name }}</a>
-                        </td>
-                        <td class="category">
-                            {% if exam.category %}
-                                {{ exam.category.full_name }}
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                        <td class="province">
-                            {% if exam.province %}
-                                {{ exam.province.name }}
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                        <td class="year">{{ exam.year }}</td>
-                        <td class="problems">{{ exam.problem_count }}</td>
-                        <td class="progress">
-                            {% if request.user.is_authenticated and exam.display_total > 0 %}
-                                <div class="exam-progress">
-                                    <span class="progress-text">{{ exam.user_earned|floatformat(0) }}/{{ exam.display_total|floatformat(0) }}</span>
-                                    <div class="progress-track">
-                                        <div class="progress-indicator" style="width: {{ (exam.user_earned / exam.display_total * 100)|floatformat(0) }}%"></div>
-                                    </div>
-                                </div>
-                            {% else %}
-                                {{ exam.total_points|floatformat(0) }} {{ _('pts') }}
-                            {% endif %}
-                        </td>
+                        <th class="col-exam-name">{{ _('Exam') }}</th>
+                        <th class="col-category">{{ _('Category') }}</th>
+                        <th class="col-province">{{ _('Province') }}</th>
+                        <th class="col-year">{{ _('Year') }}</th>
+                        <th class="col-problems">{{ _('Problems') }}</th>
+                        <th class="col-progress">{{ _('Progress') }}</th>
                     </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                    {% for exam in exams %}
+                        <tr>
+                            <td class="col-exam-name">
+                                <a href="{{ url('exam_detail', exam.slug) }}" class="exam-title-link">{{ exam.name }}</a>
+                                {% if exam.description %}
+                                    <div class="exam-subtext">{{ exam.description|striptags|truncate(80) }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="col-category">
+                                {% if exam.category %}
+                                    <span class="exam-cat-badge">{{ exam.category.full_name }}</span>
+                                {% else %}
+                                    <span class="exam-empty-dash">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="col-province">
+                                {% if exam.province %}
+                                    <span class="exam-prov-badge"><i class="fa fa-map-marker"></i> {{ exam.province.name }}</span>
+                                {% else %}
+                                    <span class="exam-empty-dash">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="col-year">
+                                <span class="exam-year-tag">{{ exam.year }}</span>
+                            </td>
+                            <td class="col-problems">
+                                <span class="exam-prob-badge">{{ exam.problem_count }}</span>
+                            </td>
+                            <td class="col-progress">
+                                {% if request.user.is_authenticated and exam.display_total > 0 %}
+                                    <div class="exam-progress-card{% if exam.progress_percent == 100 %} completed{% elif exam.progress_percent > 0 %} in-progress{% else %} not-started{% endif %}">
+                                        <div class="exam-progress-header">
+                                            <span class="exam-progress-score">
+                                                <strong>{{ exam.user_earned|floatformat(0) }}</strong> / {{ exam.display_total|floatformat(0) }}
+                                            </span>
+                                            <span class="exam-progress-percent">
+                                                {% if exam.progress_percent == 100 %}
+                                                    <i class="fa fa-check"></i>
+                                                {% endif %}
+                                                {{ exam.progress_percent }}%
+                                            </span>
+                                        </div>
+                                        <div class="exam-progress-track">
+                                            <div class="exam-progress-bar" style="width: {{ exam.progress_percent }}%"></div>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <span class="exam-total-pts-pill">
+                                        {{ exam.display_total|floatformat(0) }} {{ _('pts') }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="empty-table-cell">
+                                <div class="empty-exam-box">
+                                    <i class="fa fa-graduation-cap empty-icon"></i>
+                                    <p>{{ _('No matching exams found.') }}</p>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
     {% if page_obj.has_other_pages() %}

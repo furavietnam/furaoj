@@ -1,11 +1,23 @@
 {% extends "tabs-base.html" %}
 
-{% block tabs %}
+{% block header_icon %}fa-graduation-cap{% endblock %}
+
+{% block header_subtitle %}
+    <span class="problem-header-subtitle">{{ _('Official contest archive from student Olympiads and entrance exams') }}</span>
+{% endblock %}
+
+{% block extra_header_actions %}
     {% if request.user.has_perm('judge.add_exam') %}
-        {{ make_tab('create', 'fa-plus', url('exam_create'), _('Create new exam')) }}
-    {% endif %}
-    {{ make_tab('list', 'fa-list', url('exam_list'), _('List')) }}
-    {% if request.user.is_superuser %}
-        {{ make_tab('admin', 'fa-edit', url('admin:judge_exam_changelist'), _('Admin')) }}
+        <a href="{{ url('exam_create') }}" class="button primary-btn exam-create-action-btn">
+            <i class="fa fa-plus"></i> <span>{{ _('Create new exam') }}</span>
+        </a>
     {% endif %}
 {% endblock %}
+
+{% block tabs %}
+    {{ make_tab('list', 'fa-bars', url('exam_list'), _('List')) }}
+    {% if request.user.is_superuser %}
+        {{ make_tab('admin', 'fa-cog', url('admin:judge_exam_changelist'), _('Admin')) }}
+    {% endif %}
+{% endblock %}
+

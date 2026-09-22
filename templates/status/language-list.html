@@ -1,23 +1,4 @@
 {% extends "base.html" %}
-{% block media %}
-    <style>
-        .table td.language {
-            white-space: nowrap;
-        }
-
-        .table td.info .content-description {
-            margin: -1em 1em -1em 1em;
-        }
-
-        td.info {
-            width: 100%;
-        }
-
-        .table td {
-            text-align: left;
-        }
-    </style>
-{% endblock %}
 
 {% block title_ruler %}{% endblock %}
 
@@ -27,36 +8,281 @@
 {% endblock %}
 
 {% block body %}
-    <div class="h-scrollable-table">
-        <table class="table striped">
-            <thead>
-            <tr>
-                <th>{{ _('ID') }}</th>
-                <th>{{ _('Name') }}</th>
-                <th>{{ _('Runtime Info') }}</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for language in languages %}
-                {# All online languages have runtime_versions, even if we're not going to display them #}
-                {% if language.runtime_versions %}
-                    <tr>
-                        <td>{{ language.short_display_name }}</td>
-                        <td class="language">{{ language.name }}</td>
-                        <td class="info">
-                            <code>{{ runtime_versions(language.runtime_versions()) }}</code>
-                            {% if language.description %}
-                                <div class="content-description">
-                                    {% cache 86400 'language_html' language.id %}
-                                        {{ language.description|markdown('language') }}
-                                    {% endcache %}
-                                </div>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endif %}
-            {% endfor %}
-            </tbody>
-        </table>
+<div class="runtimes-page-wrapper">
+    <!-- Filter Toolbar -->
+    <div class="runtimes-toolbar">
+        <div class="runtimes-category-pills" id="runtime-category-pills">
+            <button type="button" class="category-pill-btn active" data-category="all">
+                <i class="fa fa-th-large"></i> <span>{{ _('All') }}</span>
+            </button>
+            <button type="button" class="category-pill-btn" data-category="c-cpp">
+                <i class="fa fa-code"></i> <span>C / C++</span>
+            </button>
+            <button type="button" class="category-pill-btn" data-category="python">
+                <i class="fa fa-terminal"></i> <span>Python</span>
+            </button>
+            <button type="button" class="category-pill-btn" data-category="java">
+                <i class="fa fa-coffee"></i> <span>Java / Kotlin</span>
+            </button>
+            <button type="button" class="category-pill-btn" data-category="pascal">
+                <i class="fa fa-cube"></i> <span>Pascal</span>
+            </button>
+            <button type="button" class="category-pill-btn" data-category="other">
+                <i class="fa fa-file-code-o"></i> <span>{{ _('Other') }}</span>
+            </button>
+        </div>
+
+        <div class="runtimes-toolbar-right">
+            <div class="runtimes-search-box">
+                <i class="fa fa-search search-icon"></i>
+                <input type="text" id="runtime-search-input" class="runtime-search-input" placeholder="{{ _('Search') }} {{ _('Language')|lower }}..." autocomplete="off">
+            </div>
+            <div class="runtimes-count-badge">
+                <span id="runtime-visible-count">0</span> / <span id="runtime-total-count">0</span> {{ _('Runtimes') }}
+            </div>
+        </div>
     </div>
+
+    <!-- Runtimes Card Container -->
+    <div class="runtimes-container-card">
+        <div class="h-scrollable-table">
+            <table class="runtimes-table" id="runtimes-table">
+                <thead>
+                    <tr>
+                        <th class="th-lang">{{ _('Language') }}</th>
+                        <th class="th-version">{{ _('Version') }}</th>
+                        <th class="th-command">{{ _('Compiler & Execution Options') }}</th>
+                    </tr>
+                </thead>
+                <tbody id="runtimes-tbody">
+                {% for language in languages %}
+                    {# All online languages have runtime_versions, even if we're not going to display them #}
+                    {% if language.runtime_versions %}
+                        {% set lang_name_lower = language.name|lower %}
+                        {% set lang_key_lower = language.key|lower %}
+                        {% set lang_common = (language.common_name or '')|lower %}
+
+                        {% if 'c++' in lang_common or lang_common == 'c' or 'c++' in lang_name_lower or lang_name_lower == 'c' or 'c11' in lang_name_lower or 'clang' in lang_key_lower %}
+                            {% set cat = 'c-cpp' %}
+                            {% set badge_class = 'lang-cpp' %}
+                            {% set icon_class = 'fa-code' %}
+                        {% elif 'python' in lang_common or 'pypy' in lang_common or 'python' in lang_name_lower or 'pypy' in lang_name_lower or 'py' in lang_key_lower %}
+                            {% set cat = 'python' %}
+                            {% set badge_class = 'lang-python' %}
+                            {% set icon_class = 'fa-terminal' %}
+                        {% elif 'java' in lang_common or 'kotlin' in lang_common or 'java' in lang_name_lower or 'kotlin' in lang_name_lower or 'java' in lang_key_lower or 'kt' in lang_key_lower %}
+                            {% set cat = 'java' %}
+                            {% set badge_class = 'lang-java' %}
+                            {% set icon_class = 'fa-coffee' %}
+                        {% elif 'pascal' in lang_common or 'pascal' in lang_name_lower or 'pas' in lang_key_lower %}
+                            {% set cat = 'pascal' %}
+                            {% set badge_class = 'lang-pascal' %}
+                            {% set icon_class = 'fa-cube' %}
+                        {% else %}
+                            {% set cat = 'other' %}
+                            {% set badge_class = 'lang-other' %}
+                            {% set icon_class = 'fa-file-code-o' %}
+                        {% endif %}
+
+                        {% set ver_str = runtime_versions(language.runtime_versions()) %}
+
+                        <tr class="runtime-row"
+                            data-category="{{ cat }}"
+                            data-search="{{ language.name|lower }} {{ language.short_display_name|lower }} {{ language.key|lower }} {{ (ver_str or '')|lower }}">
+                            
+                            <!-- Language Column -->
+                            <td class="td-lang-cell">
+                                <div class="lang-info-cell">
+                                    <div class="lang-icon-badge {{ badge_class }}">
+                                        <i class="fa {{ icon_class }}"></i>
+                                    </div>
+                                    <div class="lang-details">
+                                        <span class="runtime-lang-title">{{ language.name }}</span>
+                                        <span class="lang-id-pill">{{ language.short_display_name }}</span>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Version / Compiler Column -->
+                            <td class="runtime-version-cell">
+                                {% if ver_str %}
+                                    <span class="compiler-badge">
+                                        <i class="fa fa-cogs"></i>
+                                        <span>{{ ver_str }}</span>
+                                    </span>
+                                {% else %}
+                                    <span class="compiler-badge empty-version">
+                                        <i class="fa fa-minus"></i>
+                                        <span>{{ _('None') }}</span>
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Compiler Options & Code Block Column -->
+                            <td class="terminal-command-cell">
+                                {% if language.description %}
+                                    <div class="content-description">
+                                        {% cache 86400 'language_html' language.id %}
+                                            {{ language.description|markdown('language') }}
+                                        {% endcache %}
+                                    </div>
+                                {% else %}
+                                    <span class="empty-desc">
+                                        <i class="fa fa-info-circle"></i> {{ _('Default execution environment') }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Empty state when no runtimes match -->
+        <div id="no-runtimes-match" class="no-runtimes-match" style="display: none;">
+            <div class="no-match-icon"><i class="fa fa-search"></i></div>
+            <div class="no-match-title">{{ _('No matching runtimes found') }}</div>
+            <div class="no-match-desc">{{ _('Try a different search term or select another category.') }}</div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var searchInput = document.getElementById('runtime-search-input');
+    var categoryPills = document.querySelectorAll('#runtime-category-pills .category-pill-btn');
+    var rows = Array.from(document.querySelectorAll('#runtimes-tbody .runtime-row'));
+    var countVisible = document.getElementById('runtime-visible-count');
+    var countTotal = document.getElementById('runtime-total-count');
+    var noMatchState = document.getElementById('no-runtimes-match');
+    var tableElement = document.getElementById('runtimes-table');
+
+    var currentCategory = 'all';
+    var totalCount = rows.length;
+    if (countTotal) countTotal.textContent = totalCount;
+
+    function filterRuntimes() {
+        var query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+        var visibleCount = 0;
+
+        rows.forEach(function (row) {
+            var rowCategory = row.getAttribute('data-category');
+            var searchData = row.getAttribute('data-search') || '';
+
+            var matchesCategory = (currentCategory === 'all' || rowCategory === currentCategory);
+            var matchesQuery = !query || searchData.indexOf(query) !== -1;
+
+            if (matchesCategory && matchesQuery) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        if (countVisible) {
+            countVisible.textContent = visibleCount;
+        }
+
+        if (visibleCount === 0) {
+            if (noMatchState) noMatchState.style.display = 'block';
+            if (tableElement) tableElement.style.display = 'none';
+        } else {
+            if (noMatchState) noMatchState.style.display = 'none';
+            if (tableElement) tableElement.style.display = '';
+        }
+    }
+
+    // Category button handling
+    categoryPills.forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            categoryPills.forEach(function (b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            currentCategory = btn.getAttribute('data-category') || 'all';
+            filterRuntimes();
+        });
+    });
+
+    // Search input handling
+    if (searchInput) {
+        searchInput.addEventListener('input', filterRuntimes);
+    }
+
+    // Structure compile options into sleek terminal boxes
+    document.querySelectorAll('.terminal-command-cell .content-description p').forEach(function (pEl) {
+        var codeEl = pEl.querySelector('code');
+        if (!codeEl) return;
+
+        var terminalBox = document.createElement('div');
+        terminalBox.className = 'terminal-box';
+
+        var header = document.createElement('div');
+        header.className = 'terminal-box-header';
+
+        var labelBadge = document.createElement('span');
+        labelBadge.className = 'compile-options-label';
+        labelBadge.innerHTML = '<i class="fa fa-terminal"></i> <span>{{ _("Compile options:") }}</span>';
+
+        var copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
+        copyBtn.className = 'copy-cmd-btn';
+        copyBtn.innerHTML = '<i class="fa fa-clipboard"></i> <span>{{ _("Copy command") }}</span>';
+        copyBtn.title = '{{ _("Copy command") }}';
+
+        function showCopied() {
+            copyBtn.classList.add('copied');
+            copyBtn.innerHTML = '<i class="fa fa-check"></i> <span>{{ _("Copied!") }}</span>';
+            setTimeout(function () {
+                copyBtn.classList.remove('copied');
+                copyBtn.innerHTML = '<i class="fa fa-clipboard"></i> <span>{{ _("Copy command") }}</span>';
+            }, 2000);
+        }
+
+        copyBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var text = codeEl.innerText.trim();
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(showCopied).catch(function () {
+                    var ta = document.createElement('textarea');
+                    ta.value = text;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    showCopied();
+                });
+            } else {
+                var ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showCopied();
+            }
+        });
+
+        header.appendChild(labelBadge);
+        header.appendChild(copyBtn);
+
+        var codeContainer = document.createElement('div');
+        codeContainer.className = 'terminal-box-code';
+        codeContainer.appendChild(codeEl);
+
+        terminalBox.appendChild(header);
+        terminalBox.appendChild(codeContainer);
+
+        if (pEl.parentNode) {
+            pEl.parentNode.replaceChild(terminalBox, pEl);
+        }
+    });
+
+    // Initial filter run
+    filterRuntimes();
+});
+</script>
 {% endblock %}

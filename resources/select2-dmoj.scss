@@ -114,3 +114,12 @@
         padding: 6px;
     }
 }
+
+body[data-theme="dark"] {
+    .select2-dropdown {
+        background-color: #111a2e !important;
+        border: 1px solid #22304d !important;
+        color: #f8fafc !important;
+    }
+}
+

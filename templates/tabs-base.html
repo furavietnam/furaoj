@@ -1,17 +1,30 @@
 {% macro make_tab(name, fa, url, text) %}
-    <li class="tab{% if tab == name %} active{% endif %}">
-        {%- if url %}<a href="{{ url }}">{% else %}<span>{% endif -%}
-        <i class="tab-icon fa {{ fa }}"></i> {{ text }}
-        {%- if url %}</a>{% else %}</span>{% endif -%}
-    </li>
+    {% if url %}
+        <a href="{{ url }}" class="seg-btn{% if tab == name %} active{% endif %}">
+            <i class="fa {{ fa }}"></i> <span>{{ text }}</span>
+        </a>
+    {% else %}
+        <span class="seg-btn{% if tab == name %} active{% endif %}">
+            <i class="fa {{ fa }}"></i> <span>{{ text }}</span>
+        </span>
+    {% endif %}
 {% endmacro %}
 
-<div class="tabs">
-    {% if not left_align_tabs %}
-        <h2>{{ content_title or title }}</h2>
-    {% endif %}
-    {% block post_tab_spacer %}{% endblock %}
-    <ul>
-        {% block tabs %}{% endblock %}
-    </ul>
+<div class="problem-list-header">
+    <div class="problem-header-left">
+        <div class="problem-header-icon">
+            <i class="fa {% block header_icon %}fa-th-large{% endblock %}"></i>
+        </div>
+        <div class="problem-header-title-block">
+            <h1 class="problem-header-title">{% block header_title %}{{ content_title or title }}{% endblock %}</h1>
+            {% block header_subtitle %}{% endblock %}
+        </div>
+    </div>
+    <div class="problem-header-actions">
+        {% block extra_header_actions %}{% endblock %}
+        <div class="header-segmented-control">
+            {% block tabs %}{% endblock %}
+        </div>
+    </div>
 </div>
+{% block post_tab_spacer %}{% endblock %}

@@ -720,6 +720,10 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, Infinite
         context['attempted_problems'] = self.get_attempted_problems()
         context['hot_problems'] = self.get_hot_problems()
         context['point_start'], context['point_end'], context['point_values'] = self.get_noui_slider_points()
+        try:
+            context['total_problems'] = self.get_normal_queryset().count()
+        except Exception:
+            context['total_problems'] = Problem.available.filter(is_public=True).count()
         context.update(self.get_sort_context())
         context.update(self.get_sort_paginate_context())
         return context

@@ -1,20 +1,35 @@
 {% macro make_status(case) %}
-    <span title="{{ case.long_status }}" class="case-{{- case.result_class -}}">
-        {%- if case.status == 'SC' %}&mdash;{% else %}{{ case.long_status }}{% endif -%}
+    <span title="{{ case.long_status }}" class="case-status-pill case-status-{{- case.result_class or case.status -}}">
+        {%- if case.status in ('AC', 'PAC') -%}
+            <i class="fa fa-check"></i>
+        {%- elif case.status in ('WA', 'IE') -%}
+            <i class="fa fa-times"></i>
+        {%- elif case.status in ('TLE', 'MLE') -%}
+            <i class="fa fa-clock-o"></i>
+        {%- elif case.status == 'SC' -%}
+            &mdash;
+        {%- else -%}
+            <i class="fa fa-exclamation"></i>
+        {%- endif -%}
+        <span>{%- if case.status == 'SC' %}&mdash;{% else %}{{ case.long_status }}{% endif -%}</span>
     </span>
 {% endmacro %}
 
 {% macro make_batch_status(batch, cnt) %}
-    <b>{{ _('Batch #%(id)d', id=cnt) }}</b>
-    {% if not batch.not_graded %}
-        ({{ _('%(points)s/%(total)s points', points=batch.points|floatformat(0), total=batch.total|floatformat(0)) }})
-    {% else %}
-        <span class="fa fa-spinner fa-pulse"></span>
-    {% endif %}
-
-    {% if not can_view_testcase_status and not batch.not_graded %}
-        {{ make_status(batch) }}
-    {% endif %}
+    <div class="batch-header">
+        <div class="batch-title">
+            <i class="fa fa-folder-open-o"></i>
+            <span>{{ _('Batch #%(id)d', id=cnt) }}</span>
+            {% if not batch.not_graded %}
+                <span class="batch-points-badge">{{ _('%(points)s/%(total)s pts', points=batch.points|floatformat(0), total=batch.total|floatformat(0)) }}</span>
+            {% else %}
+                <span class="fa fa-spinner fa-pulse batch-spinner"></span>
+            {% endif %}
+        </div>
+        {% if not can_view_testcase_status and not batch.not_graded %}
+            <div class="batch-status-val">{{ make_status(batch) }}</div>
+        {% endif %}
+    </div>
 {% endmacro %}
 
 {% if submission.contest_or_none %}
@@ -26,188 +41,260 @@
 
 {% if submission.status != 'IE' %}
     {% if submission.status == 'QU' %}
-        <h4>{{ _('We are waiting for a suitable judge to process your submission...') }}</h4>
+        <div class="waiting-card">
+            <div class="waiting-icon"><i class="fa fa-clock-o"></i></div>
+            <div class="waiting-text">
+                <h4>{{ _('Waiting for judge server...') }}</h4>
+                <p>{{ _('The system is coordinating judging resources to process your submission.') }}</p>
+            </div>
+        </div>
     {% elif submission.status == 'P' %}
-        <h4>{{ _('Your submission is being processed...') }}</h4>
+        <div class="waiting-card processing">
+            <div class="waiting-icon"><i class="fa fa-spinner fa-pulse"></i></div>
+            <div class="waiting-text">
+                <h4>{{ _('Grading submission...') }}</h4>
+                <p>{{ _('Test cases are being compiled and executed on the judge server.') }}</p>
+            </div>
+        </div>
     {% elif submission.status == 'CE' %}
-        <h3>{{ _('Compilation Error') }}</h3>
-        <pre>{{ submission.error|ansi2html }}</pre>
+        <div class="compiler-feedback-card ce-card">
+            <div class="terminal-header">
+                <div class="terminal-dots">
+                    <span class="terminal-dot dot-red"></span>
+                    <span class="terminal-dot dot-yellow"></span>
+                    <span class="terminal-dot dot-green"></span>
+                </div>
+                <div class="terminal-title"><i class="fa fa-terminal"></i> {{ _('Compilation Error') }}</div>
+            </div>
+            <div class="terminal-body">
+                <pre>{{ submission.error|ansi2html }}</pre>
+            </div>
+        </div>
     {% else %}
         {% if submission.error %}
-            <h3>{{ _('Compilation Warnings') }}</h3>
-            <pre>{{ submission.error|ansi2html }}</pre>
-            <hr class="half-hr"><br>
-        {% endif %}
-        {% if is_pretest %}
-            <h3>{{ _('Pretest Execution Results') }}</h3>
-        {% else %}
-            <h3>{{ _('Execution Results') }}</h3>
-        {% endif %}
-        <br>
-        {% if can_view_testcase_status or can_view_batch_status %}
-        {% if statuses or not submission.is_graded %}
-            {% for case in statuses %}
-                {% if case.status in ("AC", "PAC") %}
-                    <span class="fa fa-check case-{{ case.result_class }}"></span>
-                {% elif case.status == "SC" %}
-                    <span class="case-SC">&ndash;</span>
-                {% else %}
-                    <a href="#{{ case.id }}">
-                        <span class="fa fa-times case-{{ case.status }} case-bad"></span>
-                    </a>
-                {% endif %}
-                {% if case.num_combined > 1 %}
-                    <sup class="case-{{ case.status }}">&times;{{ case.num_combined }}</sup>
-                {% endif %}
-            {% endfor %}
-            {% if not submission.is_graded %}
-                <span class="fa fa-spinner fa-pulse"></span>
-            {% endif %}
-            <br><br>
-        {% else %}
-            <div>
-                <div class="alert alert-warning comment-lock">
-                    {{ _('Your submission is successfully stored. Currently, there are no tests available, or this is an offline task, so please consider waiting for further evaluation.') }}
+            <div class="compiler-feedback-card warning-card">
+                <div class="terminal-header">
+                    <div class="terminal-dots">
+                        <span class="terminal-dot dot-yellow"></span>
+                    </div>
+                    <div class="terminal-title"><i class="fa fa-exclamation-triangle"></i> {{ _('Compilation Warnings') }}</div>
+                </div>
+                <div class="terminal-body">
+                    <pre>{{ submission.error|ansi2html }}</pre>
                 </div>
             </div>
         {% endif %}
-        {% set test_case_id = counter() %}
-        {% set test_case_counter = counter() %}
-        {% for batch in batches %}
-            {% if batch.id %}
-                {{ make_batch_status(batch, test_case_id()) }}
-                <br>
-                <div class="batch-cases">
-            {% endif %}
-        {% if can_view_testcase_status %}
-        <table class="submissions-status-table">{% for case in batch.cases %}
-            {% set current_test_case_count = test_case_counter() %}
-            {% set print_case_output = can_view_test and case.output %}
-            {% set print_case_ext_feedback = case.extended_feedback
-                                             and
-                                             ((not request.in_contest and current_test_case_count <= feedback_limit)
-                                              or can_view_test or can_view_feedback) %}
-            {% set curr_data = cases_data.get(case.case, None) %}
-            {% set has_extended_data = print_case_output or print_case_ext_feedback or (can_view_test and curr_data) %}
 
-            <tr id="{{ case.id }}" class="case-row toggle closed">
-                <td>
-                    {%- if has_extended_data -%}
-                        <i class="fa fa-chevron-right fa-fw"></i>
-                    {%- endif -%}
-                    {%- if batch.id -%}
-                        <b>{{ _('Case #%(id)d:', id=loop.index) }}</b>
-                    {%- elif is_pretest -%}
-                        <b>{{ _('Pretest #%(id)d:', id=test_case_id()) }}</b>
-                    {%- else -%}
-                        <b>{{ _('Test case #%(id)d:', id=test_case_id()) }}</b>
-                    {%- endif -%}
-                </td>
+        <div class="testcases-card" id="testcase-table-card">
+            <div class="testcases-card-header">
+                <div class="header-title-wrap">
+                    <i class="fa fa-tasks header-icon"></i>
+                    <h3 class="testcases-heading">
+                        {% if is_pretest %}
+                            {{ _('Pretest Results') }}
+                        {% else %}
+                            {{ _('Test Case Details') }}
+                        {% endif %}
+                    </h3>
+                </div>
 
-                <td>
-                    {{ make_status(case) }}
-                    {%- if case.feedback %}&nbsp;({{ case.feedback }}){% endif -%}
-                </td>
-
-                <td>
-                    {%- if case.status != 'SC' -%}
-                        {%- if case.status == 'TLE' -%}
-                            [&gt;<span>{{ time_limit|floatformat(3) }}s,</span>
-                        {%- else -%}
-                            [<span title="{{ case.time }}s">{{ case.time|floatformat(3) }}s,</span>
-                        {%- endif -%}
-                    {%- endif -%}
-                </td>
-
-                <td>{% if case.status != 'SC' %}{{ case.memory|kbdetailformat }}]{% endif %}</td>
-
-                {% if not batch.id %}
-                    <td>({{ case.points|floatformat(-3) }}/{{ case.total|floatformat(0) }})</td>
-                {% endif %}
-            </tr>
-
-            {% if has_extended_data %}
-                <tr id="{{ case.id }}-output" style="display:none" class="case-feedback toggled">
-                    <td colspan="5" class="case-output">
-                        <div class="case-info">
-                            {% if can_view_test and curr_data %}
-                                <strong>{{ _('Input:') }}</strong>
-                                <pre class="case-output">{{ curr_data['input']|linebreaksbr }}</pre>
-                                <strong>{{ _('Answer:') }}</strong>
-                                <pre class="case-output">{{ curr_data['answer']|linebreaksbr }}</pre>
-                            {% endif %}
-                            {% if print_case_output %}
-                                {% set escaped_output = case.output.encode("unicode-escape").decode("utf-8") %}
-                                <strong>{{ _('Your output (clipped)') }}</strong>
-                                {% if prefix_length is none or prefix_length == 0 %}
-                                    <pre class="case-output">{{ escaped_output|linebreaksbr }}</pre>
+                {% if can_view_testcase_status or can_view_batch_status %}
+                    {% if statuses or not submission.is_graded %}
+                        <div class="testcases-quick-strip">
+                            {% for case in statuses %}
+                                {% if case.status in ("AC", "PAC") %}
+                                    <span class="quick-icon icon-AC" title="{{ case.long_status }}">
+                                        <i class="fa fa-check"></i>
+                                    </span>
+                                {% elif case.status == "SC" %}
+                                    <span class="quick-icon icon-SC" title="{{ case.long_status }}">&ndash;</span>
                                 {% else %}
-                                    <pre class="case-output">{{ escaped_output[:prefix_length]|linebreaksbr }}</pre>
+                                    <a href="#{{ case.id }}" class="quick-icon icon-{{ case.status }}" title="{{ case.long_status }}">
+                                        <i class="fa fa-times"></i>
+                                    </a>
                                 {% endif %}
-                            {% endif %}
-                            {% if print_case_ext_feedback %}
-                                <strong>{{ _('Judge feedback') }}</strong>
-                                <pre class="case-output">{{ case.extended_feedback|linebreaksbr }}</pre>
+                                {% if case.num_combined > 1 %}
+                                    <sup class="case-combined-badge">&times;{{ case.num_combined }}</sup>
+                                {% endif %}
+                            {% endfor %}
+                            {% if not submission.is_graded %}
+                                <span class="fa fa-spinner fa-pulse quick-spinner"></span>
                             {% endif %}
                         </div>
-                    </td>
-                </tr>
-            {% endif %}
-        {% endfor %}
-        </table>
-        {% endif %}
-
-        {% if batch.id %}</div>{% endif %}
-            <br>
-        {% endfor %}
-        {% if statuses and submission.is_graded %}
-            <br>
-            {% if submission.result != "AB" %}
-                {% if can_view_testcase_status %}
-                    <b>{{ _('Resources:') }}</b>
-                    {% if submission.result == "TLE" %}
-                        <span>---,</span>
-                    {% else %}
-                        <span title="{{ submission.time }}s">{{ submission.time|floatformat(3) }}s,</span>
                     {% endif %}
-                    {{ submission.memory|kbdetailformat }}
-                    <br>
                 {% endif %}
-                {% if is_pretest %}
-                    <b>{{ _('Final pretest score:') }}</b>
-                {% else %}
-                    <b>{{ _('Final score:') }}</b>
-                {% endif %}
-                {{ submission.case_points|floatformat(-3) }}/{{ submission.case_total|floatformat(0) }}
-                {% if request.in_contest and submission.contest_or_none %}
-                    {% with contest=submission.contest_or_none %}
-                        {% set points=contest.points|roundfloat(3) %}
-                        {% set total=contest.problem.points|floatformat(-1) %}
-                        ({{ _('%(points)s/%(total)s points', points=points, total=total) }})
-                    {% endwith %}
-                {% else %}
-                    {% with points=submission.points|floatformat(3), total=submission.problem.points|floatformat(3) %}
-                        ({{ _('%(points)s/%(total)s points', points=points, total=total) }})
-                    {% endwith %}
-                {% endif %}
-                {% if is_pretest and submission.result in ("AC", "PAC") %}
-                    <br>
-                    <i>{{ _('Passing pretests does not guarantee a full score on system tests.') }}</i>
-                {% endif %}
-            {% else %}
-                <b>{{ _('Submission aborted!') }}</b>
-            {% endif %}
-            <br>
-        {% endif %}
-        {% else %}
-        {% if not submission.is_graded %}
-            <span class="fa fa-spinner fa-pulse"></span>
-        {% endif %}
-        <div class="sub-result {{ submission.result_class }}" style="width: fit-content; padding: 10px;">
-            {{ submission.long_status }}
-        </div>
+            </div>
 
-        {% endif %}
+            <div class="testcases-card-body">
+                {% if can_view_testcase_status or can_view_batch_status %}
+                    {% if not statuses and submission.is_graded %}
+                        <div class="alert alert-warning comment-lock">
+                            <i class="fa fa-info-circle"></i>
+                            <span>{{ _('Submission saved. No test cases are available yet or this problem is graded offline.') }}</span>
+                        </div>
+                    {% endif %}
+
+                    {% set test_case_id = counter() %}
+                    {% set test_case_counter = counter() %}
+                    {% for batch in batches %}
+                        {% if batch.id %}
+                            {{ make_batch_status(batch, test_case_id()) }}
+                            <div class="batch-cases">
+                        {% endif %}
+
+                        {% if can_view_testcase_status %}
+                            <table class="submissions-status-table">
+                                {% for case in batch.cases %}
+                                    {% set current_test_case_count = test_case_counter() %}
+                                    {% set print_case_output = can_view_test and case.output %}
+                                    {% set print_case_ext_feedback = case.extended_feedback
+                                                                     and
+                                                                     ((not request.in_contest and current_test_case_count <= feedback_limit)
+                                                                      or can_view_test or can_view_feedback) %}
+                                    {% set curr_data = cases_data.get(case.case, None) %}
+                                    {% set has_extended_data = print_case_output or print_case_ext_feedback or (can_view_test and curr_data) %}
+
+                                    <tr id="{{ case.id }}" class="case-row toggle closed{% if has_extended_data %} has-drawer{% endif %}">
+                                        <td class="col-name">
+                                            {%- if has_extended_data -%}
+                                                <i class="fa fa-chevron-right chevron-icon"></i>
+                                            {%- endif -%}
+                                            <span class="case-index">
+                                                {%- if batch.id -%}
+                                                    {{ _('Case #%(id)d', id=loop.index) }}
+                                                {%- elif is_pretest -%}
+                                                    {{ _('Pretest #%(id)d', id=test_case_id()) }}
+                                                {%- else -%}
+                                                    {{ _('Test #%(id)d', id=test_case_id()) }}
+                                                {%- endif -%}
+                                            </span>
+                                        </td>
+
+                                        <td class="col-status">
+                                            {{ make_status(case) }}
+                                            {%- if case.feedback -%}
+                                                <span class="case-inline-feedback">({{ case.feedback }})</span>
+                                            {%- endif -%}
+                                        </td>
+
+                                        <td class="col-time">
+                                            {%- if case.status != 'SC' -%}
+                                                <span class="metric-pill metric-time">
+                                                    <i class="fa fa-clock-o"></i>
+                                                    {%- if case.status == 'TLE' -%}
+                                                        &gt;{{ time_limit|floatformat(3) }}s
+                                                    {%- else -%}
+                                                        {{ case.time|floatformat(3) }}s
+                                                    {%- endif -%}
+                                                </span>
+                                            {%- endif -%}
+                                        </td>
+
+                                        <td class="col-memory">
+                                            {%- if case.status != 'SC' -%}
+                                                <span class="metric-pill metric-memory">
+                                                    <i class="fa fa-database"></i>
+                                                    {{ case.memory|kbdetailformat }}
+                                                </span>
+                                            {%- endif -%}
+                                        </td>
+
+                                        {% if not batch.id %}
+                                            <td class="col-points">
+                                                <span class="metric-pill metric-score">
+                                                    {{ case.points|floatformat(-3) }} / {{ case.total|floatformat(0) }}
+                                                </span>
+                                            </td>
+                                        {% endif %}
+                                    </tr>
+
+                                    {% if has_extended_data %}
+                                        <tr id="{{ case.id }}-output" style="display:none" class="case-feedback toggled">
+                                            <td colspan="5" class="case-output-cell">
+                                                <div class="case-drawer-container">
+                                                    {% if can_view_test and curr_data %}
+                                                        <div class="drawer-section">
+                                                            <div class="drawer-label"><i class="fa fa-sign-in"></i> {{ _('Input:') }}</div>
+                                                            <pre class="drawer-code">{{ curr_data['input']|linebreaksbr }}</pre>
+                                                        </div>
+                                                        <div class="drawer-section">
+                                                            <div class="drawer-label"><i class="fa fa-check-circle-o"></i> {{ _('Expected Answer:') }}</div>
+                                                            <pre class="drawer-code">{{ curr_data['answer']|linebreaksbr }}</pre>
+                                                        </div>
+                                                    {% endif %}
+                                                    {% if print_case_output %}
+                                                        {% set escaped_output = case.output.encode("unicode-escape").decode("utf-8") %}
+                                                        <div class="drawer-section">
+                                                            <div class="drawer-label"><i class="fa fa-desktop"></i> {{ _('Your Output:') }}</div>
+                                                            {% if prefix_length is none or prefix_length == 0 %}
+                                                                <pre class="drawer-code">{{ escaped_output|linebreaksbr }}</pre>
+                                                            {% else %}
+                                                                <pre class="drawer-code">{{ escaped_output[:prefix_length]|linebreaksbr }}</pre>
+                                                            {% endif %}
+                                                        </div>
+                                                    {% endif %}
+                                                    {% if print_case_ext_feedback %}
+                                                        <div class="drawer-section">
+                                                            <div class="drawer-label"><i class="fa fa-commenting-o"></i> {{ _('Judge Feedback:') }}</div>
+                                                            <pre class="drawer-code">{{ case.extended_feedback|linebreaksbr }}</pre>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </table>
+                        {% endif %}
+
+                        {% if batch.id %}</div>{% endif %}
+                    {% endfor %}
+
+                    {% if statuses and submission.is_graded %}
+                        <div class="testcases-footer-summary">
+                            {% if submission.result != "AB" %}
+                                <div class="footer-stat-line">
+                                    <span class="footer-label">{{ _('Final Result:') }}</span>
+                                    <span class="footer-score-pill">
+                                        <strong>{{ submission.case_points|floatformat(-3) }}</strong> / {{ submission.case_total|floatformat(0) }} {{ _('testcases') }}
+                                        {% if request.in_contest and submission.contest_or_none %}
+                                             {% with contest=submission.contest_or_none %}
+                                                ({{ contest.points|roundfloat(2) }}/{{ contest.problem.points|floatformat(0) }} {{ _('pts') }})
+                                            {% endwith %}
+                                        {% else %}
+                                            {% with points=submission.points|floatformat(2), total=submission.problem.points|floatformat(0) %}
+                                                ({{ points }}/{{ total }} {{ _('pts') }})
+                                            {% endwith %}
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                {% if is_pretest and submission.result in ("AC", "PAC") %}
+                                    <div class="pretest-disclaimer">
+                                        <i class="fa fa-info-circle"></i>
+                                        <span>{{ _('Passing pretests does not guarantee full score on final test cases.') }}</span>
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="submission-aborted-notice">
+                                    <i class="fa fa-ban"></i>
+                                    <span>{{ _('Submission was aborted.') }}</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% else %}
+                    {% if not submission.is_graded %}
+                        <div class="grading-placeholder">
+                            <span class="fa fa-spinner fa-pulse"></span>
+                            <span>{{ _('Grading...') }}</span>
+                        </div>
+                    {% endif %}
+                    <div class="sub-result {{ submission.result_class }}" style="width: fit-content; padding: 12px 18px; border-radius: 10px;">
+                        {{ submission.long_status }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
     {% endif %}
 {% else %}
     {% include "submission/internal-error-message.html" %}

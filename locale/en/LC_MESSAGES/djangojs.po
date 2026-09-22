@@ -29,3 +29,35 @@ msgstr[1] ""
 msgctxt "time format without day"
 msgid "%h:%m:%s"
 msgstr ""
+
+#: resources/user_profile.js:51
+msgid "past year"
+msgstr ""
+
+#: resources/user_profile.js:110
+msgid "%(cnt)d total submission"
+msgid_plural "%(cnt)d total submissions"
+msgstr[0] ""
+msgstr[1] ""
+
+#: resources/user_profile.js:116
+msgid "%(cnt)d submission in the last year"
+msgid_plural "%(cnt)d submissions in the last year"
+msgstr[0] ""
+msgstr[1] ""
+
+#: resources/user_profile.js:121
+msgid "%(cnt)d submission in %(year)d"
+msgid_plural "%(cnt)d submissions in %(year)d"
+msgstr[0] ""
+msgstr[1] ""
+
+#: resources/user_profile.js:178
+msgid "%(cnt)d submission on %(date)s"
+msgid_plural "%(cnt)d submissions on %(date)s"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "No submissions on %(date)s"
+msgstr ""
+

@@ -61,7 +61,7 @@ class ExamList(TitleMixin, InfinitePaginationMixin, ListView):
         if self.request.user.is_authenticated:
             profile = self.request.profile
             for exam in context['exams']:
-                exam_problems = exam.exam_problems.select_related('problem')
+                exam_problems = list(exam.exam_problems.select_related('problem'))
                 problems = [ep.problem for ep in exam_problems]
                 submissions = (
                     Submission.objects.filter(
@@ -73,12 +73,24 @@ class ExamList(TitleMixin, InfinitePaginationMixin, ListView):
                     .annotate(best_points=Max('points', output_field=FloatField()))
                 )
                 problem_scores = {s['problem_id']: s['best_points'] for s in submissions}
-                exam.user_earned = sum(problem_scores.get(ep.problem.id, 0) for ep in exam_problems)
-                exam.display_total = exam.total_points
+                calc_total = sum(ep.problem.points or 0 for ep in exam_problems)
+                exam.display_total = calc_total if calc_total > 0 else (exam.total_points or 0)
+                exam.user_earned = sum(min(problem_scores.get(ep.problem.id, 0), ep.problem.points or 0) for ep in exam_problems)
+                exam.solved_count = sum(1 for ep in exam_problems if problem_scores.get(ep.problem.id, 0) >= (ep.problem.points or 0) and (ep.problem.points or 0) > 0)
+                exam.total_count = len(exam_problems)
+                if exam.display_total > 0:
+                    exam.progress_percent = min(100, int(round(exam.user_earned / exam.display_total * 100)))
+                else:
+                    exam.progress_percent = 0
         else:
             for exam in context['exams']:
+                exam_problems = list(exam.exam_problems.select_related('problem'))
+                calc_total = sum(ep.problem.points or 0 for ep in exam_problems)
                 exam.user_earned = 0
-                exam.display_total = exam.total_points
+                exam.display_total = calc_total if calc_total > 0 else (exam.total_points or 0)
+                exam.solved_count = 0
+                exam.total_count = len(exam_problems)
+                exam.progress_percent = 0
 
         return context
 
@@ -100,7 +112,7 @@ class ExamDetail(TitleMixin, DetailView):
         context = super().get_context_data(**kwargs)
         exam = self.object
 
-        exam_problems = ExamProblem.objects.filter(exam=exam).select_related('problem').order_by('order')
+        exam_problems = list(ExamProblem.objects.filter(exam=exam).select_related('problem').order_by('order'))
 
         if self.request.user.is_authenticated:
             profile = self.request.profile
@@ -124,11 +136,20 @@ class ExamDetail(TitleMixin, DetailView):
                 ep.user_score = 0
 
         context['exam_problems'] = exam_problems
+        calc_total = sum(ep.problem.points or 0 for ep in exam_problems)
+        exam.display_total = calc_total if calc_total > 0 else (exam.total_points or 0)
 
         if self.request.user.is_authenticated:
             context['user_total_score'] = sum(ep.user_score for ep in exam_problems)
+            if exam.display_total > 0:
+                context['progress_percent'] = min(100, int(round(context['user_total_score'] / exam.display_total * 100)))
+            else:
+                context['progress_percent'] = 0
+            context['solved_count'] = sum(1 for ep in exam_problems if ep.user_score >= (ep.problem.points or 0) and (ep.problem.points or 0) > 0)
         else:
             context['user_total_score'] = 0
+            context['progress_percent'] = 0
+            context['solved_count'] = 0
 
         return context
 

@@ -1,0 +1,62 @@
+{% for problem in problems %}
+<div class="recommended-problem-card" data-code="{{ problem.code }}">
+    <div class="rec-card-header">
+        <div class="rec-card-status-tags">
+            {% if problem.is_attempted %}
+                <span class="rec-badge status-attempted" title="{{ _('Attempted') }}">
+                    <i class="fa fa-pencil"></i> {{ _('Attempted') }}
+                </span>
+            {% else %}
+                <span class="rec-badge status-unsolved" title="{{ _('Unsolved') }}">
+                    <i class="fa fa-circle-o"></i> {{ _('Unsolved') }}
+                </span>
+            {% endif %}
+            {% if problem.group %}
+                <span class="rec-badge group-badge" title="{{ problem.group.full_name }}">
+                    <i class="fa fa-folder-open-o"></i> {{ problem.group.full_name }}
+                </span>
+            {% endif %}
+        </div>
+        <div class="rec-points-wrap">
+            <span class="rec-points-badge">
+                <i class="fa fa-star"></i> {{ problem.points|floatformat(0) if problem.points == problem.points|int else problem.points|floatformat(2) }} {{ _('pts') }}
+            </span>
+        </div>
+    </div>
+
+    <div class="rec-card-body">
+        <h3 class="rec-problem-title">
+            <a href="{{ url('problem_detail', problem.code) }}" class="rec-title-link">
+                <span class="rec-problem-code">[{{ problem.code }}]</span>
+                <span class="rec-problem-name">{{ problem.display_name or problem.name }}</span>
+            </a>
+        </h3>
+
+        {% set ptypes = problem.types.all() %}
+        {% if ptypes %}
+            <div class="rec-tags-list">
+                {% for ptype in ptypes %}
+                    <span class="rec-tag-pill">{{ ptype.full_name }}</span>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="rec-card-footer">
+        <div class="rec-meta-stats">
+            <span class="rec-stat-item" title="{{ _('Number of users who solved this problem') }}">
+                <i class="fa fa-check-circle"></i>
+                <strong>{{ problem.user_count }}</strong> {{ _('users solved') }}
+            </span>
+            <span class="rec-stat-item ac-rate-item {% if problem.ac_rate >= 50 %}rate-high{% elif problem.ac_rate >= 20 %}rate-med{% else %}rate-low{% endif %}" title="{{ _('Acceptance rate') }}">
+                <i class="fa fa-pie-chart"></i>
+                <strong>{{ problem.ac_rate|floatformat(1) }}%</strong> AC
+            </span>
+        </div>
+        <a href="{{ url('problem_detail', problem.code) }}" class="rec-solve-btn">
+            <span>{{ _('Solve Now') }}</span>
+            <i class="fa fa-arrow-right"></i>
+        </a>
+    </div>
+</div>
+{% endfor %}

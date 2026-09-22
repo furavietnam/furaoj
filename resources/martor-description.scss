@@ -37,14 +37,25 @@ form .martor-preview {
         display: none !important;
     }
 
-    .tab-martor-menu a.item {
-        font-size: 0.8rem;
+    .tab-martor-menu {
+        flex-wrap: wrap !important;
+        max-width: 100% !important;
+
+        a.item {
+            font-size: 0.8rem;
+        }
     }
 
     .martor-toolbar {
-        flex: 0 1 auto !important;
+        flex: 1 1 auto !important;
+        max-width: 100% !important;
         overflow-x: auto;
         overflow-y: hidden;
+
+        .ui.buttons {
+            flex-wrap: wrap !important;
+            max-width: 100% !important;
+        }
     }
 
     .martor-field {

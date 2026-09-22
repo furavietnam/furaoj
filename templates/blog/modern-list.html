@@ -107,7 +107,19 @@
           <div class="card-footer">
             <div class="card-author magazine-card-author">
               {% set authors = post.authors.all() %}
-              {% if authors %}<i class="fa fa-user"></i>{{ link_users(authors) }}{% endif %}
+              {% if authors %}
+                {% for author in authors %}
+                  <div class="post-author-item">
+                    <a href="{{ url('user_page', author.user.username) }}" class="post-author-avatar-link" title="{{ author.display_name or author.user.username }}">
+                      <span class="author-avatar-circle">
+                        <img src="{{ gravatar(author, 52) }}" alt="{{ author.user.username }}" class="author-avatar-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <span class="author-avatar-fallback" style="display: none;">{{ (author.display_name or author.user.username)[0]|upper }}</span>
+                      </span>
+                    </a>
+                    <span class="post-author-name">{{ link_user(author) }}</span>
+                  </div>
+                {% endfor %}
+              {% endif %}
             </div>
 
             {# Card tags #}

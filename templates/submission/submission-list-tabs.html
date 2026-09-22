@@ -1,17 +1,46 @@
-{% extends "tabs-base.html" %}
-
-{% block tabs %}
-    {{ make_tab('all_submissions_list', 'fa-list', all_submissions_link, _('All')) }}
-    {% if my_submissions_link or tab == 'my_submissions_tab' %}
-        {{ make_tab('my_submissions_tab', 'fa-user', my_submissions_link, _('Mine')) }}
-    {% endif %}
-    {% if best_submissions_link %}
-        {{ make_tab('best_submissions_list', 'fa-bar-chart', best_submissions_link, _('Best')) }}
-    {% endif %}
-    {% if tab == 'user_submissions_tab' %}
-        {{ make_tab('user_submissions_tab', 'fa-user', None, _("%(user)s's", user=tab_username)) }}
-    {% endif %}
-    {% if perms.judge.change_submission %}
-        {{ make_tab('admin', 'fa-edit', url('admin:judge_submission_changelist'), _('Admin')) }}
-    {% endif %}
-{% endblock %}
+<div class="problem-list-header">
+    <div class="problem-header-left">
+        <div class="problem-header-icon">
+            <i class="fa fa-paper-plane"></i>
+        </div>
+        <div class="problem-header-title-block">
+            <h1 class="problem-header-title">{{ content_title or title or _('Submissions') }}</h1>
+            <span class="problem-header-subtitle">
+                {% if total_submissions %}
+                    {{ total_submissions }} {{ _('submissions') }}
+                {% else %}
+                    {{ _('Real-time submission grading status') }}
+                {% endif %}
+            </span>
+        </div>
+    </div>
+    <div class="problem-header-actions">
+        <div class="header-segmented-control">
+            {% if all_submissions_link %}
+                <a href="{{ all_submissions_link }}" class="seg-btn{% if tab == 'all_submissions_list' or not tab %} active{% endif %}">
+                    <i class="fa fa-list"></i> {{ _('All') }}
+                </a>
+            {% endif %}
+            {% if my_submissions_link or tab == 'my_submissions_tab' %}
+                <a href="{{ my_submissions_link }}" class="seg-btn{% if tab == 'my_submissions_tab' %} active{% endif %}">
+                    <i class="fa fa-user"></i> {{ _('Mine') }}
+                </a>
+            {% endif %}
+            {% if best_submissions_link %}
+                <a href="{{ best_submissions_link }}" class="seg-btn{% if tab == 'best_submissions_list' %} active{% endif %}">
+                    <i class="fa fa-trophy"></i> {{ _('Best') }}
+                </a>
+            {% endif %}
+            {% if tab == 'user_submissions_tab' %}
+                <a href="javascript:void(0)" class="seg-btn active">
+                    <i class="fa fa-user"></i> {{ _("%(user)s's", user=tab_username) }}
+                </a>
+            {% endif %}
+            {% if perms.judge.change_submission %}
+                <a href="{{ url('admin:judge_submission_changelist') }}" class="seg-btn">
+                    <i class="fa fa-cog"></i> {{ _('Admin') }}
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>

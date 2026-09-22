@@ -1,8 +1,23 @@
 {% extends "tabs-base.html" %}
 
+{% block header_icon %}fa-trophy{% endblock %}
+
+{% block header_subtitle %}
+    <span class="problem-header-subtitle">{{ _('Compete in programming contests and tournaments') }}</span>
+{% endblock %}
+
+{% block extra_header_actions %}
+    {% if hide_private_contests is not none %}
+        <label class="filter-action-btn" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+            <input id="hide-private-contests-checkbox" type="checkbox" style="margin: 0; cursor: pointer;">
+            <span style="font-size: 13px; font-weight: 600; color: #475569;">{{ _('Hide private contests') }}</span>
+        </label>
+    {% endif %}
+{% endblock %}
+
 {% block post_tab_spacer %}
     {% if tab == 'calendar' %}
-        <div style="font-size: 1.6em; margin-top: 0.3em">
+        <div style="font-size: 1.4em; margin: 12px 0; display: flex; gap: 12px; align-items: center;">
             {% if prev_month %}
                 <a href="{{ url('contest_calendar', prev_month.year, prev_month.month) }}">&laquo; {{ _('Prev') }}</a>
             {% endif %}
@@ -19,12 +34,6 @@
 {% endblock %}
 
 {% block tabs %}
-    {% if hide_private_contests is not none %}
-        <div style="padding: 0.75em 1em 0.75em 0;">
-            <input id="hide-private-contests-checkbox" type="checkbox">
-            <label for="hide-private-contests-checkbox">{{ _('Hide private contests') }}</label>
-        </div>
-    {% endif %}
     {% if perms.judge.add_contest %}
         {{ make_tab('new', 'fa-plus', url('contest_new'), _('Add new contest')) }}
     {% endif %}

@@ -44,34 +44,275 @@
     }
 }
 
+// Modern Problem Table Card
+.problem-table-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #edf2f7;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
 #problem-table {
-    td, th {
-        // Text columns are left-aligned
-        &.problem-code, &.problem-name, &.category, &.types {
-            text-align: left;
-            padding: 0 1rem;
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    background: #ffffff;
+    backdrop-filter: none;
+    margin: 0;
+
+    &.striped tr:nth-child(2n) {
+        background: transparent;
+    }
+
+    th {
+        background-color: #ffffff;
+        border: none;
+        border-bottom: 1px solid #f1f5f9;
+        height: 48px;
+        color: #475569;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        padding: 12px 14px;
+        white-space: nowrap;
+        vertical-align: middle;
+
+        a {
+            color: inherit;
+            text-decoration: none;
+
+            &:hover {
+                color: #0066ff;
+            }
         }
 
-        // Numeric columns are center-aligned
-        &.solved, &.points, &.ac-rate, &.editorial, &.users {
-            padding: 0 10px;
-            white-space: nowrap;
-        }
-
-        &.problem-code {
-            word-break: break-all;
+        .sort-caret {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-left: 3px;
+            vertical-align: middle;
         }
     }
 
-    th a {
-        color: inherit;
+    td {
+        border: none;
+        border-bottom: 1px solid #f1f5f9;
+        padding: 15px 14px;
+        vertical-align: middle;
+        font-size: 14px;
     }
 
     tr {
-        transition: background-color linear 0.2s;
+        transition: background-color 0.15s ease;
+
+        &:last-child td {
+            border-bottom: none;
+        }
 
         &:hover {
-            background: rgba($color_primary100, 0.05);
+            background-color: #f8fafc !important;
+        }
+    }
+
+    // Hide ID, Category, Types on main list view to match the 6-column design
+    .problem-code, .category, .types {
+        display: none !important;
+    }
+
+    // Column 1: Status circle
+    .status-col {
+        width: 44px;
+        text-align: center;
+        padding-left: 18px;
+        padding-right: 6px;
+    }
+
+    .status-circle-th {
+        width: 18px;
+        height: 18px;
+        display: inline-block;
+    }
+
+    .status-circle {
+        width: 18px;
+        height: 18px;
+        border: 2px solid #cbd5e1;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        background: transparent;
+        text-decoration: none;
+        vertical-align: middle;
+
+        &.solved {
+            border-color: #10b981;
+            background-color: #10b981;
+            color: #ffffff;
+            font-size: 10px;
+        }
+
+        &.attempted {
+            border-color: #f59e0b;
+            background-color: rgba(245, 158, 11, 0.15);
+        }
+
+        &.unsolved {
+            border-color: #cbd5e1;
+            background-color: transparent;
+        }
+    }
+
+    // Column 2: Problem title
+    .problem-name {
+        text-align: left;
+        padding-left: 10px;
+        padding-right: 16px;
+
+        .problem-title-link {
+            color: #0066ff !important;
+            font-weight: 700;
+            font-size: 15px;
+            text-decoration: none;
+            display: inline-block;
+            transition: color 0.15s ease;
+
+            &:hover {
+                color: #0044cc !important;
+                text-decoration: none;
+            }
+        }
+    }
+
+    // Column 3: Points
+    .points {
+        width: 100px;
+        text-align: right;
+        padding-right: 20px;
+
+        &.points-val {
+            font-weight: 800;
+            font-size: 15px;
+            color: #0f172a;
+        }
+    }
+
+    // Column 4: % AC with color coding
+    .ac-rate {
+        width: 100px;
+        text-align: right;
+        padding-right: 20px;
+        font-weight: 700;
+        font-size: 15px;
+
+        &.ac-high {
+            color: #10b981 !important; // Green for >= 50%
+        }
+
+        &.ac-med {
+            color: #f59e0b !important; // Orange/Amber for 20% - 49%
+        }
+
+        &.ac-low {
+            color: #ef4444 !important; // Red for < 20%
+        }
+    }
+
+    // Column 5: # AC
+    .users {
+        width: 90px;
+        text-align: right;
+        padding-right: 20px;
+
+        .ac-count-link {
+            color: #0066ff !important;
+            font-weight: 700;
+            font-size: 15px;
+            text-decoration: none;
+
+            &:hover {
+                text-decoration: none;
+            }
+        }
+    }
+
+    // Column 6: Editorial / BookOpen icon
+    .editorial, .editorial-col {
+        width: 50px;
+        text-align: center;
+        padding-right: 16px;
+
+        .book-open-icon {
+            display: inline-block;
+            vertical-align: middle;
+            stroke: #cbd5e1;
+            transition: stroke 0.15s ease;
+
+            &.has-editorial {
+                stroke: #64748b;
+
+                &:hover {
+                    stroke: #0066ff;
+                }
+            }
+
+            &.no-editorial {
+                stroke: #cbd5e1;
+            }
+        }
+    }
+}
+
+// Layout adjustments for problems page
+#common-content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+#content-left.problems {
+    width: 100%;
+    flex: none;
+}
+
+#content-right.problems.filter-collapsible {
+    display: none;
+    width: 100%;
+    max-width: 100%;
+    float: none;
+    margin-bottom: 20px;
+
+    .info-float {
+        float: none;
+        padding: 0;
+        width: 100% !important;
+    }
+
+    .sidebox {
+        background: #ffffff;
+        border: 1px solid #edf2f7;
+        border-radius: 16px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+        padding: 18px 22px;
+        margin: 0;
+
+        h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            i {
+                color: #0066ff;
+            }
         }
     }
 }
@@ -79,38 +320,72 @@
 #filter-form {
     vertical-align: top;
     margin-bottom: 0.5em;
-    margin-top: 0.75em;
+    margin-top: 0.5em;
 
     a {
-        margin-right: 5px;
+        margin-right: 8px;
         display: inline-block;
-        padding: 3px 10px;
+        padding: 8px 18px;
         vertical-align: middle;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        text-decoration: none;
     }
 
-    input {
+    #go {
+        background: #0066ff;
+        color: #ffffff;
+        border: 1px solid #0066ff;
+
+        &:hover {
+            background: #0052cc;
+        }
+    }
+
+    #random {
+        background: #ffffff;
+        color: #475569;
+        border: 1px solid #e2e8f0;
+
+        &:hover {
+            background: #f8fafc;
+            color: #0066ff;
+        }
+    }
+
+    input[type="text"] {
+        vertical-align: middle;
+        margin-bottom: 0.75em;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 14px;
+        height: 38px;
+        box-sizing: border-box;
+        transition: border-color 0.15s ease;
+
+        &:focus {
+            border-color: #0066ff;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.12);
+        }
+    }
+
+    input[type="checkbox"] {
         vertical-align: middle;
         margin-bottom: 0.5em;
+        accent-color: #0066ff;
     }
 
     label {
         vertical-align: middle;
+        font-size: 14px;
+        color: #334155;
     }
 
     .filter-form-group {
-        margin-top: 5px;
-    }
-}
-
-#content-right {
-    &.problems {
-        max-width: unset;
-    }
-}
-
-#content-left {
-    &.problems {
-        flex: 3;
+        margin-top: 8px;
     }
 }
 
@@ -490,14 +765,16 @@ ul.problem-list {
     box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.15);
 
     body[data-theme="dark"] & {
-        background: #121212;
-        box-shadow: 4px 4px 0px rgba(255, 255, 255, 0.2);
+        background: #111a2e;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
     }
 
     body[data-theme="auto"] & {
         @media (prefers-color-scheme: dark) {
-            background: #121212;
-            box-shadow: 4px 4px 0px rgba(255, 255, 255, 0.2);
+            background: #111a2e;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
         }
     }
 
@@ -593,5 +870,101 @@ ul.problem-list {
 
     #ace_source {
         height: 480px !important;
+    }
+}
+
+// ------------------------------------------
+// Problem Dark Mode Overrides
+// ------------------------------------------
+@mixin problem-dark-mode-rules {
+    .problem-table-card {
+        background: #111a2e !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35) !important;
+    }
+
+    #problem-table {
+        background: #111a2e !important;
+
+        th {
+            background-color: #0d1527 !important;
+            border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+            color: #94a3b8 !important;
+
+            a:hover {
+                color: #60a5fa !important;
+            }
+        }
+
+        td {
+            border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+            color: #cbd5e1 !important;
+        }
+
+        tr:hover {
+            background-color: #17233c !important;
+        }
+
+        .problem-name .problem-title-link {
+            color: #60a5fa !important;
+
+            &:hover {
+                color: #93c5fd !important;
+            }
+        }
+
+        .points-val {
+            color: #f8fafc !important;
+        }
+    }
+
+    .status-circle.unsolved {
+        border-color: #334155 !important;
+    }
+
+    #content-right.problems.filter-collapsible .sidebox {
+        background: #111a2e !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+
+        h3 {
+            color: #f8fafc !important;
+        }
+    }
+
+    #filter-form {
+        #random {
+            background: #131d31 !important;
+            color: #cbd5e1 !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+
+            &:hover {
+                background: #17233c !important;
+                color: #60a5fa !important;
+            }
+        }
+
+        input[type="text"] {
+            background: #0d1527 !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+            color: #f8fafc !important;
+        }
+    }
+
+    .submit-modal-header {
+        border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+    }
+}
+
+@if not $is_light_theme {
+    @include problem-dark-mode-rules;
+}
+
+body[data-theme="dark"] {
+    @include problem-dark-mode-rules;
+}
+
+body[data-theme="auto"] {
+    @media (prefers-color-scheme: dark) {
+        @include problem-dark-mode-rules;
     }
 }

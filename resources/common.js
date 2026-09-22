@@ -323,4 +323,27 @@ $(function () {
         $(this).addClass("is-visible");
         e.stopPropagation();
     } );
+
+    // Submission actions dropdown: click to drop down, click again to hide
+    $(document).on('click', '.sub-actions-btn', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $dropdown = $(this).closest('.sub-actions-dropdown');
+        var $row = $dropdown.closest('.submission-row');
+        var wasOpen = $dropdown.hasClass('open');
+        $('.sub-actions-dropdown.open').removeClass('open');
+        $('.submission-row.actions-open').removeClass('actions-open');
+        if (!wasOpen) {
+            $dropdown.addClass('open');
+            $row.addClass('actions-open');
+        }
+    });
+
+    $(document).on('click', function (e) {
+        if (!$(e.target).closest('.sub-actions-dropdown').length) {
+            $('.sub-actions-dropdown.open').removeClass('open');
+            $('.submission-row.actions-open').removeClass('actions-open');
+        }
+    });
 });
+

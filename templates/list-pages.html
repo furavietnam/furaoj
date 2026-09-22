@@ -1,12 +1,14 @@
 <ul class="pagination">
     {% if page_obj.has_previous() %}
-        {% if page_obj.previous_page_number() == 1 and first_page_href != None %}
-            <li><a href="{{ first_page_href }}">«</a></li>
+        {% if first_page_href != None %}
+            <li><a href="{{ first_page_href }}" title="{{ _('First page') }}">«</a></li>
         {% else %}
-            <li><a href="{{ page_prefix or '' }}{{ page_obj.previous_page_number() }}{{ page_suffix or '' }}">«</a></li>
+            <li><a href="{{ page_prefix or '' }}1{{ page_suffix or '' }}" title="{{ _('First page') }}">«</a></li>
         {% endif %}
+        <li><a href="{{ page_prefix or '' }}{{ page_obj.previous_page_number() }}{{ page_suffix or '' }}" title="{{ _('Previous page') }}">&lt;</a></li>
     {% else %}
         <li class="disabled-page"><span>«</span></li>
+        <li class="disabled-page"><span>&lt;</span></li>
     {% endif %}
 
     {% for page in page_obj.page_range %}
@@ -24,8 +26,10 @@
     {% endfor %}
 
     {% if page_obj.has_next() %}
-        <li><a href="{{ page_prefix or '' }}{{ page_obj.next_page_number() }}{{ page_suffix or '' }}">»</a></li>
+        <li><a href="{{ page_prefix or '' }}{{ page_obj.next_page_number() }}{{ page_suffix or '' }}" title="{{ _('Next page') }}">&gt;</a></li>
+        <li><a href="{{ page_prefix or '' }}{{ page_obj.paginator.num_pages }}{{ page_suffix or '' }}" title="{{ _('Last page') }}">»</a></li>
     {% else %}
+        <li class="disabled-page"><span>&gt;</span></li>
         <li class="disabled-page"><span>»</span></li>
     {% endif %}
 </ul>

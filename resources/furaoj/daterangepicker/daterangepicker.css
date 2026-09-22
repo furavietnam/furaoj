@@ -408,3 +408,100 @@
     clear: none !important;
   }
 }
+
+body[data-theme="dark"] .daterangepicker {
+  background-color: #111a2e !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+  color: #f1f5f9 !important;
+}
+
+body[data-theme="dark"] .daterangepicker:before {
+  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+body[data-theme="dark"] .daterangepicker:after {
+  border-bottom-color: #111a2e !important;
+}
+
+body[data-theme="dark"] .daterangepicker .calendar-table {
+  background-color: #111a2e !important;
+  border-color: #111a2e !important;
+}
+
+body[data-theme="dark"] .daterangepicker .calendar-table th,
+body[data-theme="dark"] .daterangepicker .calendar-table td {
+  color: #cbd5e1 !important;
+}
+
+body[data-theme="dark"] .daterangepicker td.available:hover,
+body[data-theme="dark"] .daterangepicker th.available:hover {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+}
+
+body[data-theme="dark"] .daterangepicker td.off,
+body[data-theme="dark"] .daterangepicker td.off.in-range {
+  background-color: #111a2e !important;
+  color: #475569 !important;
+}
+
+body[data-theme="dark"] .daterangepicker td.in-range {
+  background-color: #172554 !important;
+  color: #93c5fd !important;
+}
+
+body[data-theme="dark"] .daterangepicker td.active,
+body[data-theme="dark"] .daterangepicker td.active:hover {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+body[data-theme="dark"] .daterangepicker .calendar-table .next span,
+body[data-theme="dark"] .daterangepicker .calendar-table .prev span {
+  border-color: #cbd5e1 !important;
+}
+
+body[data-theme="dark"] .daterangepicker .drp-buttons {
+  border-top-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+body[data-theme="dark"] .daterangepicker .drp-buttons .drp-selected {
+  color: #94a3b8 !important;
+}
+
+body[data-theme="dark"] .daterangepicker .applyBtn {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+body[data-theme="dark"] .daterangepicker .cancelBtn {
+  background: #1e293b !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #cbd5e1 !important;
+}
+
+body[data-theme="dark"] .daterangepicker .ranges li {
+  color: #cbd5e1 !important;
+}
+
+body[data-theme="dark"] .daterangepicker .ranges li:hover {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+}
+
+body[data-theme="dark"] .daterangepicker .ranges li.active {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+body[data-theme="dark"] .daterangepicker select.hourselect,
+body[data-theme="dark"] .daterangepicker select.minuteselect,
+body[data-theme="dark"] .daterangepicker select.secondselect,
+body[data-theme="dark"] .daterangepicker select.ampmselect {
+  background: #0d1527 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #f1f5f9 !important;
+}
+

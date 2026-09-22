@@ -49,31 +49,37 @@
 
     {% if authored %}
         <div class="user-problem-group">
-            <h3 class="unselectable toggle closed">
-                <span class="fa fa-chevron-right fa-fw"></span>{{ _('Authored problems') }} ({{ authored|length }})
+            <h3 class="unselectable toggle closed user-prob-header">
+                <i class="fa fa-chevron-right chevron-icon"></i>
+                <span class="group-title">{{ _('Authored problems') }}</span>
+                <span class="group-count-badge">{{ authored|length }}</span>
             </h3>
-            <table style="display: none" class="table striped toggled">
-                <thead>
-                <tr>
-                    <th>{{ _('Problem') }}</th>
-                    <th>{{ _('Category') }}</th>
-                    <th>{{ _('Points') }}</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for problem in authored %}
+            <div class="user-problem-table-wrap toggled" style="display: none">
+                <table class="table striped user-problem-table">
+                    <thead>
                     <tr>
-                        <td>
-                            <a href="{{ url('problem_detail', problem.code) }}">{{ problem.name }}</a>
-                        </td>
-                        <td>{{ problem.group.full_name }}</td>
-                        <td><a href="{{ url('ranked_submissions', problem.code) }}">
-                            {{ problem.points|floatformat }}{% if problem.partial %}p{% endif %}
-                        </a></td>
+                        <th class="col-problem">{{ _('Problem') }}</th>
+                        <th class="col-category">{{ _('Category') }}</th>
+                        <th class="col-points">{{ _('Points') }}</th>
                     </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                    {% for problem in authored %}
+                        <tr>
+                            <td class="col-problem">
+                                <a href="{{ url('problem_detail', problem.code) }}" class="prob-title">{{ problem.name }}</a>
+                            </td>
+                            <td class="col-category"><span class="prob-cat">{{ problem.group.full_name }}</span></td>
+                            <td class="col-points">
+                                <a href="{{ url('ranked_submissions', problem.code) }}" class="points-pill">
+                                    {{ problem.points|floatformat }}{% if problem.partial %}p{% endif %}
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     {% endif %}
 
@@ -85,41 +91,43 @@
                 <label style="vertical-align:middle" for="hide_solved">{{ _("Hide problems I've solved") }}</label>
             </form>
         </span></div>
-    {% else %}
-        <hr>
     {% endif %}
 
     {% for group in best_submissions %}
         <div class="user-problem-group">
-            <h3 class="unselectable toggle closed"><span class="fa fa-chevron-right fa-fw"></span>
+            <h3 class="unselectable toggle closed user-prob-header">
+                <i class="fa fa-chevron-right chevron-icon"></i>
+                <span class="group-title">{{ group.name }}</span>
                 {%- with points_str=group.points|floatformat(-3) -%}
-                    {{ _('%(group)s (%(val)s points)', group=group.name, val=points_str) }}
+                    <span class="group-count-badge">{{ points_str }} {{ _('points') }}</span>
                 {%- endwith -%}
             </h3>
-            <table style="display: none" class="table striped toggled">
-                <thead>
-                <tr>
-                    <th>{{ _('Problem') }}</th>
-                    <th>{{ _('Score') }}</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for entry in group.problems %}
+            <div class="user-problem-table-wrap toggled" style="display: none">
+                <table class="table striped user-problem-table">
+                    <thead>
                     <tr>
-                        <td>
-                            <a href="{{ url('problem_detail', entry.code) }}">{{ entry.name }}</a>
-                        </td>
-                        <td>
-                            <a href="{{ url('user_submissions', entry.code, user.user.username) }}">
-                                {%- with points_str=entry.points|floatformat(-3), total_str=entry.total|floatformat(-3) -%}
-                                    {{ _('%(points)s / %(total)s', points=points_str, total=total_str) }}
-                                {%- endwith -%}
-                            </a>
-                        </td>
+                        <th class="col-problem">{{ _('Problem') }}</th>
+                        <th class="col-score">{{ _('Score') }}</th>
                     </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                    {% for entry in group.problems %}
+                        <tr>
+                            <td class="col-problem">
+                                <a href="{{ url('problem_detail', entry.code) }}" class="prob-title">{{ entry.name }}</a>
+                            </td>
+                            <td class="col-score">
+                                {%- with points_str=entry.points|floatformat(-3), total_str=entry.total|floatformat(-3) -%}
+                                    <a href="{{ url('user_submissions', entry.code, user.user.username) }}" class="score-pill{% if entry.points == entry.total %} full{% elif entry.points > 0 %} partial{% else %} zero{% endif %}">
+                                        {{ points_str }} / {{ total_str }}
+                                    </a>
+                                {%- endwith -%}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     {% endfor %}
 {% endblock %}

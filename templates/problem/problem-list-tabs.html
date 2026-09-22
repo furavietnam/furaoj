@@ -1,11 +1,32 @@
-{% extends "tabs-base.html" %}
-
-{% block tabs %}
-    {% if request.user.has_perm('judge.add_problem') %}
-        {{ make_tab('create', 'fa-plus', url('problem_create'), _('Create new problem')) }}
-    {% endif %}
-    {{ make_tab('list', 'fa-list', url('problem_list'), _('List')) }}
-    {% if request.user.is_superuser %}
-        {{ make_tab('admin', 'fa-edit', url('admin:judge_problem_changelist'), _('Admin')) }}
-    {% endif %}
-{% endblock %}
+<div class="problem-list-header">
+    <div class="problem-header-left">
+        <div class="problem-header-icon">
+            <i class="fa fa-list-ul"></i>
+        </div>
+        <div class="problem-header-title-block">
+            <h1 class="problem-header-title">{{ _('Problem list') }}</h1>
+            <span class="problem-header-subtitle">
+                {% if total_problems is not none %}
+                    {{ total_problems }} {{ _('problems') }}
+                {% elif problems_count is not none %}
+                    {{ problems_count }} {{ _('problems') }}
+                {% else %}
+                    {{ _('Competitive Programming Problem Archive') }}
+                {% endif %}
+            </span>
+        </div>
+    </div>
+    <div class="problem-header-actions">
+        <a href="javascript:void(0);" id="toggle-filter-btn" class="filter-action-btn" role="button">
+            <i class="fa fa-sliders"></i> {{ _('Filter') }}
+        </a>
+        <div class="header-segmented-control">
+            <a href="{{ url('problem_list') }}" class="seg-btn active">
+                <i class="fa fa-bars"></i> {{ _('List') }}
+            </a>
+            <a href="{% if show_org_tags and organization %}{{ url('problem_random_organization', organization.slug) }}{% else %}{{ url('problem_random') }}{% endif %}" id="recommend-btn" class="seg-btn">
+                <i class="fa fa-lightbulb-o"></i> {{ _('Suggest') }}
+            </a>
+        </div>
+    </div>
+</div>

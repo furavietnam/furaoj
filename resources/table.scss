@@ -1,65 +1,495 @@
 @use "vars" as *;
 
+// ==========================================
+// Modern Table System
+// ==========================================
+
 .h-scrollable-table {
     overflow-x: auto;
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #edf2f7;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
 }
 
 .table {
+    border-collapse: separate;
     border-spacing: 0;
     width: 100%;
-    margin-left: auto;
-    margin-right: auto;
-    margin-bottom: 0.5em;
-    background: rgba($color_primary100, 0.01);
-    backdrop-filter: blur(3px);
-
-    &.striped tr:nth-child(2n) {
-        background: rgba($color_primary100, 0.03);
-    }
+    margin: 12px 0 24px;
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #edf2f7;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
 
     th {
-        height: 2em;
-        color: $color_primary0;
-        background-color: $color_primary75;
-        border-color: $color_primary50;
-        border-width: 0 1px 1px 0;
-        border-style: solid;
-        padding: 4px 10px;
+        background-color: #f8fafc !important;
+        color: #475569 !important;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        border: none;
+        border-bottom: 1px solid #f1f5f9;
+        padding: 14px 18px;
         vertical-align: middle;
-        text-align: center;
         white-space: nowrap;
-        font-weight: 600;
-        font-size: 1.1em;
+        text-align: left;
+        line-height: 1.2;
+
+        a {
+            color: inherit;
+            text-decoration: none;
+            transition: color 0.15s ease;
+
+            &:hover {
+                color: #0066ff;
+            }
+        }
+
+        i.fa {
+            font-size: 11px;
+            margin-left: 3px;
+        }
+
+        &.rank, &.problems, &.points, &.users, &.progress, &.col-points, &.col-score {
+            text-align: center;
+        }
     }
 
     td {
-        border-color: $color_primary25;
-        border-width: 0 1px 1px 0;
-        border-style: solid;
-        padding: 7px 5px;
+        border: none;
+        border-bottom: 1px solid #f1f5f9;
+        padding: 12px 18px;
         vertical-align: middle;
+        color: #1e293b;
+        font-size: 14px;
+        text-align: left;
+        background-color: #ffffff;
+        transition: background-color 0.15s ease;
+
+        a {
+            color: #0066ff;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.15s ease;
+
+            &:hover {
+                color: #0052cc;
+                text-decoration: underline;
+            }
+        }
+    }
+
+    tbody tr {
+        transition: background-color 0.15s ease;
+
+        &:hover td {
+            background-color: #f8fafc;
+        }
+
+        &:last-child td {
+            border-bottom: none;
+        }
+    }
+
+    &.striped tbody tr:nth-child(even) td {
+        background-color: #fafbfc;
+    }
+
+    &.striped tbody tr:nth-child(even):hover td {
+        background-color: #f1f5f9;
+    }
+}
+
+.h-scrollable-table > .table,
+#submissions-table.table,
+.user-problem-table-wrap > .table {
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    margin: 0;
+}
+
+// ------------------------------------------
+// User Leaderboard Specific Styles (.users-table)
+// ------------------------------------------
+.users-table {
+    th.rank, td:first-child {
+        text-align: center;
+        font-weight: 700;
+        color: #64748b;
+        width: 60px;
+    }
+
+    .rate-box {
+        width: 14px;
+        height: 14px;
+        vertical-align: middle;
+        margin-right: 4px;
+    }
+
+    .user-name {
+        a {
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .personal-info {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 2px;
+
+            a {
+                font-weight: 500;
+                font-size: 12px;
+                color: #64748b;
+
+                &:hover {
+                    color: #0066ff;
+                }
+            }
+        }
+    }
+
+    .user-points {
+        text-align: center;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-weight: 700;
+        color: #0f172a;
+        font-size: 14px;
+    }
+
+    td:nth-child(4), td:last-child {
+        text-align: center;
+    }
+}
+
+// ------------------------------------------
+// Contest List Specific Styles (.contest-list)
+// ------------------------------------------
+.contest-list {
+    margin-bottom: 24px;
+    border-radius: 16px;
+    border: 1px solid #edf2f7;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+
+    .contest-list-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #0066ff;
+        text-decoration: none;
+
+        &:hover {
+            color: #0052cc;
+            text-decoration: underline;
+        }
+    }
+
+    .contest-tags {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-left: 6px;
+
+        .contest-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 7px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            line-height: 1.2;
+
+            a {
+                text-decoration: none;
+            }
+        }
+    }
+
+    .time-left {
+        color: #64748b;
+        font-size: 12px;
+        margin-top: 4px;
+        line-height: 1.4;
+    }
+
+    td:nth-child(2) {
+        text-align: center;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    th:last-child, td:last-child {
+        text-align: right;
+        padding-right: 24px !important;
+        width: 180px;
+    }
+
+    .participate-button {
+        background: #0066ff !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 8px 24px !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 102, 255, 0.25) !important;
+        transition: all 0.15s ease;
+        text-decoration: none !important;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap !important;
+        width: auto !important;
+        min-width: 140px !important;
+
+        &:hover {
+            background: #0052cc !important;
+            box-shadow: 0 4px 12px rgba(0, 102, 255, 0.35) !important;
+            transform: translateY(-1px);
+        }
+
+        &:active {
+            transform: translateY(1px);
+        }
+    }
+}
+
+// ------------------------------------------
+// Judge Status Specific Styles (#judge-status)
+// ------------------------------------------
+#judge-status {
+    td:nth-child(1) {
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    td:nth-child(2) {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 13px;
+        color: #64748b;
+    }
+
+    td:nth-child(3) {
+        text-align: center;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 12px;
+        font-weight: 700;
+        color: #059669;
+    }
+
+    td:nth-child(4) {
+        text-align: center;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 13px;
+        color: #475569;
+    }
+
+    td:last-child {
+        font-size: 13px;
+        line-height: 2.2;
+    }
+
+    .runtime-label {
+        display: inline-block;
+        background: #f1f5f9;
+        color: #0066ff !important;
+        font-weight: 600;
+        font-size: 12px;
+        padding: 3px 8px;
+        border-radius: 6px;
+        margin: 2px 2px;
+        text-decoration: none !important;
+        transition: all 0.15s ease;
+        border: 1px solid #e2e8f0;
+
+        &:hover {
+            background: #e0edff;
+            border-color: #bfdbfe;
+            color: #0052cc !important;
+            transform: translateY(-1px);
+        }
+    }
+}
+
+// ------------------------------------------
+// Exam Table Specific Styles (#exam-table)
+// ------------------------------------------
+#exam-table {
+    .exam-name a {
+        font-size: 15px;
+        font-weight: 700;
+        color: #0066ff;
+    }
+
+    .category, .province, .year, .problems, .progress {
         text-align: center;
     }
 
-    // Border fixes
-    th:first-child, td:first-child {
-        border-left-width: 1px;
+    .exam-progress {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+
+        .progress-text {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .progress-track {
+            width: 80px;
+            height: 6px;
+            background: #f1f5f9;
+            border-radius: 3px;
+            overflow: hidden;
+
+            .progress-indicator {
+                height: 100%;
+                background: #0066ff;
+                border-radius: 3px;
+            }
+        }
+    }
+}
+
+// ------------------------------------------
+// Table Dark Mode Overrides
+// ------------------------------------------
+@mixin table-dark-mode-rules {
+    .h-scrollable-table,
+    .table {
+        background: #111a2e !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35) !important;
+
+        th {
+            background-color: #0d1527 !important;
+            color: #94a3b8 !important;
+            border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+
+            a {
+                color: inherit;
+                &:hover {
+                    color: #60a5fa !important;
+                }
+            }
+        }
+
+        td {
+            background-color: #111a2e !important;
+            border-bottom-color: rgba(255, 255, 255, 0.06) !important;
+            color: #cbd5e1 !important;
+
+            a {
+                color: #60a5fa !important;
+
+                &:hover {
+                    color: #93c5fd !important;
+                }
+            }
+        }
+
+        tbody tr:hover td {
+            background-color: #17233c !important;
+        }
+
+        &.striped tbody tr:nth-child(even) td {
+            background-color: #0e172a !important;
+        }
+
+        &.striped tbody tr:nth-child(even):hover td {
+            background-color: #17233c !important;
+        }
     }
 
-    tr:first-child th, tr:first-child td {
-        border-top-width: 1px;
+    .users-table {
+        th.rank, td:first-child {
+            color: #94a3b8 !important;
+        }
+
+        .user-name .personal-info {
+            color: #94a3b8 !important;
+
+            a {
+                color: #94a3b8 !important;
+                &:hover { color: #60a5fa !important; }
+            }
+        }
+
+        .user-points {
+            color: #f8fafc !important;
+        }
     }
 
-    // Rounded corners for <th>
-    tr:first-child th:first-child {
-        border-top-left-radius: $table_header_rounding;
+    .contest-list {
+        background: #111a2e !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35) !important;
+
+        td:nth-child(2) {
+            color: #cbd5e1 !important;
+        }
+
+        .time-left {
+            color: #94a3b8 !important;
+        }
     }
 
-    tr:first-child th:last-child {
-        border-top-right-radius: $table_header_rounding;
+    #judge-status {
+        td:nth-child(1) {
+            color: #f8fafc !important;
+        }
+
+        td:nth-child(2) {
+            color: #94a3b8 !important;
+        }
+
+        td:nth-child(4) {
+            color: #94a3b8 !important;
+        }
+
+        .runtime-label {
+            background: #17233c !important;
+            color: #60a5fa !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+
+            &:hover {
+                background: #1e2e4f !important;
+                color: #93c5fd !important;
+            }
+        }
     }
 
-    tbody tr:last-child th:first-child {
-        border-bottom-left-radius: $table_header_rounding;
+    #exam-table {
+        .exam-progress {
+            .progress-text {
+                color: #94a3b8 !important;
+            }
+
+            .progress-track {
+                background: #17233c !important;
+            }
+        }
+    }
+}
+
+@if not $is_light_theme {
+    @include table-dark-mode-rules;
+}
+
+body[data-theme="dark"] {
+    @include table-dark-mode-rules;
+}
+
+body[data-theme="auto"] {
+    @media (prefers-color-scheme: dark) {
+        @include table-dark-mode-rules;
     }
 }

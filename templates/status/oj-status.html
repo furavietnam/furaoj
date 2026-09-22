@@ -65,7 +65,12 @@
                     $('#daterange span').html(start_date.format(date_format) + ' - ' + end_date.format(date_format));
                 }
 
+                var defaultStart = moment().subtract(29, 'days').startOf('day');
+                var defaultEnd = moment().endOf('day');
+
                 $('#daterange').daterangepicker({
+                    startDate: defaultStart,
+                    endDate: defaultEnd,
                     timePicker: true,
                     timePicker24Hour: true,
                     timePickerSeconds: true,
@@ -88,6 +93,9 @@
                         {{ _('Last 90 Days')|htmltojs }}: [moment().subtract(89, 'days').startOf('day'), moment().endOf('day')]
                     }
                 }, cb);
+
+                cb(defaultStart, defaultEnd);
+                draw_charts(defaultStart, defaultEnd);
 
                 $('#daterange').on('apply.daterangepicker', function(ev, picker) {
                     draw_charts(picker.startDate, picker.endDate);
@@ -112,7 +120,7 @@
 {% endblock %}
 
 {% block body %}
-    <div id="daterange" style="background: #fff; cursor: pointer; padding: 5px 10px; border: 1px solid #ccc;">
+    <div id="daterange">
         <i class="fa fa-calendar"></i>&nbsp;
         <span></span> <i class="fa fa-caret-down"></i>
     </div>

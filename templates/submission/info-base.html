@@ -1,20 +1,71 @@
 {% extends "base.html" %}
 
+{% block title_row %}{% endblock %}
 {% block header %}
-    <span class="submission-info">
-        <span class="submission-date">
-            {% with date=submission.date|date(_('N j, Y, g:i a')), can_edit=submission.problem.is_editable_by(request.user) %}
-                {% if can_edit and submission.judged_on %}
-                    {{ _('%(date)s on judge %(judge)s', date=date, judge=submission.judged_on.name) }}
+    <div class="problem-list-header submission-detail-header">
+        <div class="problem-header-left">
+            <div class="problem-header-icon sub-header-icon sub-icon-{{ submission.result_class or submission.status }}">
+                {% if not submission.is_graded %}
+                    <i class="fa fa-spinner fa-pulse"></i>
+                {% elif submission.result in ('AC', '_AC') %}
+                    <i class="fa fa-check"></i>
+                {% elif submission.result in ('WA', 'IE') %}
+                    <i class="fa fa-times"></i>
+                {% elif submission.result in ('TLE', 'MLE', 'OLE', 'IR', 'RTE') %}
+                    <i class="fa fa-clock-o"></i>
+                {% elif submission.result == 'CE' %}
+                    <i class="fa fa-exclamation-triangle"></i>
                 {% else %}
-                    {{ date }}
+                    <i class="fa fa-file-code-o"></i>
                 {% endif %}
-                <br>
-                <span>{{ submission.language }}</span>
-                {% if can_edit %}
-                    [<a href="{{ url('admin:judge_submission_change', submission.id) }}">{{ _('Admin') }}</a>]
-                {% endif %}
-            {% endwith %}
-        </span>
-    </span>
+            </div>
+            <div class="problem-header-title-block">
+                <div class="submission-title-line">
+                    <span class="submission-badge-id">#{{ submission.id }}</span>
+                    <h1 class="problem-header-title">
+                        <a href="{{ url('problem_detail', submission.problem.code) }}" class="submission-problem-link">
+                            {{ submission.problem.translated_name(request.LANGUAGE_CODE) }}
+                        </a>
+                    </h1>
+                </div>
+                <div class="submission-meta-strip">
+                    <span class="meta-item user-meta">
+                        <i class="fa fa-user"></i>
+                        <a href="{{ url('user_page', submission.user.user.username) }}" class="{{ submission.user.css_class }}">
+                            {{ submission.user.display_name }}
+                        </a>
+                    </span>
+                    <span class="meta-sep">&bull;</span>
+                    <span class="meta-item time-meta">
+                        <i class="fa fa-calendar-o"></i>
+                        {% with date=submission.date|date(_('N j, Y, g:i a')), can_edit=submission.problem.is_editable_by(request.user) %}
+                            {% if can_edit and submission.judged_on %}
+                                {{ _('%(date)s on judge %(judge)s', date=date, judge=submission.judged_on.name) }}
+                            {% else %}
+                                {{ date }}
+                            {% endif %}
+                        {% endwith %}
+                    </span>
+                    <span class="meta-sep">&bull;</span>
+                    <span class="meta-item lang-meta">
+                        <i class="fa fa-code"></i>
+                        <span class="lang-tag">{{ submission.language.name }}</span>
+                    </span>
+                    {% set can_edit = submission.problem.is_editable_by(request.user) %}
+                    {% if can_edit and perms.judge.change_submission %}
+                        <span class="meta-sep">&bull;</span>
+                        <a href="{{ url('admin:judge_submission_change', submission.id) }}" class="meta-item admin-meta" target="_blank">
+                            <i class="fa fa-cog"></i> {{ _('Admin') }}
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="problem-header-actions">
+            <div class="header-segmented-control">
+                {% block sub_nav_tabs %}{% endblock %}
+            </div>
+        </div>
+    </div>
 {% endblock %}
+{% block title_ruler %}{% endblock %}

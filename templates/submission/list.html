@@ -391,6 +391,12 @@
                             {% include "submission/row.html" %}
                         {% endwith %}
                     </div>
+                {% else %}
+                    <div class="no-submissions-card">
+                        <div class="empty-icon"><i class="fa fa-inbox"></i></div>
+                        <div class="empty-title">{{ _('No submissions found') }}</div>
+                        <div class="empty-sub">{{ _('Try adjusting status or language filters in the sidebar.') }}</div>
+                    </div>
                 {% endfor %}
             </div>
         </div>

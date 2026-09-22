@@ -103,6 +103,7 @@ def paged_list_view(view, name):
 
 urlpatterns = [
     path('', blog.PostList.as_view(template_name='home.html', title=_('Home')), kwargs={'page': 1}, name='home'),
+    path('recommended-problems/ajax', blog.RecommendedProblemsAjax.as_view(), name='recommended_problems_ajax'),
     path('500/', exception),
     path('admin/', admin.site.urls),
     path('i18n/', include('django.conf.urls.i18n')),

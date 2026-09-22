@@ -1,14 +1,32 @@
 <style>
-    .runtime-label {
+    #judge-status .runtime-label {
         position: relative;
-        white-space: nowrap
+        white-space: nowrap;
+        display: inline-block;
+        background: #f1f5f9;
+        color: #0066ff !important;
+        font-weight: 600;
+        font-size: 12px;
+        padding: 3px 9px;
+        border-radius: 6px;
+        margin: 2px 2px;
+        text-decoration: none !important;
+        border: 1px solid #e2e8f0;
+        transition: all 0.15s ease;
+    }
+
+    #judge-status .runtime-label:hover {
+        background: #e0edff;
+        border-color: #bfdbfe;
+        color: #0052cc !important;
+        transform: translateY(-1px);
     }
 
     .tooltipped:after {
-        text-align: left
+        text-align: left;
     }
 
     td.ping {
-        white-space: nowrap
+        white-space: nowrap;
     }
 </style>

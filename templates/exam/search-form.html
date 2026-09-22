@@ -1,15 +1,22 @@
-<div class="sidebox">
-    <h3>{{ _('Exam search') }} <i class="fa fa-search"></i></h3>
+<div class="sidebox exam-search-box">
+    <h3>
+        <span>{{ _('Exam search') }}</span>
+        <i class="fa fa-search"></i>
+    </h3>
     <div class="sidebox-content">
         <form id="filter-form" name="form" action="" method="get">
-            <div>
+            <div class="filter-search-input-wrap">
+                <i class="fa fa-search search-field-icon"></i>
                 <input id="search" type="text" name="q" value="{{ search_query or '' }}"
                        placeholder="{{ _('Search exams...') }}">
             </div>
+
             <div class="filter-form-group">
-                <label for="exam_category"><i>{{ _('Category') }}</i></label>
+                <label for="exam_category">
+                    <i class="fa fa-folder-open-o"></i> {{ _('Category') }}
+                </label>
                 <select id="exam_category" name="exam_category">
-                    <option value="">{{ _('All') }}</option>
+                    <option value="">{{ _('All categories') }}</option>
                     {% for cat in categories %}
                         <option value="{{ cat.id }}"{% if selected_category and cat.id|string == selected_category|string %} selected{% endif %}>
                             {{ cat.full_name }}
@@ -17,10 +24,13 @@
                     {% endfor %}
                 </select>
             </div>
+
             <div class="filter-form-group">
-                <label for="province"><i>{{ _('Province') }}</i></label>
+                <label for="province">
+                    <i class="fa fa-map-marker"></i> {{ _('Province') }}
+                </label>
                 <select id="province" name="province">
-                    <option value="">{{ _('All') }}</option>
+                    <option value="">{{ _('All provinces') }}</option>
                     {% for prov in provinces %}
                         <option value="{{ prov.id }}"{% if selected_province and prov.id|string == selected_province|string %} selected{% endif %}>
                             {{ prov.name }}
@@ -28,10 +38,13 @@
                     {% endfor %}
                 </select>
             </div>
+
             <div class="filter-form-group">
-                <label for="year"><i>{{ _('Year') }}</i></label>
+                <label for="year">
+                    <i class="fa fa-calendar"></i> {{ _('Year') }}
+                </label>
                 <select id="year" name="year">
-                    <option value="">{{ _('All') }}</option>
+                    <option value="">{{ _('All years') }}</option>
                     {% for y in years %}
                         <option value="{{ y }}"{% if selected_year and y|string == selected_year|string %} selected{% endif %}>
                             {{ y }}
@@ -39,8 +52,16 @@
                     {% endfor %}
                 </select>
             </div>
+
             <div class="form-submit-group">
-                <a id="go" class="button">{{ _('Go') }}</a>
+                <button type="submit" id="go" class="exam-submit-btn">
+                    <i class="fa fa-filter"></i> {{ _('Filter exams') }}
+                </button>
+                {% if search_query or selected_category or selected_province or selected_year %}
+                    <a href="{{ url('exam_list') }}" class="exam-reset-btn" title="{{ _('Clear filters') }}">
+                        <i class="fa fa-times"></i> {{ _('Clear') }}
+                    </a>
+                {% endif %}
             </div>
         </form>
 
@@ -59,11 +80,16 @@
                 });
 
                 $search.keypress(function (e) {
-                    if (e.keyCode == 13)
-                        $('#go').click();
+                    if (e.keyCode == 13) {
+                        e.preventDefault();
+                        clean_submit();
+                    }
                 });
 
-                $('#go').click(clean_submit);
+                $('#go').click(function(e) {
+                    e.preventDefault();
+                    clean_submit();
+                });
             });
         </script>
     </div>

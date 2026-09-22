@@ -18,48 +18,73 @@
 {% endblock %}
 
 {% block title_row %}
-<div id="post-{{ post.id }}" style="display: flex; gap: 0.5em;">
-    <div class="vote">
+<div id="post-{{ post.id }}" class="blog-detail-header-card">
+    <div class="vote blog-vote-widget">
         {% if logged_in %}
             <a href="javascript:blog_upvote({{ post.id }})"
-            class="upvote-link fa fa-chevron-up fa-fw{% if post.vote_score == 1 %} voted{% endif %}"></a>
+               class="upvote-link fa fa-chevron-up fa-fw{% if post.vote_score == 1 %} voted{% endif %}"
+               title="{{ _('Upvote') }}"></a>
         {% else %}
             <a href="javascript:alert({{ _('Please log in to vote')|htmltojs }})" title="{{ _('Please log in to vote') }}"
-            class="upvote-link fa fa-chevron-up fa-fw"></a>
+               class="upvote-link fa fa-chevron-up fa-fw"></a>
         {% endif %}
-        <br>
         <div id="post-score" class="comment-score">{{ post.score }}</div>
         {% if logged_in %}
             <a href="javascript:blog_downvote({{ post.id }})"
-            class="downvote-link fa fa-chevron-down fa-fw{% if post.vote_score == -1 %} voted{% endif %}"></a>
+               class="downvote-link fa fa-chevron-down fa-fw{% if post.vote_score == -1 %} voted{% endif %}"
+               title="{{ _('Downvote') }}"></a>
         {% else %}
             <a href="javascript:alert({{ _('Please log in to vote')|htmltojs }})" title="{{ _('Please log in to vote') }}"
-            class="downvote-link fa fa-chevron-down fa-fw"></a>
+               class="downvote-link fa fa-chevron-down fa-fw"></a>
         {% endif %}
     </div>
-    <div style="width: 100%;">
-        <h2 style="display:inline">
-            {% block content_title %}
-                {% if content_title %}{{ content_title }}{% else %}{{ title }}{% endif %}
-            {% endblock %}
-        </h2>
-        {% if post.organization %}
-            <span class="organization-tag" style="display: inline;">
-                <a href="{{ post.organization.get_absolute_url() }}">
-                    <i class="fa fa-lock"></i> {{ post.organization.name }}
-                </a>
-            </span>
-        {% endif %}
-        {% if post.is_editable_by(request.user) %}
-            <div class="title-line-action">[<a href="{{ url('blog_post_edit', post.id, post.slug) }}">{{ _('Edit') }}</a>]</div>
-        {% endif %}
-        <div class="time">
+
+    <div class="blog-header-main">
+        <div class="blog-title-wrap">
+            <h1 class="blog-detail-title">
+                {% block content_title %}
+                    {% if content_title %}{{ content_title }}{% else %}{{ title }}{% endif %}
+                {% endblock %}
+            </h1>
+
+            <div class="blog-header-actions">
+                {% if post.organization %}
+                    <span class="organization-tag">
+                        <a href="{{ post.organization.get_absolute_url() }}">
+                            <i class="fa fa-lock"></i> {{ post.organization.name }}
+                        </a>
+                    </span>
+                {% endif %}
+                {% if post.is_editable_by(request.user) %}
+                    <a href="{{ url('blog_post_edit', post.id, post.slug) }}" class="blog-edit-btn" title="{{ _('Edit') }}">
+                        <i class="fa fa-pencil"></i> <span>{{ _('Edit') }}</span>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="blog-meta-strip">
             {% with authors=post.authors.all() %}
-                {%- if authors -%}
-                    <span class="post-authors">{{ link_users(authors) }}</span>
-                {%- endif -%}
+                {% if authors %}
+                    <div class="blog-authors-list">
+                        {% for author in authors %}
+                            <div class="blog-author-badge">
+                                <a href="{{ url('user_page', author.user.username) }}" class="author-avatar-link" title="{{ author.display_name or author.user.username }}">
+                                    <span class="author-avatar-circle">
+                                        <img src="{{ gravatar(author, 52) }}" alt="{{ author.user.username }}" class="author-avatar-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                        <span class="author-avatar-fallback" style="display: none;">{{ (author.display_name or author.user.username)[0]|upper }}</span>
+                                    </span>
+                                </a>
+                                <span class="author-name">{{ link_user(author) }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <span class="meta-separator">•</span>
+                {% endif %}
             {% endwith %}
-            <span class="post-time">
+
+            <span class="blog-publish-time">
+                <i class="fa fa-clock-o"></i>
                 {% trans trimmed time=post.publish_on|date(_("N j, Y, g:i a")) %}
                     posted on {{ time }}
                 {% endtrans %}
@@ -70,25 +95,31 @@
 {% endblock %}
 
 {% block body %}
-    <div class="post-full">
+    <div class="post-full blog-content-card">
         <div class="body content-description">
             {% cache 86400 'post_content' post.id MATH_ENGINE %}
                 {{ post.content|markdown('blog', MATH_ENGINE)|reference|str|safe}}
             {% endcache %}
         </div>
+
+        <div class="blog-footer-engagement">
+            <div class="social-share-wrap">
+                <span class="share-label"><i class="fa fa-share-alt"></i> {{ _('Share') }}:</span>
+                <span class="social-buttons">
+                    {{ post_to_facebook(request, post, '<i class="fa fa-facebook"></i> <span>Facebook</span>') }}
+                    {{ post_to_twitter(request, SITE_NAME + ':', post, '<i class="fa fa-twitter"></i> <span>Twitter</span>') }}
+                </span>
+            </div>
+        </div>
     </div>
-    <hr>
-    <span class="social">
-        {{ post_to_facebook(request, post, '<i class="fa fa-facebook-official"></i>') }}
-        {{ post_to_twitter(request, SITE_NAME + ':', post, '<i class="fa fa-twitter"></i>') }}
-    </span>
-    <div id="comments" data-comments-url="{{ url('blog_post_comments', post.id, post.slug) }}"
+
+    <div id="comments" class="blog-comments-container" data-comments-url="{{ url('blog_post_comments', post.id, post.slug) }}"
          data-comments-trigger="auto"
          data-comments-preloaded="{{ 'true' if comment_form and comment_form.errors else 'false' }}">
         {% if comment_form and comment_form.errors %}
             {% include "comments/list.html" %}
         {% else %}
-            <div class="comments-loading">{{ _('Loading...') }}</div>
+            <div class="comments-loading"><i class="fa fa-spinner fa-spin"></i> {{ _('Loading...') }}</div>
         {% endif %}
     </div>
     <div style="clear: both;"></div>

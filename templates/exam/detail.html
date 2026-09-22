@@ -16,76 +16,104 @@
         <div id="content-right" class="exams">
             <div class="info-float">
                 <div class="sidebox">
-                    <h3>{{ _('Information') }}</h3>
-                    <div class="sidebox-content">
-                        <p><strong>{{ _('Year') }}:</strong> {{ exam.year }}</p>
+                    <h3>{{ _('Information') }} <i class="fa fa-info-circle"></i></h3>
+                    <div class="sidebox-content exam-info-list">
+                        <div class="info-item">
+                            <span class="info-label">{{ _('Year') }}</span>
+                            <span class="info-value">{{ exam.year }}</span>
+                        </div>
                         {% if exam.date %}
-                            <p><strong>{{ _('Date') }}:</strong> {{ exam.date|date(_("M j, Y")) }}</p>
+                            <div class="info-item">
+                                <span class="info-label">{{ _('Date') }}</span>
+                                <span class="info-value">{{ exam.date|date(_("M j, Y")) }}</span>
+                            </div>
                         {% endif %}
                         {% if exam.category %}
-                            <p><strong>{{ _('Category') }}:</strong> {{ exam.category.full_name }}</p>
+                            <div class="info-item">
+                                <span class="info-label">{{ _('Category') }}</span>
+                                <span class="info-value">{{ exam.category.full_name }}</span>
+                            </div>
                         {% endif %}
                         {% if exam.province %}
-                            <p><strong>{{ _('Province') }}:</strong> {{ exam.province.name }}</p>
+                            <div class="info-item">
+                                <span class="info-label">{{ _('Province') }}</span>
+                                <span class="info-value">{{ exam.province.name }}</span>
+                            </div>
                         {% endif %}
-                        <p><strong>{{ _('Problems') }}:</strong> {{ exam.problem_count }}</p>
-                        {% if request.user.is_authenticated and exam.total_points > 0 %}
-                            <p><strong>{{ _('Progress') }}:</strong> {{ user_total_score|floatformat(0) }}/{{ exam.total_points|floatformat(0) }}</p>
-                        {% else %}
-                            <p><strong>{{ _('Total points') }}:</strong> {{ exam.total_points|floatformat(0) }}</p>
-                        {% endif %}
+                        <div class="info-item">
+                            <span class="info-label">{{ _('Problems') }}</span>
+                            <span class="info-value">{{ exam.problem_count }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">{{ _('Progress') if request.user.is_authenticated and exam.display_total > 0 else _('Total points') }}</span>
+                            <span class="info-value score-highlight">
+                                {% if request.user.is_authenticated and exam.display_total > 0 %}
+                                    {{ user_total_score|floatformat(0) }} / {{ exam.display_total|floatformat(0) }}
+                                    <span class="exam-detail-percent">({{ progress_percent }}%)</span>
+                                {% else %}
+                                    {{ exam.display_total|floatformat(0) }}
+                                {% endif %}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         <div id="content-left" class="exams">
             {% if exam.description %}
-                <div class="content-description screen">
+                <div class="content-description exam-description-card">
                     {{ exam.description }}
-                    <hr>
                 </div>
             {% endif %}
 
-            <table id="exam-detail-table" class="table striped">
-                <thead>
-                <tr>
-                    <th class="order">#</th>
-                    <th class="problem-code">{{ _('Problem') }}</th>
-                    <th class="problem-name">{{ _('Name') }}</th>
-                    <th class="max-points">{{ _('Max') }}</th>
-                    {% if request.user.is_authenticated %}
-                        <th class="user-score">{{ _('Score') }}</th>
-                        <th class="status">{{ _('Status') }}</th>
-                    {% endif %}
-                </tr>
-                </thead>
-                <tbody>
-                {% for ep in exam_problems %}
+            <div class="h-scrollable-table">
+                <table id="exam-detail-table" class="table striped">
+                    <thead>
                     <tr>
-                        <td class="order">{{ ep.order }}</td>
-                        <td class="problem-code">
-                            <a href="{{ url('problem_detail', ep.problem.code) }}">{{ ep.problem.code }}</a>
-                        </td>
-                        <td class="problem-name">
-                            <a href="{{ url('problem_detail', ep.problem.code) }}">{{ ep.problem.name }}</a>
-                        </td>
-                        <td class="max-points">{{ ep.problem.points|floatformat(0) }}</td>
+                        <th class="order" style="width: 50px; text-align: center;">#</th>
+                        <th class="problem-code" style="width: 140px;">{{ _('Problem') }}</th>
+                        <th class="problem-name">{{ _('Name') }}</th>
+                        <th class="max-points" style="width: 100px; text-align: center;">{{ _('Max') }}</th>
                         {% if request.user.is_authenticated %}
-                            <td class="user-score">{{ ep.user_score|floatformat(0) }}</td>
-                            <td class="status">
-                                {% if ep.user_score >= ep.problem.points %}
-                                    <i class="solved-problem-color fa fa-check-circle"></i>
-                                {% elif ep.user_score > 0 %}
-                                    <i class="attempted-problem-color fa fa-frown-o"></i>
-                                {% else %}
-                                    <i class="unsolved-problem-color fa"></i>
-                                {% endif %}
-                            </td>
+                            <th class="user-score" style="width: 100px; text-align: center;">{{ _('Score') }}</th>
+                            <th class="status" style="width: 80px; text-align: center;">{{ _('Status') }}</th>
                         {% endif %}
                     </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                    {% for ep in exam_problems %}
+                        <tr>
+                            <td class="order" style="text-align: center; font-weight: 600; color: #64748b;">{{ ep.order }}</td>
+                            <td class="problem-code">
+                                <a href="{{ url('problem_detail', ep.problem.code) }}" class="problem-code-link">{{ ep.problem.code }}</a>
+                            </td>
+                            <td class="problem-name">
+                                <a href="{{ url('problem_detail', ep.problem.code) }}">{{ ep.problem.name }}</a>
+                            </td>
+                            <td class="max-points" style="text-align: center;">
+                                <span class="points-pill">{{ ep.problem.points|floatformat(0) }}</span>
+                            </td>
+                            {% if request.user.is_authenticated %}
+                                <td class="user-score" style="text-align: center;">
+                                    <span class="score-pill{% if ep.user_score >= ep.problem.points and ep.problem.points > 0 %} full{% elif ep.user_score > 0 %} partial{% else %} zero{% endif %}">
+                                        {{ ep.user_score|floatformat(0) }}
+                                    </span>
+                                </td>
+                                <td class="status" style="text-align: center;">
+                                    {% if ep.user_score >= ep.problem.points and ep.problem.points > 0 %}
+                                        <i class="solved-problem-color fa fa-check-circle" style="color: #059669; font-size: 18px;" title="{{ _('Completed') }}"></i>
+                                    {% elif ep.user_score > 0 %}
+                                        <i class="attempted-problem-color fa fa-adjust" style="color: #d97706; font-size: 16px;" title="{{ _('Incomplete') }}"></i>
+                                    {% else %}
+                                        <span style="color: #cbd5e1; font-weight: 600;">-</span>
+                                    {% endif %}
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 {% endblock %}

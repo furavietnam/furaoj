@@ -4330,7 +4330,7 @@ msgstr "Bạn đang không tham gia kỳ thi \"%s\"."
 #: judge/views/contests.py:706
 #, python-format
 msgid "Contests in %(month)s"
-msgstr "Kỳ thi trong tháng %(month)s"
+msgstr "Lịch kỳ thi %(month)s"
 
 #: judge/views/contests.py:706
 msgid "F Y"
@@ -9795,8 +9795,6 @@ msgstr "URL rút gọn này không hoạt động."
 #~ msgid "Suggesting new problem"
 #~ msgstr "Đề xuất bài tập"
 
-#~ msgid "Suggest"
-#~ msgstr "Đề xuất"
 
 #~ msgid "Suggester:"
 #~ msgstr "Người đăng:"
@@ -9943,3 +9941,270 @@ msgstr "URL rút gọn này không hoạt động."
 
 #~ msgid "Maximum single-case runtime:"
 #~ msgstr "Thời gian chạy test lâu nhất:"
+
+msgid "Competitive Programming Problem Archive"
+msgstr "Kho bài tập lập trình thi đấu và ôn luyện thuật toán"
+
+msgid "Suggest"
+msgstr "Đề xuất"
+
+msgid "No editorial available"
+msgstr "Chưa có lời giải"
+
+msgid "Attempted"
+msgstr "Đang thử"
+
+msgid "Unsolved"
+msgstr "Chưa giải"
+
+msgid "First page"
+msgstr "Trang đầu"
+
+msgid "Previous page"
+msgstr "Trang trước"
+
+msgid "Next page"
+msgstr "Trang sau"
+
+msgid "Last page"
+msgstr "Trang cuối"
+
+msgid "All categories"
+msgstr "Tất cả danh mục"
+
+msgid "All provinces"
+msgstr "Tất cả tỉnh thành"
+
+msgid "All years"
+msgstr "Tất cả năm"
+
+msgid "Filter exams"
+msgstr "Lọc kỳ thi"
+
+msgid "Clear filters"
+msgstr "Xóa bộ lọc"
+
+msgid "Official contest archive from student Olympiads and entrance exams"
+msgstr "Kho đề thi chính thức từ các kỳ thi học sinh giỏi và tuyển sinh chuyên"
+
+msgid "Compete in programming contests and tournaments"
+msgstr "Tham gia tranh tài trong các kỳ thi lập trình"
+
+msgid "News & Announcements"
+msgstr "Bảng tin & Thông báo"
+
+msgid "Updates, announcements and articles"
+msgstr "Cập nhật tin tức, thông báo và bài viết chia sẻ kiến thức"
+
+msgid "Real-time operational status of judging servers and execution environments"
+msgstr "Tình trạng hoạt động của hệ thống máy chấm và môi trường thực thi"
+
+msgid "Real-time submission grading status"
+msgstr "Theo dõi trạng thái chấm bài thời gian thực"
+
+msgid "Pretest Results"
+msgstr "Kết quả Pretest"
+
+msgid "Passed"
+msgstr "Đạt"
+
+msgid "testcases"
+msgstr "test"
+
+msgid "The system is currently grading testcases in real-time"
+msgstr "Hệ thống đang tiến hành chấm các test case theo thời gian thực"
+
+msgid "Copy source"
+msgstr "Sao chép mã nguồn"
+
+msgid "Raw"
+msgstr "Xem thô"
+
+#, python-format
+msgid "%(points)s/%(total)s pts"
+msgstr "%(points)s/%(total)s điểm"
+
+msgid "Waiting for judge server..."
+msgstr "Đang chờ máy chủ chấm..."
+
+msgid "The system is coordinating judging resources to process your submission."
+msgstr "Hệ thống đang điều phối tài nguyên máy chấm để xử lý bài nộp của bạn."
+
+msgid "Grading submission..."
+msgstr "Đang tiến hành chấm bài..."
+
+msgid "Test cases are being compiled and executed on the judge server."
+msgstr "Các test case đang được biên dịch và chạy trên máy chủ."
+
+msgid "Test Case Details"
+msgstr "Chi tiết các Test Case"
+
+msgid "Submission saved. No test cases are available yet or this problem is graded offline."
+msgstr "Bài nộp đã được lưu. Hiện tại chưa có dữ liệu test hoặc đây là bài tập chấm offline."
+
+msgid "Expected Answer:"
+msgstr "Đáp án chuẩn (Answer):"
+
+msgid "Your Output:"
+msgstr "Kết quả của bạn (Your output):"
+
+msgid "Judge Feedback:"
+msgstr "Nhận xét máy chấm (Judge feedback):"
+
+msgid "Final Result:"
+msgstr "Tổng kết quả:"
+
+msgid "Passing pretests does not guarantee full score on final test cases."
+msgstr "Vượt qua pretest không đảm bảo sẽ đạt điểm tối đa trên hệ thống test chính thức."
+
+msgid "Submission was aborted."
+msgstr "Bài nộp đã bị dừng chấm (Aborted)."
+
+msgid "No submissions found"
+msgstr "Không tìm thấy bài nộp nào"
+
+msgid "Try adjusting status or language filters in the sidebar."
+msgstr "Thử thay đổi bộ lọc trạng thái hoặc ngôn ngữ ở thanh bên."
+
+msgid "Leaderboard ranking by points and performance"
+msgstr "Bảng xếp hạng thành tích và điểm số của các lập trình viên"
+
+msgid "No matching exams found."
+msgstr "Không tìm thấy kỳ thi phù hợp."
+
+msgid "Source"
+msgstr "Mã nguồn"
+
+msgid "Compare"
+msgstr "So sánh"
+
+msgid "Memory"
+msgstr "Bộ nhớ"
+
+msgid "Grading..."
+msgstr "Đang chấm bài..."
+
+#, python-format
+msgid "Case #%(id)d"
+msgstr "Test #%(id)d"
+
+#, python-format
+msgid "Pretest #%(id)d"
+msgstr "Pretest #%(id)d"
+
+#, python-format
+msgid "Test #%(id)d"
+msgstr "Test #%(id)d"
+
+msgid "Other"
+msgstr "Khác"
+
+msgid "Copy command"
+msgstr "Sao chép lệnh"
+
+msgid "No matching runtimes found"
+msgstr "Không tìm thấy ngôn ngữ phù hợp"
+
+msgid "Try a different search term or select another category."
+msgstr "Vui lòng thử từ khóa tìm kiếm khác hoặc chuyển danh mục."
+
+msgid "Default execution environment"
+msgstr "Môi trường thực thi mặc định"
+
+msgid "Compiler & Execution Options"
+msgstr "Tùy chọn biên dịch & thực thi"
+
+msgid "Compile options:"
+msgstr "Tùy chọn biên dịch:"
+
+msgid "Recommended"
+msgstr "Đề xuất"
+
+msgid "Recommended Problems"
+msgstr "Đề xuất bài tập"
+
+msgid "Discover unsolved problems tailored for your practice"
+msgstr "Khám phá các bài tập chưa giải để rèn luyện kỹ năng"
+
+msgid "Solve Now"
+msgstr "Giải bài ngay"
+
+msgid "Reshuffle"
+msgstr "Đổi gợi ý khác"
+
+msgid "Reshuffle suggestions"
+msgstr "Xáo trộn lại danh sách gợi ý"
+
+msgid "All caught up! You have viewed all recommended problems."
+msgstr "Bạn đã xem hết tất cả bài tập đề xuất!"
+
+msgid "Congratulations! You have solved all public problems on FuraOJ!"
+msgstr "Tuyệt vời! Bạn đã hoàn thành tất cả các bài tập trên FuraOJ!"
+
+msgid "unsolved problems available"
+msgstr "bài tập chưa giải có thể luyện tập"
+
+msgid "problems available"
+msgstr "bài tập có sẵn"
+
+msgid "Loading more recommendations..."
+msgstr "Đang tải thêm bài tập đề xuất..."
+
+msgid "All Solved!"
+msgstr "Đã hoàn thành tất cả!"
+
+msgid "No public problems found."
+msgstr "Chưa có bài tập công khai nào."
+
+msgid "View Problem Archive"
+msgstr "Xem kho bài tập"
+
+msgid "Number of users who solved this problem"
+msgstr "Số người đã giải bài tập này"
+
+msgid "Acceptance rate"
+msgstr "Tỉ lệ hoàn thành"
+
+msgid "users solved"
+msgstr "người đã giải"
+
+msgid "Total Submissions"
+msgstr "Tổng số bài nộp"
+
+msgid "Active Days"
+msgstr "Ngày hoạt động"
+
+msgid "Max Streak"
+msgstr "Chuỗi dài nhất"
+
+msgid "Current Streak"
+msgstr "Chuỗi hiện tại"
+
+msgid "Previous year"
+msgstr "Năm trước"
+
+msgid "Next year"
+msgstr "Năm sau"
+msgid "Previous month"
+msgstr "Tháng trước"
+
+msgid "Next month"
+msgstr "Tháng sau"
+
+msgid "Export iCal"
+msgstr "Xuất iCal"
+
+msgid "Export calendar feed (.ics)"
+msgstr "Xuất lịch thi (.ics)"
+
+msgid "Contest Starts"
+msgstr "Kỳ thi bắt đầu"
+
+msgid "One-Day Contest"
+msgstr "Kỳ thi trong ngày"
+
+msgid "Contest Ends"
+msgstr "Kỳ thi kết thúc"
+
+msgid "Current Day"
+msgstr "Hôm nay"

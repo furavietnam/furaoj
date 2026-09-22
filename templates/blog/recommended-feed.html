@@ -1,0 +1,139 @@
+<div class="recommended-feed-container">
+    <div class="rec-toolbar">
+        <div class="rec-toolbar-info">
+            <span class="rec-count-badge">
+                <i class="fa fa-compass"></i>
+                {% if request.user.is_authenticated %}
+                    <strong>{{ recommended_total }}</strong> {{ _('unsolved problems available') }}
+                {% else %}
+                    <strong>{{ recommended_total }}</strong> {{ _('problems available') }}
+                {% endif %}
+            </span>
+        </div>
+        <div class="rec-toolbar-actions">
+            <a href="{{ url('home') }}?tab=recommended&refresh=1" class="rec-refresh-btn" id="refresh-recommendations" title="{{ _('Reshuffle suggestions') }}">
+                <i class="fa fa-refresh"></i>
+                <span>{{ _('Reshuffle') }}</span>
+            </a>
+        </div>
+    </div>
+
+    {% if recommended_total == 0 %}
+        <div class="rec-empty-state">
+            <div class="empty-icon-wrap">
+                <i class="fa fa-trophy"></i>
+            </div>
+            <h3>{{ _('All Solved!') }}</h3>
+            <p>
+                {% if request.user.is_authenticated %}
+                    {{ _('Congratulations! You have solved all public problems on FuraOJ!') }}
+                {% else %}
+                    {{ _('No public problems found.') }}
+                {% endif %}
+            </p>
+            <a href="{{ url('problem_list') }}" class="rec-view-all-btn">
+                <i class="fa fa-list"></i> {{ _('View Problem Archive') }}
+            </a>
+        </div>
+    {% else %}
+        <div id="recommended-problems-feed" class="recommended-problems-feed"
+             data-next-offset="{{ recommended_next_offset|default(10) }}"
+             data-has-more="{{ 'true' if recommended_has_more else 'false' }}"
+             data-ajax-url="{{ url('recommended_problems_ajax') }}">
+            {% set problems = recommended_problems %}
+            {% include "blog/recommended-problem-cards.html" %}
+        </div>
+
+        <div id="feed-loader" class="feed-loader" style="display: none;">
+            <div class="feed-spinner">
+                <i class="fa fa-circle-o-notch fa-spin"></i>
+                <span>{{ _('Loading more recommendations...') }}</span>
+            </div>
+        </div>
+
+        <div id="feed-sentinel" class="feed-sentinel" {% if not recommended_has_more %}style="display: none;"{% endif %}></div>
+
+        <div id="feed-end" class="feed-end-notice" {% if recommended_has_more %}style="display: none;"{% endif %}>
+            <i class="fa fa-flag-checkered"></i>
+            <span>{{ _('All caught up! You have viewed all recommended problems.') }}</span>
+        </div>
+    {% endif %}
+</div>
+
+<script type="text/javascript">
+(function () {
+    const feedContainer = document.getElementById('recommended-problems-feed');
+    const sentinel = document.getElementById('feed-sentinel');
+    const loader = document.getElementById('feed-loader');
+    const endNotice = document.getElementById('feed-end');
+
+    if (!feedContainer || !sentinel) return;
+
+    let nextOffset = parseInt(feedContainer.getAttribute('data-next-offset') || '10', 10);
+    let hasMore = feedContainer.getAttribute('data-has-more') === 'true';
+    const ajaxBaseUrl = feedContainer.getAttribute('data-ajax-url');
+    let isLoading = false;
+    let observer = null;
+
+    async function loadMoreProblems() {
+        if (isLoading || !hasMore) return;
+        isLoading = true;
+        if (loader) loader.style.display = 'flex';
+
+        try {
+            const fetchUrl = ajaxBaseUrl + '?offset=' + encodeURIComponent(nextOffset) + '&limit=10';
+            const response = await fetch(fetchUrl, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.html && data.html.trim().length > 0) {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = data.html;
+                while (tempDiv.firstChild) {
+                    feedContainer.appendChild(tempDiv.firstChild);
+                }
+            }
+
+            nextOffset = data.next_offset;
+            hasMore = data.has_more;
+
+            if (!hasMore) {
+                if (sentinel) sentinel.style.display = 'none';
+                if (endNotice) endNotice.style.display = 'flex';
+                if (observer) observer.disconnect();
+            }
+        } catch (err) {
+            console.error('Failed to load recommended problems:', err);
+        } finally {
+            isLoading = false;
+            if (loader) loader.style.display = 'none';
+        }
+    }
+
+    if ('IntersectionObserver' in window && sentinel) {
+        observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting && hasMore && !isLoading) {
+                    loadMoreProblems();
+                }
+            });
+        }, {
+            root: null,
+            rootMargin: '300px',
+            threshold: 0.01
+        });
+
+        if (hasMore) {
+            observer.observe(sentinel);
+        }
+    }
+})();
+</script>

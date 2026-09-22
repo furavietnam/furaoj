@@ -1,5 +1,17 @@
 {% extends "tabs-base.html" %}
 
+{% block header_icon %}fa-graduation-cap{% endblock %}
+
+{% block header_title %}{{ exam.name }}{% endblock %}
+
+{% block header_subtitle %}
+    <span class="problem-header-subtitle">
+        {% if exam.category %}{{ exam.category.full_name }} &bull; {% endif %}
+        {% if exam.province %}{{ exam.province.name }} &bull; {% endif %}
+        {{ exam.year }}
+    </span>
+{% endblock %}
+
 {% block tabs %}
     {{ make_tab('detail', 'fa-info-circle', url('exam_detail', exam.slug), _('Info')) }}
     {% if request.user.is_authenticated and exam.is_editable_by(request.user) %}

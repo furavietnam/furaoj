@@ -1,5 +1,11 @@
 {% extends "tabs-base.html" %}
 
+{% block header_icon %}fa-trophy{% endblock %}
+
+{% block header_subtitle %}
+    <span class="problem-header-subtitle">{{ _('Leaderboard ranking by points and performance') }}</span>
+{% endblock %}
+
 {% block tabs %}
     {{ make_tab('list', 'fa-users', url('user_list'), _('Leaderboard')) }}
     {{ make_tab('contributor', 'fa-thumbs-up', url('contributors_list'), _('Contributors')) }}

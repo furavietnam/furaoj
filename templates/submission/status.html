@@ -1,4 +1,5 @@
 {% extends "submission/info-base.html" %}
+
 {% block js_media %}
     {% if not submission.is_graded and EVENT_LAST_MSG %}
         <script type="text/javascript">
@@ -52,13 +53,13 @@
                             case 'internal-error':
                             case 'compile-error':
                                 $('#abort-button').remove();
-                                $('#grading-label').remove();
+                                $('#grading-hero-card').remove();
                                 hideEasterEgg();
                                 update();
                                 break;
                             case 'grading-end':
                                 $('#abort-button').remove();
-                                $('#grading-label').remove();
+                                $('#grading-hero-card').remove();
                                 hideEasterEgg();
                                 if (message.easter_egg_html) {
                                     showEasterEgg(message.easter_egg_html);
@@ -78,7 +79,7 @@
                                 break;
                         }
                     }
-                )
+                );
             });
         </script>
     {% endif %}
@@ -96,68 +97,201 @@
     {% endif %}
 {% endblock %}
 
-{% block body %}
-    <br>
-    {% if not submission.language.file_only or request.user.is_superuser %}
-        <div><a href="{{ url('submission_source', submission.id) }}">{{ _('View source') }}</a></div>
-    {% endif %}
+{% block sub_nav_tabs %}
+    <a href="{{ url('submission_status', submission.id) }}" class="seg-btn active">
+        <i class="fa fa-dashboard"></i> <span>{{ _('Status') }}</span>
+    </a>
+
     {% if submission.language.file_only %}
-        <div><a href="{{ url('submission_source_download', submission.id) }}">{{ _('Download') }}</a></div>
+        <a href="{{ url('submission_source_download', submission.id) }}" class="seg-btn">
+            <i class="fa fa-download"></i> <span>{{ _('Download') }}</span>
+        </a>
+    {% elif not submission.language.file_only or request.user.is_superuser %}
+        <a href="{{ url('submission_source', submission.id) }}" class="seg-btn">
+            <i class="fa fa-code"></i> <span>{{ _('Source') }}</span>
+        </a>
     {% endif %}
+
     {% if (request.user == submission.user.user or perms.judge.resubmit_other) and not submission.language.file_only %}
-        <div><a href="{{ url('problem_submit', submission.problem.code, submission.id) }}">{{ _('Resubmit') }}</a></div>
+        <a href="{{ url('problem_submit', submission.problem.code, submission.id) }}" class="seg-btn">
+            <i class="fa fa-repeat"></i> <span>{{ _('Resubmit') }}</span>
+        </a>
     {% endif %}
+
     {% set can_edit = submission.problem.is_editable_by(request.user) %}
     {% if perms.judge.rejudge_submission and can_edit and not submission.is_locked %}
-        {% compress js %}
-            <script type="text/javascript">
-                window.confirm_and_rejudge = function (form) {
-                    if (confirm({{ _('Are you sure you want to rejudge?')|htmltojs }})) {
-                        form.submit();
-                    }
-                };
-            </script>
-        {% endcompress %}
-        <div>
-            <form action="{{ url('submission_rejudge') }}" method="post">
-                {% csrf_token %}
-                <a href="#" onclick="confirm_and_rejudge(parentNode)">{{ _('Rejudge') }}</a>
-                <input type="hidden" name="id" value="{{ submission.id }}">
-                <input type="hidden" name="path" value="{{ url('submission_status', submission.id) }}">
-            </form>
+        <script type="text/javascript">
+            window.confirm_and_rejudge = function () {
+                if (confirm({{ _('Are you sure you want to rejudge?')|htmltojs }})) {
+                    document.getElementById('header-rejudge-form').submit();
+                }
+            };
+        </script>
+        <form id="header-rejudge-form" action="{{ url('submission_rejudge') }}" method="post" style="display:none">
+            {% csrf_token %}
+            <input type="hidden" name="id" value="{{ submission.id }}">
+            <input type="hidden" name="path" value="{{ url('submission_status', submission.id) }}">
+        </form>
+        <a href="#" onclick="confirm_and_rejudge(); return false;" class="seg-btn">
+            <i class="fa fa-refresh"></i> <span>{{ _('Rejudge') }}</span>
+        </a>
+    {% endif %}
+
+    {% if can_edit and not submission.language.file_only %}
+        <a href="{{ url('problem_submission_diff', submission.problem.code) }}?username={{ submission.user.user.username }}&highlight={{ submission.id }}" class="seg-btn">
+            <i class="fa fa-files-o"></i> <span>{{ _('Compare') }}</span>
+        </a>
+    {% endif %}
+{% endblock %}
+
+{% block body %}
+    {% if submission.is_graded %}
+        <div class="submission-verdict-card verdict-{{ submission.result_class or submission.result }}">
+            <div class="verdict-main-row">
+                <div class="verdict-status-badge">
+                    <span class="verdict-icon">
+                        {% if submission.result in ('AC', '_AC') %}
+                            <i class="fa fa-check"></i>
+                        {% elif submission.result in ('WA', 'IE') %}
+                            <i class="fa fa-times"></i>
+                        {% elif submission.result in ('TLE', 'MLE', 'OLE', 'IR', 'RTE') %}
+                            <i class="fa fa-clock-o"></i>
+                        {% elif submission.result == 'CE' %}
+                            <i class="fa fa-exclamation-triangle"></i>
+                        {% else %}
+                            <i class="fa fa-info-circle"></i>
+                        {% endif %}
+                    </span>
+                    <div class="verdict-text-group">
+                        <span class="verdict-label">{{ submission.long_status }}</span>
+                        {% if submission.is_pretested %}
+                            <span class="verdict-sublabel">{{ _('Pretest Results') }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="verdict-score-badge">
+                    <div class="score-points">
+                        <span class="points-val">
+                            {% if request.in_contest and submission.contest_or_none %}
+                                {{ submission.contest_or_none.points|roundfloat(2) }}
+                            {% else %}
+                                {{ submission.points|floatformat(2) }}
+                            {% endif %}
+                        </span>
+                        <span class="points-slash">/</span>
+                        <span class="points-total">
+                            {% if request.in_contest and submission.contest_or_none %}
+                                {{ submission.contest_or_none.problem.points|floatformat(0) }}
+                            {% else %}
+                                {{ submission.problem.points|floatformat(0) }}
+                            {% endif %}
+                        </span>
+                        <span class="points-unit">{{ _('pts') }}</span>
+                    </div>
+                    {% if submission.case_total %}
+                        <div class="score-cases">
+                            {{ _('Passed') }} <strong>{{ submission.case_points|floatformat(-3) }}</strong> / {{ submission.case_total|floatformat(0) }} {{ _('testcases') }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="verdict-stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fa fa-clock-o"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">{{ _('Time') }}</span>
+                        <span class="stat-value">
+                            {% if submission.result == 'TLE' %}
+                                &gt; {{ time_limit|floatformat(3) }}s
+                            {% elif submission.time is not none %}
+                                {{ submission.time|floatformat(3) }}s
+                            {% else %}
+                                &mdash;
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fa fa-database"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">{{ _('Memory') }}</span>
+                        <span class="stat-value">
+                            {% if submission.memory is not none %}
+                                {{ submission.memory|kbdetailformat }}
+                            {% else %}
+                                &mdash;
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fa fa-code"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">{{ _('Language') }}</span>
+                        <span class="stat-value">{{ submission.language.name }}</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="fa fa-server"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">{{ _('Judge') }}</span>
+                        <span class="stat-value">
+                            {% if submission.judged_on %}
+                                {{ submission.judged_on.name }}
+                            {% else %}
+                                &mdash;
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="submission-verdict-card verdict-grading" id="grading-hero-card">
+            <div class="verdict-main-row">
+                <div class="verdict-status-badge">
+                    <span class="verdict-icon">
+                        <i class="fa fa-spinner fa-pulse"></i>
+                    </span>
+                    <div class="verdict-text-group">
+                        <span class="verdict-label" id="grading-label">{{ submission.long_status or _('Grading...') }}</span>
+                        <span class="verdict-sublabel">{{ _('The system is currently grading testcases in real-time') }}</span>
+                    </div>
+                </div>
+            </div>
         </div>
     {% endif %}
-    {% if can_edit and not submission.language.file_only %}
-        <div><a href="{{ url('problem_submission_diff', submission.problem.code) }}?username={{ submission.user.user.username }}&highlight={{ submission.id }}">{{ _('Diff this submission') }}</a></div>
-    {% endif %}
 
-    <br>
-    <hr class="half-hr">
-    <br>
-
-    <div id="easter-egg-container" style="display:none;">
+    <div id="easter-egg-container" class="easter-egg-card" style="display:none;">
         <div id="easter-egg-content"></div>
     </div>
 
     {% if easter_egg_html %}
-        <div id="easter-egg-static" style="margin: 10px 0;">
+        <div id="easter-egg-static" class="easter-egg-card">
             {{ easter_egg_html|safe }}
         </div>
     {% endif %}
 
-    <div id="test-cases">{% include "submission/status-testcases.html" %}</div>
+    <div id="test-cases">
+        {% include "submission/status-testcases.html" %}
+    </div>
 
     {% if not submission.is_graded %}
         {% if (request.user == submission.user.user and not request.official_contest_mode) or perms.judge.abort_any_submission %}
-            <div id="abort-button">
-                <br>
-                <hr class="half-hr">
-                <br>
+            <div id="abort-button" class="abort-submission-wrap">
                 <form action="{{ url('submission_abort', submission.id) }}" method="post"
                       title="{{ _('Press Ctrl-Enter or Command-Enter to abort.') }}">
                     {% csrf_token %}
-                    <input style="float:left" type="submit" value="{{ _('Abort') }}" class="button">
-                    <br><br>
+                    <button type="submit" class="abort-btn">
+                        <i class="fa fa-stop-circle"></i>
+                        <span>{{ _('Abort') }}</span>
+                        <span class="shortcut-hint">(Ctrl+Enter)</span>
+                    </button>
                 </form>
             </div>
         {% endif %}
