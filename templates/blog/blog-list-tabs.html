@@ -24,5 +24,8 @@
     {{ make_tab('home', 'fa-newspaper-o', newsfeed_link, _('News')) }}
     {{ make_tab('blog_list', 'fa-rss', all_blogs_link, _('Blog')) }}
     {{ make_tab('recommended', 'fa-lightbulb-o', recommended_link, _('Recommended')) }}
+    {% if request.user.is_staff and (perms.judge.add_blogpost or perms.judge.change_blogpost or request.user.is_superuser) %}
+        {{ make_tab('admin', 'fa-cog', url('admin:judge_blogpost_changelist'), _('Admin')) }}
+    {% endif %}
 {% endblock %}
 

@@ -492,13 +492,16 @@
 
     .form-submit-group {
         margin-top: 18px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
 
-        #go {
+        .filter-submit-btn, #go {
             display: flex !important;
             align-items: center;
             justify-content: center;
             gap: 6px;
-            width: 100%;
+            flex: 1;
             height: 38px;
             background: #0066ff !important;
             color: #ffffff !important;
@@ -520,6 +523,30 @@
 
             &:active {
                 transform: translateY(1px);
+            }
+        }
+
+        .filter-reset-btn {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 5px !important;
+            padding: 0 14px !important;
+            height: 38px !important;
+            border-radius: 10px !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            color: #64748b !important;
+            background: #f1f5f9 !important;
+            border: 1px solid #e2e8f0 !important;
+            text-decoration: none !important;
+            transition: all 0.15s ease !important;
+            box-sizing: border-box !important;
+
+            &:hover {
+                background: #fee2e2 !important;
+                color: #dc2626 !important;
+                border-color: #fecaca !important;
             }
         }
     }

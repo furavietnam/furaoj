@@ -51,15 +51,18 @@
                 }
 
                 $category.select2({
-                    theme: '{{ DMOJ_SELECT2_THEME }}'
+                    theme: '{{ DMOJ_SELECT2_THEME }}',
+                    width: '100%'
                 }).css({'visibility': 'visible'}).change(clean_submit);
                 $('#types').select2({
                     theme: '{{ DMOJ_SELECT2_THEME }}',
-                    multiple: 1, placeholder: {{ _('Filter by type...')|htmltojs }}
+                    multiple: 1, placeholder: {{ _('Filter by type...')|htmltojs }},
+                    width: '100%'
                 }).css({'visibility': 'visible'});
                 $('#org-tags').select2({
                     theme: '{{ DMOJ_SELECT2_THEME }}',
-                    multiple: 1, placeholder: {{ _('Filter by tag...')|htmltojs }}
+                    multiple: 1, placeholder: {{ _('Filter by tag...')|htmltojs }},
+                    width: '100%'
                 }).css({'visibility': 'visible'});
 
                 // This is incredibly nasty to do but it's needed because otherwise the select2 steals the focus
@@ -270,7 +273,9 @@
 
             $('#toggle-filter-btn').on('click', function(e) {
                 e.preventDefault();
-                $('#content-right').slideToggle(200);
+                $('#content-right').slideToggle(200, function() {
+                    $(window).trigger('resize');
+                });
                 $(this).toggleClass('active');
             });
             $('#recommend-btn').on('click', function(e) {

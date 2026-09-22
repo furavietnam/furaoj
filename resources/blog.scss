@@ -44,11 +44,14 @@
             align-items: center;
             justify-content: center;
             min-width: 44px;
+            width: 44px;
+            align-self: flex-start;
             background: #f8fafc;
             border: 1px solid #edf2f7;
             border-radius: 12px;
             padding: 8px 4px;
             gap: 2px;
+            box-sizing: border-box;
 
             @if not $is_light_theme {
                 background: #0d1527;
@@ -63,10 +66,16 @@
             a.upvote-link, a.downvote-link {
                 color: #94a3b8;
                 font-size: 14px;
-                padding: 4px;
+                width: 28px;
+                height: 24px;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
                 border-radius: 6px;
                 transition: all 0.2s ease;
                 text-decoration: none;
+                box-sizing: border-box;
 
                 &:hover {
                     color: #0066ff;
@@ -93,6 +102,12 @@
                 font-weight: 700;
                 color: #1e293b;
                 margin: 2px 0;
+                width: 100%;
+                text-align: center;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                line-height: 1;
 
                 @if not $is_light_theme {
                     color: #f1f5f9;
@@ -665,12 +680,15 @@
         align-items: center;
         justify-content: center;
         min-width: 44px;
+        width: 44px;
+        align-self: flex-start;
         background: #f8fafc;
         border: 1px solid #edf2f7;
         border-radius: 12px;
         padding: 8px 4px;
         gap: 2px;
         flex-shrink: 0;
+        box-sizing: border-box;
 
         @if not $is_light_theme {
             background: #0f172a;
@@ -685,10 +703,16 @@
         a.upvote-link, a.downvote-link {
             color: #94a3b8;
             font-size: 14px;
-            padding: 4px;
+            width: 28px;
+            height: 24px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             border-radius: 6px;
             transition: all 0.2s ease;
             text-decoration: none;
+            box-sizing: border-box;
 
             &:hover {
                 color: #0066ff;
@@ -709,6 +733,12 @@
             font-weight: 700;
             color: #1e293b;
             margin: 2px 0;
+            width: 100%;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
 
             @if not $is_light_theme {
                 color: #f1f5f9;

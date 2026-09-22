@@ -441,14 +441,23 @@
         if (contest.mode === 'participation') {
             if (p.virtual === 0) {
                 var liveUrl = escapeHtml(contest.ranking_url + '#!' + u.username);
-                rankDisplay = '<a href="' + liveUrl + '">Live</a>';
+                rankDisplay = '<a href="' + liveUrl + '" class="rank-live-badge">Live</a>';
             } else {
-                rankDisplay = escapeHtml(String(p.virtual));
+                rankDisplay = '<span class="rank-num">' + escapeHtml(String(p.virtual)) + '</span>';
             }
         } else {
-            rankDisplay = escapeHtml(String(p.rank));
+            var r = p.rank;
+            if (r === 1) {
+                rankDisplay = '<span class="rank-badge rank-1" title="1st Place"><i class="fa fa-trophy"></i> 1</span>';
+            } else if (r === 2) {
+                rankDisplay = '<span class="rank-badge rank-2" title="2nd Place"><i class="fa fa-trophy"></i> 2</span>';
+            } else if (r === 3) {
+                rankDisplay = '<span class="rank-badge rank-3" title="3rd Place"><i class="fa fa-trophy"></i> 3</span>';
+            } else {
+                rankDisplay = '<span class="rank-num">' + escapeHtml(String(r)) + '</span>';
+            }
         }
-        html += '<td>' + rankDisplay + '</td>';
+        html += '<td class="rank-col">' + rankDisplay + '</td>';
 
         // Username cell
         html += '<td class="user-name"><div>';

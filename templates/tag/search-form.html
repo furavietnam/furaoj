@@ -1,14 +1,20 @@
-<div class="sidebox">
-    <h3>{{ _('Problem search') }} <i class="fa fa-search"></i></h3>
+<div class="sidebox problem-search-box">
+    <h3>
+        <span>{{ _('Problem search') }}</span>
+        <i class="fa fa-search"></i>
+    </h3>
     <div class="sidebox-content">
         <form id="filter-form" name="form" action="" method="get">
             {% if selected_tag %}<input type="hidden" name="tag_id" value="{{ selected_tag }}">{% endif %}
-            <div>
+            <div class="filter-search-input-wrap">
+                <i class="fa fa-search search-field-icon"></i>
                 <input id="search" type="text" name="search" value="{{ search_query or '' }}"
-                        placeholder="{{ _('Search problems...') }}">
+                        placeholder="{{ _('Search problems...') }}" autocomplete="off">
             </div>
             <div class="filter-form-group">
-                <label for="judge"><i>{{ _('Online judges') }}</i></label>
+                <label for="judges">
+                    <i class="fa fa-balance-scale"></i> {{ _('Online judges') }}
+                </label>
                 <select id="judges" name="judge" multiple>
                     {% for id, full_name in judges %}
                         <option value="{{ id }}"{% if id in selected_judges %} selected{% endif %}>
@@ -18,9 +24,15 @@
                 </select>
             </div>
             <div class="form-submit-group">
-                <a id="go" class="button">{{ _('Go') }}</a>
-                <a id="random" class="button">{{ _('Random') }}</a>
-                <a class="button" href="{{url('tagproblem_list')}}">{{ _('Clear search') }}</a>
+                <button type="button" id="go" class="filter-submit-btn">
+                    <i class="fa fa-filter"></i> <span>{{ _('Go') }}</span>
+                </button>
+                <button type="button" id="random" class="filter-secondary-btn">
+                    <i class="fa fa-random"></i> <span>{{ _('Random') }}</span>
+                </button>
+                <a class="filter-reset-btn" href="{{url('tagproblem_list')}}" title="{{ _('Clear search') }}">
+                    <i class="fa fa-times"></i> <span>{{ _('Clear search') }}</span>
+                </a>
             </div>
         </form>
     </div>

@@ -60,123 +60,169 @@
 
 {% block body %}
     {% block before_posts %}{% endblock %}
-    <div id="blog-container">
-        <div class="blog-content sidebox">
-            <h3>{{ _('About') }} {{ organization.name }} <i class="fa fa-info-circle"></i></h3>
-            <div class="sidebox-content">
-                <div style="margin: 1.4em;">
+    <div class="organization-home-layout">
+        <div class="org-main-content">
+            <div class="org-card org-about-card">
+                <div class="org-card-header">
+                    <div class="org-card-header-left">
+                        <i class="fa fa-info-circle org-card-header-icon"></i>
+                        <h3 class="org-card-title">{{ _('About') }} {{ organization.name }}</h3>
+                    </div>
+                </div>
+                <div class="org-card-body content-description">
                     {% cache 3600 'organization_html' organization.id MATH_ENGINE %}
                         {{ organization.about|markdown('organization-about', MATH_ENGINE)|reference|str|safe }}
                     {% endcache %}
                 </div>
             </div>
+
             {% if posts %}
-                <br>
-                <h3>{{ _('News') }} <i class="fa fa-terminal"></i></h3>
-                <div class="sidebox-content" style="border: unset;">
-                    {% for post in posts %}
-                        {% include "blog/blog-post.html" %}
-                    {% endfor %}
+                <div class="org-card org-news-card">
+                    <div class="org-card-header">
+                        <div class="org-card-header-left">
+                            <i class="fa fa-newspaper-o org-card-header-icon"></i>
+                            <h3 class="org-card-title">{{ _('News') }}</h3>
+                        </div>
+                    </div>
+                    <div class="org-news-list">
+                        {% for post in posts %}
+                            {% include "blog/blog-post.html" %}
+                        {% endfor %}
+                    </div>
+                    {% if page_obj.has_other_pages() %}
+                        <div class="bottom-pagination-bar">{% include "list-pages.html" %}</div>
+                    {% endif %}
                 </div>
-                {% if page_obj.has_other_pages() %}
-                    <div class="bottom-pagination-bar">{% include "list-pages.html" %}</div>
-                {% endif %}
             {% endif %}
         </div>
-        <div class="blog-sidebar">
-            <div class="blog-sidebox sidebox">
-                <h3>{{ _('Controls') }} <i class="fa fa-question-circle"></i></h3>
-                <div class="sidebox-content" style="padding: 1em;">
+
+        <div class="org-sidebar">
+            <div class="org-card org-controls-card">
+                <div class="org-card-header">
+                    <div class="org-card-header-left">
+                        <i class="fa fa-cogs org-card-header-icon"></i>
+                        <h3 class="org-card-title">{{ _('Controls') }}</h3>
+                    </div>
+                </div>
+                <div class="org-card-body">
                     {% if request.user.is_authenticated %}
-                        {% if is_member %}
-                            <form method="post" action="{{ url('leave_organization', organization.slug) }}">
-                                {% csrf_token %}
-                                <input type="submit" class="unselectable button full leave-organization" value="{{ _('Leave organization') }}">
-                            </form>
-                        {% elif organization.is_open %}
-                            <form method="post" action="{{ url('join_organization', organization.slug) }}">
-                                {% csrf_token %}
-                                <input type="submit" class="unselectable button full" value="{{ _('Join organization') }}">
-                            </form>
-                        {% else %}
-                            <a href="{{ url('request_organization', organization.slug) }}"
-                            class="unselectable button full">{{ _('Request membership') }}</a>
-                        {% endif %}
-                    {% endif %}
-                    <br>
-                    {% if can_edit %}
-                        <div>
-                            <a href="{{ url('organization_monthly_usage', organization.slug) }}">{{ _('Organization cost') }}</a>
-                        </div>
-                        {% if not organization.is_open %}
-                            <div>
-                                <a href="{{ url('organization_requests_pending', organization.slug) }}">
-                                    {{ _('View requests') }}
-                                    {% if num_requests %}<span class="badge">{{ num_requests }}</span>{% endif %}
+                        <div class="org-membership-action">
+                            {% if is_member %}
+                                <form method="post" action="{{ url('leave_organization', organization.slug) }}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="org-action-btn leave-org-btn leave-organization">
+                                        <i class="fa fa-sign-out"></i> <span>{{ _('Leave organization') }}</span>
+                                    </button>
+                                </form>
+                            {% elif organization.is_open %}
+                                <form method="post" action="{{ url('join_organization', organization.slug) }}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="org-action-btn join-org-btn">
+                                        <i class="fa fa-sign-in"></i> <span>{{ _('Join organization') }}</span>
+                                    </button>
+                                </form>
+                            {% else %}
+                                <a href="{{ url('request_organization', organization.slug) }}" class="org-action-btn join-org-btn">
+                                    <i class="fa fa-paper-plane"></i> <span>{{ _('Request membership') }}</span>
                                 </a>
-                            </div>
-                        {% endif %}
-                        {% if perms.judge.edit_organization_post %}
-                            <div>
-                                <a href="{{ url('blog_post_create_organization', organization.slug) }}">{{ _('Create blog post') }}</a>
-                            </div>
-                        {% endif %}
-                        <div>
-                            <a href="{{ url('edit_organization', organization.slug) }}">{{ _('Edit organization') }}</a>
+                            {% endif %}
                         </div>
                     {% endif %}
-                    {% if perms.judge.change_organization %}
-                        <div>
-                            <a href="{{ url('admin:judge_organization_change', organization.id) }}">{{ _('Admin organization') }}</a>
+
+                    {% if can_edit or perms.judge.change_organization %}
+                        <div class="org-links-menu">
+                            {% if can_edit %}
+                                <a href="{{ url('organization_monthly_usage', organization.slug) }}" class="org-menu-item">
+                                    <i class="fa fa-pie-chart"></i>
+                                    <span>{{ _('Organization cost') }}</span>
+                                </a>
+                                {% if not organization.is_open %}
+                                    <a href="{{ url('organization_requests_pending', organization.slug) }}" class="org-menu-item">
+                                        <i class="fa fa-user-plus"></i>
+                                        <span>{{ _('View requests') }}</span>
+                                        {% if num_requests %}<span class="org-badge">{{ num_requests }}</span>{% endif %}
+                                    </a>
+                                {% endif %}
+                                {% if perms.judge.edit_organization_post %}
+                                    <a href="{{ url('blog_post_create_organization', organization.slug) }}" class="org-menu-item">
+                                        <i class="fa fa-pencil-square-o"></i>
+                                        <span>{{ _('Create blog post') }}</span>
+                                    </a>
+                                {% endif %}
+                                <a href="{{ url('edit_organization', organization.slug) }}" class="org-menu-item">
+                                    <i class="fa fa-pencil"></i>
+                                    <span>{{ _('Edit organization') }}</span>
+                                </a>
+                            {% endif %}
+                            {% if perms.judge.change_organization %}
+                                <a href="{{ url('admin:judge_organization_change', organization.id) }}" class="org-menu-item admin-item">
+                                    <i class="fa fa-wrench"></i>
+                                    <span>{{ _('Admin organization') }}</span>
+                                </a>
+                            {% endif %}
                         </div>
-                        <div>
-                            {{ link_users(organization.admins.all()) }}
+                    {% endif %}
+
+                    {% if organization.admins.exists() %}
+                        <div class="org-admins-card-section">
+                            <div class="org-admins-label">
+                                <i class="fa fa-shield"></i> {{ _('Administrators') }}
+                            </div>
+                            <div class="org-admins-tags">
+                                {{ link_users(organization.admins.all()) }}
+                            </div>
                         </div>
                     {% endif %}
                 </div>
             </div>
 
             {% if new_contests %}
-                <div class="blog-sidebox sidebox">
-                    <h3>{{ _('New contests') }} <i class="fa fa-trophy"></i></h3>
-                    <div class="sidebox-content">
-                        <ul class="problem-list">
+                <div class="org-card org-sidebar-card">
+                    <div class="org-card-header">
+                        <div class="org-card-header-left">
+                            <i class="fa fa-trophy org-card-header-icon trophy"></i>
+                            <h3 class="org-card-title">{{ _('New contests') }}</h3>
+                        </div>
+                    </div>
+                    <div class="org-card-body">
+                        <div class="org-item-list">
                             {% for contest in new_contests %}
-                                <div class="contest-list-title">
-                                    <a href="{{ url('contest_view', contest.key) }}">{{ contest.name }}</a>
-                                </div>
-                                <div class="time time-left">
-                                    {% if contest.time_limit %}
-                                        {{ contest.start_time|date(_("M j, Y, G:i")) }} -
-                                        {{ contest.end_time|date(_("M j, Y, G:i")) }}
-                                    {% else %}
-                                        {{ contest.start_time|date(_("M j, Y, G:i")) }}
-                                    {% endif %}
-                                    <br>
-                                    {% if contest.time_limit %}
-                                        {%- trans time_limit=contest.time_limit|timedelta('localized-no-seconds') -%}{{time_limit}} window{%- endtrans -%}
-                                    {% else %}
-                                        {%- trans duration=contest.contest_window_length|timedelta('localized-no-seconds') -%}{{duration}} long{%- endtrans -%}
-                                    {% endif %}
+                                <div class="org-item-row">
+                                    <a href="{{ url('contest_view', contest.key) }}" class="org-item-title">{{ contest.name }}</a>
+                                    <div class="org-item-meta">
+                                        <i class="fa fa-calendar-o"></i>
+                                        {% if contest.time_limit %}
+                                            {{ contest.start_time|date(_("M j, Y, G:i")) }} - {{ contest.end_time|date(_("M j, Y, G:i")) }}
+                                        {% else %}
+                                            {{ contest.start_time|date(_("M j, Y, G:i")) }}
+                                        {% endif %}
+                                    </div>
                                 </div>
                             {% endfor %}
-                        </ul>
+                        </div>
                     </div>
                 </div>
             {% endif %}
+
             {% if new_problems %}
-                <div class="sidebox">
-                    <h3>{{ _('New problems') }} <i class="fa fa-puzzle-piece"></i>
-                    </h3>
-                    <div class="sidebox-content">
-                        <ul class="problem-list">
+                <div class="org-card org-sidebar-card">
+                    <div class="org-card-header">
+                        <div class="org-card-header-left">
+                            <i class="fa fa-puzzle-piece org-card-header-icon puzzle"></i>
+                            <h3 class="org-card-title">{{ _('New problems') }}</h3>
+                        </div>
+                    </div>
+                    <div class="org-card-body">
+                        <div class="org-item-list">
                             {% for problem in new_problems %}
-                                <li>
-                                    <a href="{{ url('problem_detail', problem.code) }}">{{ problem.name }}</a>
-                                    {{ problem.date|date(_("M j, Y, G:i")) }}
-                                </li>
+                                <div class="org-item-row">
+                                    <a href="{{ url('problem_detail', problem.code) }}" class="org-item-title">{{ problem.name }}</a>
+                                    <div class="org-item-meta">
+                                        <i class="fa fa-clock-o"></i> {{ problem.date|date(_("M j, Y, G:i")) }}
+                                    </div>
+                                </div>
                             {% endfor %}
-                        </ul>
+                        </div>
                     </div>
                 </div>
             {% endif %}

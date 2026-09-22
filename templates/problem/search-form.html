@@ -1,84 +1,112 @@
-<div class="sidebox">
-    <h3>{{ _('Problem search') }} <i class="fa fa-search"></i>
+<div class="sidebox problem-search-box">
+    <h3>
+        <span>{{ _('Problem search') }}</span>
+        <i class="fa fa-search"></i>
     </h3>
     <div class="sidebox-content">
         <form id="filter-form" name="form" action="" method="get">
-            <div>
+            <div class="filter-search-input-wrap">
+                <i class="fa fa-search search-field-icon"></i>
                 <input id="search" type="text" name="search" value="{{ search_query or '' }}"
-                       placeholder="{{ _('Search problems...') }}">
+                       placeholder="{{ _('Search problems...') }}" autocomplete="off">
             </div>
-            {% if has_fts %}
-                <div>
-                    <input id="full_text" type="checkbox" name="full_text" value="1"
-                           {% if full_text %}checked{% endif %}>
-                    <label for="full_text">{{ _('Full text search') }}</label>
+            <div class="filter-checkbox-group">
+                {% if has_fts %}
+                    <label class="filter-checkbox-item" for="full_text">
+                        <input id="full_text" type="checkbox" name="full_text" value="1"
+                               {% if full_text %}checked{% endif %}>
+                        <span class="checkbox-label">{{ _('Full text search') }}</span>
+                    </label>
+                {% endif %}
+                {% if request.user.is_authenticated %}
+                    <label class="filter-checkbox-item" for="hide_solved">
+                        <input id="hide_solved" type="checkbox" name="hide_solved" value="1"
+                               {% if hide_solved %}checked{% endif %}>
+                        <span class="checkbox-label">{{ _('Hide solved problems') }}</span>
+                    </label>
+                {% endif %}
+                <label class="filter-checkbox-item" for="has_public_editorial">
+                    <input id="has_public_editorial" type="checkbox" name="has_public_editorial" value="1"
+                            {% if has_public_editorial %} checked{% endif %}>
+                    <span class="checkbox-label">{{ _('Has editorial') }}</span>
+                </label>
+                <label class="filter-checkbox-item" for="show_types">
+                    <input id="show_types" type="checkbox" name="show_types" value="1"
+                            {% if show_types %} checked{% endif %}>
+                    <span class="checkbox-label">{{ _('Show problem types') }}</span>
+                </label>
+            </div>
+            <div class="filter-controls-grid">
+                <div class="filter-form-group">
+                    <label for="category">
+                        <i class="fa fa-folder-open-o"></i> {{ _('Category') }}
+                    </label>
+                    <select id="category" name="category">
+                        {% if category %}
+                            <option value="" selected="selected">{{ _('All') }}</option>
+                        {% else %}
+                            <option value="">{{ _('All') }}</option>{% endif %}
+                        <option disabled="disabled">---</option>
+                        {% for group in categories %}
+                            <option value="{{ group.id }}"{% if group.id == category %} selected{% endif %}>
+                                {{ group.full_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
                 </div>
-            {% endif %}
-            {% if request.user.is_authenticated %}
-                <div>
-                    <input id="hide_solved" type="checkbox" name="hide_solved" value="1"
-                           {% if hide_solved %}checked{% endif %}>
-                    <label for="hide_solved">{{ _('Hide solved problems') }}</label>
+                {% if show_org_tags %}
+                <div class="filter-form-group">
+                    <label for="org-tags">
+                        <i class="fa fa-tags"></i> {{ _('Tags') }}
+                    </label>
+                    <select id="org-tags" name="tag" multiple>
+                        <option value="untagged"{% if untagged_selected %} selected{% endif %}>{{ _('Uncategorized') }}</option>
+                        {% for tag in org_tags_filter %}
+                            <option value="{{ tag.id }}"{% if tag.id in selected_tags %} selected{% endif %}>
+                                {{ tag.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
                 </div>
-            {% endif %}
-            <div>
-                <input id="has_public_editorial" type="checkbox" name="has_public_editorial" value="1"
-                        {% if has_public_editorial %} checked{% endif %}>
-                <label for="has_public_editorial">{{ _('Has editorial') }}</label>
+                {% else %}
+                <div class="filter-form-group">
+                    <label for="types">
+                        <i class="fa fa-tags"></i> {{ _('Problem types') }}
+                    </label>
+                    <select id="types" name="type" multiple>
+                        {% for type in problem_types %}
+                            <option value="{{ type.id }}"{% if type.id in selected_types %} selected{% endif %}>
+                                {{ user_trans(type.full_name) }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                {% if point_values %}
+                    <div class="filter-form-group point-range-group">
+                        <label>
+                            <i class="fa fa-sliders"></i> {{ _('Point range') }}
+                        </label>
+                        <div id="point-slider-wrapper">
+                            <div id="point-slider"></div>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
-            <div>
-                <input id="show_types" type="checkbox" name="show_types" value="1"
-                        {% if show_types %} checked{% endif %}>
-                <label for="show_types">{{ _('Show problem types') }}</label>
-            </div>
-            <div class="filter-form-group">
-                <label for="category"><i>{{ _('Category') }}</i></label>
-                <select id="category" name="category">
-                    {% if category %}
-                        <option value="" selected="selected">{{ _('All') }}</option>
-                    {% else %}
-                        <option value="">{{ _('All') }}</option>{% endif %}
-                    <option disabled="disabled">---</option>
-                    {% for group in categories %}
-                        <option value="{{ group.id }}"{% if group.id == category %} selected{% endif %}>
-                            {{ group.full_name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            {% if show_org_tags %}
-            <div class="filter-form-group">
-                <label for="org-tags"><i>{{ _('Tags') }}</i></label>
-                <select id="org-tags" name="tag" multiple>
-                    <option value="untagged"{% if untagged_selected %} selected{% endif %}>{{ _('Uncategorized') }}</option>
-                    {% for tag in org_tags_filter %}
-                        <option value="{{ tag.id }}"{% if tag.id in selected_tags %} selected{% endif %}>
-                            {{ tag.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            {% else %}
-            <div class="filter-form-group">
-                <label for="type"><i>{{ _('Problem types') }}</i></label>
-                <select id="types" name="type" multiple>
-                    {% for type in problem_types %}
-                        <option value="{{ type.id }}"{% if type.id in selected_types %} selected{% endif %}>
-                            {{ user_trans(type.full_name) }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            {% endif %}
-            {% if point_values %}
-                <div class="form-label">{{ _('Point range') }}</div>
-                <div id="point-slider"></div>
-            {% endif %}
             <input id="point-start" type="hidden" name="point_start" {% if point_start and point_start != point_values.min %}value="{{ point_start }}"{% else %}disabled{% endif %}>
             <input id="point-end" type="hidden" name="point_end" {% if point_end and point_end != point_values.max %}value="{{ point_end }}"{% else %}disabled{% endif %}>
             <div class="form-submit-group">
-                <a id="go" class="button">{{ _('Go') }}</a>
-                <a id="random" class="button">{{ _('Random') }}</a>
+                <button type="button" id="go" class="filter-submit-btn">
+                    <i class="fa fa-filter"></i> <span>{{ _('Go') }}</span>
+                </button>
+                <button type="button" id="random" class="filter-secondary-btn">
+                    <i class="fa fa-random"></i> <span>{{ _('Random') }}</span>
+                </button>
+                {% if search_query or category or selected_types or selected_tags or full_text or hide_solved or has_public_editorial or show_types or (point_start and point_start != point_values.min) or (point_end and point_end != point_values.max) %}
+                    <a href="{{ url('problem_list') }}" id="clear-filter-btn" class="filter-reset-btn" title="{{ _('Clear filters') }}">
+                        <i class="fa fa-times"></i> <span>{{ _('Clear') }}</span>
+                    </a>
+                {% endif %}
             </div>
         </form>
 

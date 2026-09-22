@@ -17,6 +17,11 @@
         </div>
     </div>
     <div class="problem-header-actions">
+        {% if request.user.has_perm('judge.add_problem') or perms.judge.add_problem %}
+            <a href="{% if show_org_tags and organization %}{{ url('problem_create_organization', organization.slug) }}{% else %}{{ url('problem_create') }}{% endif %}" class="primary-action-btn">
+                <i class="fa fa-plus"></i> <span>{{ _('Create problem') }}</span>
+            </a>
+        {% endif %}
         <a href="javascript:void(0);" id="toggle-filter-btn" class="filter-action-btn" role="button">
             <i class="fa fa-sliders"></i> {{ _('Filter') }}
         </a>
@@ -27,6 +32,21 @@
             <a href="{% if show_org_tags and organization %}{{ url('problem_random_organization', organization.slug) }}{% else %}{{ url('problem_random') }}{% endif %}" id="recommend-btn" class="seg-btn">
                 <i class="fa fa-lightbulb-o"></i> {{ _('Suggest') }}
             </a>
+            {% if request.user.has_perm('judge.import_polygon_package') or perms.judge.import_polygon_package %}
+                <a href="{{ url('problem_import_polygon') }}" class="seg-btn">
+                    <i class="fa fa-cloud-upload"></i> {{ _('Import Polygon') }}
+                </a>
+            {% endif %}
+            {% if show_org_tags and organization and (perms.judge.delete_problem or request.user.is_superuser) %}
+                <a href="{{ url('organization_problems_bulk_delete', organization.slug) }}" class="seg-btn">
+                    <i class="fa fa-trash"></i> {{ _('Bulk delete') }}
+                </a>
+            {% endif %}
+            {% if request.user.is_staff and (perms.judge.edit_all_problem or perms.judge.edit_own_problem or perms.judge.change_problem or request.user.is_superuser) %}
+                <a href="{{ url('admin:judge_problem_changelist') }}" class="seg-btn">
+                    <i class="fa fa-cog"></i> {{ _('Admin') }}
+                </a>
+            {% endif %}
         </div>
     </div>
 </div>

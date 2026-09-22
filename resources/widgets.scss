@@ -248,6 +248,42 @@ textarea:focus {
         max-width: 100%;
     }
 
+    // Primary Action Button (e.g. "Tạo bài tập", "Tạo kỳ thi")
+    .primary-action-btn {
+        background: linear-gradient(135deg, #0066ff 0%, #0052cc 100%) !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 7px 16px !important;
+        font-size: 14px !important;
+        font-weight: 700 !important;
+        color: #ffffff !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        cursor: pointer !important;
+        text-decoration: none !important;
+        box-shadow: 0 3px 0 0 #003d99, 0 4px 12px rgba(0, 102, 255, 0.25) !important;
+        transition: all 0.15s ease !important;
+        height: 38px !important;
+        box-sizing: border-box !important;
+
+        i {
+            color: #ffffff !important;
+            font-size: 13px !important;
+        }
+
+        &:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 0 0 #003d99, 0 6px 16px rgba(0, 102, 255, 0.35) !important;
+            color: #ffffff !important;
+        }
+
+        &:active {
+            transform: translateY(2px) !important;
+            box-shadow: none !important;
+        }
+    }
+
     // 1. "Bộ lọc" 3D button
     .filter-action-btn {
         background: #ffffff !important;
@@ -681,6 +717,16 @@ details {
 
     .problem-header-subtitle {
         color: #94a3b8 !important;
+    }
+
+    .primary-action-btn {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+        box-shadow: 0 3px 0 0 #1e3a8a, 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+
+        &:hover {
+            box-shadow: 0 4px 0 0 #1e3a8a, 0 6px 16px rgba(37, 99, 235, 0.4) !important;
+            color: #ffffff !important;
+        }
     }
 
     .filter-action-btn {

@@ -399,22 +399,23 @@
         }
 
         function createBar(duration) {
-            var $bar = $('<div>').css({
-                display: 'flex', alignItems: 'center', gap: '8px',
-                padding: '6px 0', marginBottom: '8px', fontSize: '13px',
-            });
+            var $bar = $('<div>').addClass('contest-replay-bar');
+            var $icon = $('<span>').addClass('replay-clock-icon').html('<i class="fa fa-history"></i>');
             $slider = $('<input>').attr({ type: 'range', min: 0, max: Math.floor(duration), step: 1 })
-                .css({ flex: '1', cursor: 'pointer' });
-            $timeLabel = $('<span>').css({ minWidth: '110px', fontFamily: 'monospace' });
-            var $endBtn = $('<button>').text(isVirtual ? 'Live' : 'End').css({ fontSize: '12px', padding: '2px 8px' });
+                .addClass('replay-time-slider');
+            $timeLabel = $('<span>').addClass('replay-time-label');
+            var $endBtn = $('<button>').addClass('replay-live-btn').html(
+                isVirtual ? '<span class="live-dot"></span>Live' : 'End'
+            );
             if (supportsFrozen) {
                 $freezeInput = $('<input>').attr({ type: 'number', min: 0, placeholder: 'Freeze min' })
-                    .css({ width: '90px', fontSize: '12px' });
+                    .addClass('replay-freeze-input');
                 if (frozenOverride !== null) $freezeInput.val(frozenOverride);
             }
-            $bar.append($('<span>').text('⏱'), $slider, $timeLabel, $endBtn);
+            $bar.append($icon, $slider, $timeLabel, $endBtn);
             if ($freezeInput) $bar.append($freezeInput);
-            $('#ranking-container').before($bar);
+            var $target = $('.ranking-table-card').length ? $('.ranking-table-card') : $('#ranking-container');
+            $target.before($bar);
             return $endBtn;
         }
 

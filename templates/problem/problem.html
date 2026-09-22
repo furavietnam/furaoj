@@ -247,6 +247,12 @@
         </div>
     {% endif %}
 
+    {% if request.user.is_staff and (perms.judge.change_problem or request.user.is_superuser) %}
+        <div>
+            <a href="{{ url('admin:judge_problem_change', problem.id) }}"><i class="fa fa-cog fa-fw"></i> {{ _('Admin') }}</a>
+        </div>
+    {% endif %}
+
     <hr style="padding-top: 0.3em">
 
     <div class="problem-info-entry">

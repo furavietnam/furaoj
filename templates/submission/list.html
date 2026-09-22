@@ -315,12 +315,17 @@
     <div id="common-content">
         <div id="content-right" class="submission">
             <div class="info-float">
-                <div class="sidebox">
-                    <h3>{{ _('Filter submissions') }} <i class="fa fa-search"></i></h3>
+                <div class="sidebox submission-filter-box">
+                    <h3>
+                        <span>{{ _('Filter submissions') }}</span>
+                        <i class="fa fa-search"></i>
+                    </h3>
                     <div class="sidebox-content">
                         <form id="filter-form" name="form" action="{{ first_page_href }}" method="get">
                             <div class="filter-form-group">
-                                <label for="status"><i>{{ _('Status') }}</i></label>
+                                <label for="status">
+                                    <i class="fa fa-check-circle-o"></i> {{ _('Status') }}
+                                </label>
                                 <select id="status" name="status"{% if not is_in_low_power_mode %} multiple{% endif %}>
                                     {% if is_in_low_power_mode %}
                                         <option value="">{{ _('All') }}</option>
@@ -333,7 +338,9 @@
                                 </select>
                             </div>
                             <div class="filter-form-group">
-                                <label for="language"><i>{{ _('Language') }}</i></label>
+                                <label for="language">
+                                    <i class="fa fa-code"></i> {{ _('Language') }}
+                                </label>
                                 <select id="language" name="language"{% if not is_in_low_power_mode %} multiple{% endif %}>
                                     {% if is_in_low_power_mode %}
                                         <option value="">{{ _('All') }}</option>
@@ -347,7 +354,9 @@
                             </div>
                             {% if not organization and not is_in_low_power_mode %}
                                 <div class="filter-form-group">
-                                    <label for="organization"><i>{{ _('Organization') }}</i></label>
+                                    <label for="organization">
+                                        <i class="fa fa-users"></i> {{ _('Organization') }}
+                                    </label>
                                     <select id="organization" name="organization">
                                         <option value="">{{ _('All') }}</option>
                                         <option disabled="disabled">---</option>
@@ -359,12 +368,22 @@
                                 </div>
                             {% endif %}
                             <div class="form-submit-group">
-                                <a id="go" onclick="form.submit()" class="button">{{ _('Go') }}</a>
+                                <button type="submit" id="go" class="filter-submit-btn">
+                                    <i class="fa fa-filter"></i> <span>{{ _('Go') }}</span>
+                                </button>
+                                {% if selected_statuses or selected_languages or selected_organization %}
+                                    <a class="filter-reset-btn" href="{{ url('submission_list') }}" title="{{ _('Clear filters') }}">
+                                        <i class="fa fa-times"></i> <span>{{ _('Clear') }}</span>
+                                    </a>
+                                {% endif %}
                             </div>
                         </form>
                     </div>
                     <div id="statistics-table">
-                        <h3>{{ _('Statistics') }} <i class="fa fa-pie-chart"></i></h3>
+                        <h3>
+                            <span>{{ _('Statistics') }}</span>
+                            <i class="fa fa-pie-chart"></i>
+                        </h3>
                         <div class="sidebox-content">
                             <div id="status-graph">
                                 <canvas width="230" height="170"></canvas>

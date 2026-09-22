@@ -1,24 +1,44 @@
 <style>
     .first-solve {
-        background-color: #1daa1d !important;
+        background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%) !important;
+        color: #15803d !important;
+        box-shadow: inset 0 0 0 1.5px #86efac;
+    }
+
+    .first-solve a {
+        color: #15803d !important;
+        font-weight: 800;
     }
 
     .full-score {
-        color: black;
-        background-color: #60e760;
+        color: #059669 !important;
+        background-color: #ecfdf5 !important;
+        font-weight: 700;
+    }
+
+    .full-score a {
+        color: #059669 !important;
+        font-weight: 800;
     }
 
     .failed-score {
-        color: black;
-        background-color: #e87272;
+        color: #dc2626 !important;
+        background-color: #fef2f2 !important;
+        font-weight: 600;
+    }
+
+    .failed-score a {
+        color: #dc2626 !important;
     }
 
     .pending {
-        background-color: #6666ff;
+        background-color: #eff6ff !important;
+        color: #2563eb !important;
+        font-weight: 600;
     }
 
-    .failed-score a, .full-score a, .pending a {
-        color: black;
+    .pending a {
+        color: #2563eb !important;
     }
 
     .solving-time {
@@ -26,8 +46,9 @@
     }
 
     .solving-time-minute {
-        color: black;
-        font-size: 1.25em;
-        padding-bottom: -0.75em;
+        color: inherit;
+        font-size: 14px;
+        font-weight: 800;
+        font-family: 'JetBrains Mono', monospace;
     }
 </style>

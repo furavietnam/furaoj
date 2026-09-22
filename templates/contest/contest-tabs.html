@@ -114,4 +114,7 @@
     {% if perms.judge.clone_contest and can_edit %}
         {{ make_tab('clone', 'fa-copy', url('contest_clone', contest.key), _('Clone')) }}
     {% endif %}
+    {% if request.user.is_staff and (perms.judge.change_contest or request.user.is_superuser) %}
+        {{ make_tab('admin', 'fa-cog', url('admin:judge_contest_change', contest.id), _('Admin')) }}
+    {% endif %}
 {% endblock %}

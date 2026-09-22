@@ -42,7 +42,6 @@
                                     <a href="javascript:alert({{ _('Please log in to vote')|htmltojs }})" title="{{ _('Please log in to vote') }}"
                                     class="upvote-link fa fa-chevron-up fa-fw"></a>
                                 {% endif %}
-                                <br>
                                 <div class="comment-score">{{ comment.score }}</div>
                                 {% if logged_in %}
                                     <a href="javascript:comment_downvote({{ comment.id }})"

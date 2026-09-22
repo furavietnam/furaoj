@@ -1,7 +1,7 @@
 {% set logged_in = request.user.is_authenticated %}
 {% set profile = request.profile if logged_in else None %}
 <section class="{% if post.sticky %}sticky {% endif %}post" id="post-{{ post.id }}">
-    <div style="display: flex; gap: 0.5em;">
+    <div style="display: flex; gap: 14px; align-items: flex-start;">
         <div class="vote">
             {% if logged_in %}
                 <a href="javascript:blog_upvote({{ post.id }})"
@@ -10,7 +10,6 @@
                 <a href="javascript:alert({{ _('Please log in to vote')|htmltojs }})" title="{{ _('Please log in to vote') }}"
                 class="upvote-link fa fa-chevron-up fa-fw"></a>
             {% endif %}
-            <br>
             <div id="post-score" class="comment-score">{{ post.score }}</div>
             {% if logged_in %}
                 <a href="javascript:blog_downvote({{ post.id }})"

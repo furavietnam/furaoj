@@ -10,4 +10,7 @@
     {{ make_tab('list', 'fa-users', url('user_list'), _('Leaderboard')) }}
     {{ make_tab('contributor', 'fa-thumbs-up', url('contributors_list'), _('Contributors')) }}
     {{ make_tab('organizations', 'fa-university', url('organization_list'), _('Organizations')) }}
+    {% if request.user.is_staff and (perms.judge.change_profile or request.user.is_superuser) %}
+        {{ make_tab('admin', 'fa-cog', url('admin:judge_profile_changelist'), _('Admin')) }}
+    {% endif %}
 {% endblock %}

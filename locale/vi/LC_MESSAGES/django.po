@@ -10208,3 +10208,12 @@ msgstr "Kỳ thi kết thúc"
 
 msgid "Current Day"
 msgstr "Hôm nay"
+
+msgid "Create problem"
+msgstr "Tạo bài tập"
+
+msgid "Import Polygon"
+msgstr "Nhập Polygon"
+
+msgid "Bulk delete"
+msgstr "Xoá hàng loạt"

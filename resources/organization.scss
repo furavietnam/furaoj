@@ -1,0 +1,449 @@
+@use "vars" as *;
+
+// ==========================================
+// Organization Page Modern Styling
+// ==========================================
+
+.organization-home-layout {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+    margin-top: 20px;
+    width: 100%;
+    box-sizing: border-box;
+
+    @media (max-width: 900px) {
+        flex-direction: column;
+        gap: 18px;
+    }
+}
+
+.org-main-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.org-sidebar {
+    width: 320px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+
+    @media (max-width: 900px) {
+        width: 100%;
+    }
+}
+
+// Cards
+.org-card {
+    background: #ffffff;
+    border: 1px solid #edf2f7;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
+    padding: 22px;
+    box-sizing: border-box;
+    transition: box-shadow 0.2s ease;
+
+    .org-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 14px;
+        margin-bottom: 18px;
+        border-bottom: 1px solid #f1f5f9;
+
+        .org-card-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            .org-card-header-icon {
+                color: #0066ff;
+                font-size: 16px;
+
+                &.trophy {
+                    color: #f59e0b;
+                }
+
+                &.puzzle {
+                    color: #8b5cf6;
+                }
+            }
+
+            .org-card-title {
+                font-size: 15px;
+                font-weight: 800;
+                color: #0f172a;
+                margin: 0;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+        }
+    }
+
+    .org-card-body {
+        font-size: 14.5px;
+        line-height: 1.6;
+        color: #334155;
+    }
+}
+
+// About Card
+.org-about-card {
+    .org-card-body {
+        p:first-child {
+            margin-top: 0;
+        }
+
+        p:last-child {
+            margin-bottom: 0;
+        }
+    }
+}
+
+// News Card
+.org-news-card {
+    .org-news-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+}
+
+// Controls Card
+.org-controls-card {
+    .org-membership-action {
+        margin-bottom: 16px;
+
+        .org-action-btn {
+            width: 100%;
+            height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+
+            &.leave-org-btn {
+                background: #fee2e2 !important;
+                color: #dc2626 !important;
+                border: 1px solid #fecaca !important;
+
+                &:hover {
+                    background: #fecaca !important;
+                    color: #b91c1c !important;
+                    transform: translateY(-1px);
+                }
+            }
+
+            &.join-org-btn {
+                background: linear-gradient(135deg, #0066ff 0%, #0052cc 100%) !important;
+                color: #ffffff !important;
+                border: none !important;
+                box-shadow: 0 4px 12px rgba(0, 102, 255, 0.25) !important;
+
+                &:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 6px 16px rgba(0, 102, 255, 0.35) !important;
+                    color: #ffffff !important;
+                }
+            }
+        }
+    }
+
+    .org-links-menu {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        .org-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #475569;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+
+            i {
+                color: #0066ff;
+                font-size: 14px;
+                width: 18px;
+                text-align: center;
+                flex-shrink: 0;
+            }
+
+            &:hover {
+                background: #eff6ff;
+                color: #0066ff;
+                border-color: #bfdbfe;
+                transform: translateX(3px);
+            }
+
+            &.admin-item {
+                background: #fdf2f8;
+                border-color: #fbcfe8;
+                color: #be185d;
+
+                i {
+                    color: #db2777;
+                }
+
+                &:hover {
+                    background: #fce7f3;
+                    color: #9d174d;
+                    border-color: #f9a8d4;
+                }
+            }
+
+            .org-badge {
+                margin-left: auto;
+                background: #ef4444;
+                color: #ffffff;
+                font-size: 11px;
+                font-weight: 700;
+                padding: 2px 7px;
+                border-radius: 9999px;
+            }
+        }
+    }
+
+    .org-admins-card-section {
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px solid #f1f5f9;
+
+        .org-admins-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+
+            i {
+                color: #0066ff;
+                font-size: 13px;
+            }
+        }
+
+        .org-admins-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+
+            a {
+                font-weight: 700;
+                font-size: 13.5px;
+                color: #0066ff;
+                text-decoration: none;
+
+                &:hover {
+                    text-decoration: underline;
+                }
+            }
+        }
+    }
+}
+
+// Sidebar Contest & Problem lists
+.org-sidebar-card {
+    .org-item-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+
+        .org-item-row {
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: #f8fafc;
+            border: 1px solid #edf2f7;
+            transition: all 0.15s ease;
+
+            &:hover {
+                background: #f1f5f9;
+                border-color: #e2e8f0;
+                transform: translateX(2px);
+            }
+
+            .org-item-title {
+                display: block;
+                font-size: 14px;
+                font-weight: 700;
+                color: #0066ff;
+                text-decoration: none;
+                margin-bottom: 4px;
+
+                &:hover {
+                    color: #0052cc;
+                }
+            }
+
+            .org-item-meta {
+                font-size: 12px;
+                color: #64748b;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+            }
+        }
+    }
+}
+
+// ------------------------------------------
+// Organization Dark Mode Overrides
+// ------------------------------------------
+@mixin organization-dark-mode-rules {
+    .org-card {
+        background: #111a2e !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35) !important;
+
+        .org-card-header {
+            border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+
+            .org-card-header-left {
+                .org-card-header-icon {
+                    color: #60a5fa !important;
+
+                    &.trophy {
+                        color: #fbbf24 !important;
+                    }
+
+                    &.puzzle {
+                        color: #a78bfa !important;
+                    }
+                }
+
+                .org-card-title {
+                    color: #f8fafc !important;
+                }
+            }
+        }
+
+        .org-card-body {
+            color: #cbd5e1 !important;
+        }
+    }
+
+    .org-controls-card {
+        .org-membership-action {
+            .org-action-btn.leave-org-btn {
+                background: rgba(239, 68, 68, 0.15) !important;
+                color: #f87171 !important;
+                border-color: rgba(239, 68, 68, 0.3) !important;
+
+                &:hover {
+                    background: rgba(239, 68, 68, 0.25) !important;
+                    color: #fca5a5 !important;
+                }
+            }
+        }
+
+        .org-links-menu {
+            .org-menu-item {
+                background: #0d1527 !important;
+                border-color: rgba(255, 255, 255, 0.08) !important;
+                color: #cbd5e1 !important;
+
+                i {
+                    color: #60a5fa !important;
+                }
+
+                &:hover {
+                    background: #17233c !important;
+                    color: #60a5fa !important;
+                    border-color: rgba(96, 165, 250, 0.3) !important;
+                }
+
+                &.admin-item {
+                    background: rgba(219, 39, 119, 0.1) !important;
+                    border-color: rgba(219, 39, 119, 0.2) !important;
+                    color: #f472b6 !important;
+
+                    i {
+                        color: #f472b6 !important;
+                    }
+
+                    &:hover {
+                        background: rgba(219, 39, 119, 0.2) !important;
+                        color: #fbcfe8 !important;
+                    }
+                }
+            }
+        }
+
+        .org-admins-card-section {
+            border-top-color: rgba(255, 255, 255, 0.08) !important;
+
+            .org-admins-label {
+                color: #94a3b8 !important;
+
+                i {
+                    color: #60a5fa !important;
+                }
+            }
+
+            .org-admins-tags a {
+                color: #60a5fa !important;
+            }
+        }
+    }
+
+    .org-sidebar-card {
+        .org-item-list {
+            .org-item-row {
+                background: #0d1527 !important;
+                border-color: rgba(255, 255, 255, 0.06) !important;
+
+                &:hover {
+                    background: #17233c !important;
+                }
+
+                .org-item-title {
+                    color: #60a5fa !important;
+
+                    &:hover {
+                        color: #93c5fd !important;
+                    }
+                }
+
+                .org-item-meta {
+                    color: #94a3b8 !important;
+                }
+            }
+        }
+    }
+}
+
+@if not $is_light_theme {
+    @include organization-dark-mode-rules;
+}
+
+body[data-theme="dark"] {
+    @include organization-dark-mode-rules;
+}
+
+body[data-theme="auto"] {
+    @media (prefers-color-scheme: dark) {
+        @include organization-dark-mode-rules;
+    }
+}

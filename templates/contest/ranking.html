@@ -464,45 +464,62 @@ $('#show-personal-info-checkbox').click(function () {
 {% endblock %}
 
 {% block before_users_table %}
-    <div style="margin-bottom: 1.25em">
-        {% if tab == 'ranking' %}
-            <div id="org-dropdown-check-list">
-                <button id="filter-by-organization-button" class="inline-button">
-                    <i class="tab-icon fa fa-filter"></i>
-                    <b>{{ _('Filter') }}</b>
-                </button>
+    <div class="ranking-toolbar">
+        <div class="ranking-toolbar-left">
+            {% if tab == 'ranking' %}
+                <div id="org-dropdown-check-list">
+                    <button id="filter-by-organization-button" class="ranking-filter-btn" type="button">
+                        <i class="fa fa-filter"></i>
+                        <span>{{ _('Filter') }}</span>
+                    </button>
 
-                <div id="org-check-list-wrapper">
-                    <div>
-                        <button id="apply-organization-filter" class="inline-button filter-checklist-button">{{ _('Apply') }}</button>
-                        <button id="clear-organization-filter" class="inline-button filter-checklist-button">{{ _('Clear') }}</button>
+                    <div id="org-check-list-wrapper" class="org-filter-dropdown">
+                        <div class="org-filter-dropdown-actions">
+                            <button id="apply-organization-filter" class="filter-submit-btn-sm" type="button">{{ _('Apply') }}</button>
+                            <button id="clear-organization-filter" class="filter-reset-btn-sm" type="button">{{ _('Clear') }}</button>
+                        </div>
+                        <select id="org-check-list" name="orgs[]" multiple="multiple"></select>
                     </div>
-                    <select id="org-check-list" name="orgs[]" multiple="multiple"></select>
                 </div>
+            {% endif %}
+            <div class="ranking-filter-chips">
+                {% if tab != 'official_ranking' %}
+                    <label class="ranking-chip-item" for="show-personal-info-checkbox">
+                        <input id="show-personal-info-checkbox" type="checkbox">
+                        <span class="ranking-chip-text">{{ _('Show full name/organization') }}</span>
+                    </label>
+                {% endif %}
+                {% if tab == 'ranking' %}
+                    <label class="ranking-chip-item" for="show-virtual-participations-checkbox">
+                        <input id="show-virtual-participations-checkbox" type="checkbox">
+                        <span class="ranking-chip-text">{{ _('Show virtual participations') }}</span>
+                    </label>
+                    {% if has_ghosts %}
+                    <span id="show-ghosts-wrap">
+                        <label class="ranking-chip-item" for="show-ghosts-checkbox">
+                            <input id="show-ghosts-checkbox" type="checkbox">
+                            <span class="ranking-chip-text">{{ _('Show ghost participations') }}</span>
+                        </label>
+                    </span>
+                    {% endif %}
+                {% endif %}
             </div>
-        {% endif %}
-        {% if tab != 'official_ranking' %}
-            <input id="show-personal-info-checkbox" type="checkbox" style="vertical-align: bottom">
-            <label for="show-personal-info-checkbox" style="vertical-align: bottom">{{ _('Show full name/organization') }}</label>
-        {% endif %}
-        {% if tab == 'ranking' %}
-            <input id="show-virtual-participations-checkbox" type="checkbox" style="vertical-align: bottom">
-            <label for="show-virtual-participations-checkbox" style="vertical-align: bottom">{{ _('Show virtual participations') }}</label>
-            {% if has_ghosts %}
-            <span id="show-ghosts-wrap">
-                <input id="show-ghosts-checkbox" type="checkbox" style="vertical-align: bottom">
-                <label for="show-ghosts-checkbox" style="vertical-align: bottom">{{ _('Show ghost participations') }}</label>
-            </span>
+        </div>
+        <div class="ranking-toolbar-right">
+            {% if tab == 'ranking' and not is_ICPC_format %}
+                <button type="button" onclick="download_table_as_csv()" class="ranking-csv-btn">
+                    <i class="fa fa-download"></i>
+                    <span>{{ _('Download as CSV') }}</span>
+                </button>
             {% endif %}
-            {% if not is_ICPC_format %}
-            <a href="#" onclick="download_table_as_csv()" style="float: right;">{{ _('Download as CSV') }}</a>
-            {% endif %}
-        {% endif %}
+        </div>
     </div>
 {% endblock %}
 
 {% block users_table %}
-    <div id="ranking-container"></div>
+    <div class="ranking-table-card">
+        <div id="ranking-container"></div>
+    </div>
 {% endblock %}
 
 {% block body %}
@@ -527,29 +544,15 @@ $('#show-personal-info-checkbox').click(function () {
     {% endif %}
     {{ super() }}
     {% if is_ICPC_format %}
-    <table id="cell_legend" class="table" style="width: 10em; margin-left: 0">
-        <thead>
-            <tr>
-                <th scope="col">{{_('Cell colours')}}</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr class="first-solve">
-                <td>{{_('Solved first')}}</td>
-            </tr>
-            <tr class="full-score">
-                <td>{{_('Solved')}}</td>
-            </tr>
-            <tr class="failed-score">
-                <td>{{_('Tried, incorrect')}}</td>
-            </tr>
-            <tr class="pending">
-                <td>{{_('Tried, pending')}}</td>
-            </tr>
-            <tr>
-                <td>{{_('Untried')}}</td>
-            </tr>
-        </tbody>
-    </table>
+    <div class="ranking-legend-card">
+        <div class="legend-title">{{_('Cell colours')}}:</div>
+        <div class="legend-chips">
+            <span class="legend-chip first-solve"><i class="fa fa-star"></i> {{_('Solved first')}}</span>
+            <span class="legend-chip full-score"><i class="fa fa-check"></i> {{_('Solved')}}</span>
+            <span class="legend-chip failed-score"><i class="fa fa-times"></i> {{_('Tried, incorrect')}}</span>
+            <span class="legend-chip pending"><i class="fa fa-clock-o"></i> {{_('Tried, pending')}}</span>
+            <span class="legend-chip untried">{{_('Untried')}}</span>
+        </div>
+    </div>
     {% endif %}
 {% endblock %}
