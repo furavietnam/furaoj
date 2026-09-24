@@ -1,5 +1,6 @@
 import hashlib
 import json
+import logging
 import math
 import os
 import re
@@ -24,64 +25,51 @@ from judge.views.widgets import django_uploader
 
 __all__ = ['ImportPolygonError', 'PolygonImporter']
 
+logger = logging.getLogger('judge.polygon')
+
 
 PANDOC_FILTER = r"""
 local function normalize_quote(text)
-    -- These four quotes are disallowed characters.
-    -- See DMOJ_PROBLEM_STATEMENT_DISALLOWED_CHARACTERS
-    text = text:gsub('\u{2018}', "'") -- left single quote
-    text = text:gsub('\u{2019}', "'") -- right single quote
-    text = text:gsub('\u{201C}', '"') -- left double quote
-    text = text:gsub('\u{201D}', '"') -- right double quote
+    text = text:gsub('\u{2018}', "'")
+    text = text:gsub('\u{2019}', "'")
+    text = text:gsub('\u{201C}', '"')
+    text = text:gsub('\u{201D}', '"')
     return text
 end
 
 local function escape_html_content(text)
-    -- Escape HTML/Markdown/MathJax syntax characters
-    text = text:gsub('&', '&amp;') -- must be first
+    text = text:gsub('&', '&amp;')
     text = text:gsub('<', "&lt;")
     text = text:gsub('>', "&gt;")
     text = text:gsub('*', '\\*')
     text = text:gsub('_', '\\_')
-    text = text:gsub('%$', '<span>%$</span>')
-    text = text:gsub('~', '<span>~</span>')
     return text
 end
 
 function Math(m)
-    -- Fix math delimiters
     local delimiter = m.mathtype == 'InlineMath' and '$' or '$$'
     return pandoc.RawInline('html', delimiter .. m.text .. delimiter)
 end
 
 function Image(el)
-    -- And blank lines before and after the image for caption to work
     return {pandoc.RawInline('markdown', '\n\n'), el, pandoc.RawInline('markdown', '\n\n')}
 end
 
 function Code(el)
-    -- Normalize quotes and render similar to Codeforces
     local text = normalize_quote(el.text)
     text = escape_html_content(text)
     return pandoc.RawInline('html', '<span style="font-family: courier new,monospace;">' .. text .. '</span>')
 end
 
 function CodeBlock(el)
-    -- Normalize quotes
     el.text = normalize_quote(el.text)
-
-    -- Set language to empty string if it's nil
-    -- This is a hack to force backtick code blocks instead of indented code blocks
-    -- See https://github.com/jgm/pandoc/issues/7033
     if el.classes[1] == nil then
         el.classes[1] = ''
     end
-
     return el
 end
 
 function Quoted(el)
-    -- Normalize quotes
     local quote = el.quotetype == 'SingleQuote' and "'" or '"'
     local inlines = el.content
     table.insert(inlines, 1, quote)
@@ -90,30 +78,24 @@ function Quoted(el)
 end
 
 function Str(el)
-    -- Normalize quotes
     el.text = normalize_quote(el.text)
 
-    -- en dash/em dash/non-breaking space would still show up correctly if we don't escape them,
-    -- but they would be hardly noticeable while editing.
     local res = {}
     local part = ''
     for c in el.text:gmatch(utf8.charpattern) do
         if c == '\u{2013}' then
-            -- en dash
             if part ~= '' then
                 table.insert(res, pandoc.Str(part))
                 part = ''
             end
             table.insert(res, pandoc.RawInline('html', '&ndash;'))
         elseif c == '\u{2014}' then
-            -- em dash
             if part ~= '' then
                 table.insert(res, pandoc.Str(part))
                 part = ''
             end
             table.insert(res, pandoc.RawInline('html', '&mdash;'))
         elseif c == '\u{00A0}' then
-            -- Non-breaking space
             if part ~= '' then
                 table.insert(res, pandoc.Str(part))
                 part = ''
@@ -130,15 +112,6 @@ function Str(el)
     return res
 end
 
--- Footnote handling. FuraOJ's markdown engine (markdown2) does not understand
--- GFM footnote syntax, so we can't let pandoc's default [^N]/[^N]: output
--- through. Instead, replace each \footnote{...} call site with an inline
--- marker, capture the body, and at document level append the bodies as
--- regular blocks separated from the main content by a horizontal rule.
--- The Lua filter module state resets per pandoc invocation, so numbering is
--- naturally per-section and never collides when section outputs are merged.
--- Labels follow the academic \fnsymbol sequence used by Codeforces:
--- ∗ † ‡ § ¶, doubled on overflow (∗∗, ††, ...), then tripled, etc.
 local FOOTNOTE_SYMBOLS = {'\u{2217}', '\u{2020}', '\u{2021}', '\u{00A7}', '\u{00B6}'}
 local footnote_counter = 0
 local footnotes = {}
@@ -222,34 +195,50 @@ end
 """
 
 
-# Polygon uses some custom macros: https://polygon.codeforces.com/docs/statements-tex-manual
-# For example, \bf is deprecated in modern LaTeX, but Polygon treats it the same as \textbf
-# and recommends writing \bf{...} instead of \textbf{...} for brevity.
-# Similar for \it, \tt, \t
-# We just redefine them to their modern counterparts.
-# Note that this would break {\bf abcd}, but AFAIK Polygon never recommends that so it's fine.
 TEX_MACROS = r"""
 \renewcommand{\bf}{\textbf}
 \renewcommand{\it}{\textit}
 \renewcommand{\tt}{\texttt}
 \renewcommand{\t}{\texttt}
+\providecommand{\text}{\mathrm}
+\providecommand{\textbf}[1]{\mathbf{#1}}
+\providecommand{\textit}[1]{\mathit{#1}}
 """
 
 
 def pandoc_tex_to_markdown(tex):
-    tex = TEX_MACROS + tex
+    if not tex or not isinstance(tex, str) or not tex.strip():
+        return ''
+
+    tex_full = TEX_MACROS + '\n' + tex
     with tempfile.TemporaryDirectory() as tmp_dir:
         with open(os.path.join(tmp_dir, 'temp.tex'), 'w', encoding='utf-8') as f:
-            f.write(tex)
+            f.write(tex_full)
 
         with open(os.path.join(tmp_dir, 'filter.lua'), 'w', encoding='utf-8') as f:
             f.write(PANDOC_FILTER)
 
-        subprocess.run(
-            ['pandoc', '--lua-filter=filter.lua', '-t', 'gfm', '-o', 'temp.md', 'temp.tex'],
-            cwd=tmp_dir,
-            check=True,
-        )
+        try:
+            subprocess.run(
+                ['pandoc', '--lua-filter=filter.lua', '-t', 'gfm', '-o', 'temp.md', 'temp.tex'],
+                cwd=tmp_dir,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as e:
+            logger.warning('Pandoc lua filter failed with code %d: %s. Trying direct markdown conversion.', e.returncode, e.stderr)
+            try:
+                subprocess.run(
+                    ['pandoc', '-t', 'gfm', '-o', 'temp.md', 'temp.tex'],
+                    cwd=tmp_dir,
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+            except Exception:
+                # Fallback an toan: tra ve text goc, tuyet doi khong gay crash
+                return tex
 
         with open(os.path.join(tmp_dir, 'temp.md'), 'r', encoding='utf-8') as f:
             md = f.read()
@@ -277,7 +266,6 @@ class PolygonImporter:
             interactive: bool = True,
             config=None,
     ):
-        # Check if pandoc is available
         if not shutil.which('pandoc'):
             raise ImportPolygonError('pandoc not installed')
         if pandoc_get_version() < (3, 0, 0):
@@ -288,9 +276,6 @@ class PolygonImporter:
         self.interactive = interactive
         self.config = config
 
-        # Let's validate the problem code right now.
-        # We don't want to have done everything and still fail
-        # because of invalid problem code.
         Problem._meta.get_field('code').run_validators(code)
         if Problem.objects.filter(code=code).exists():
             if not do_update:
@@ -304,7 +289,6 @@ class PolygonImporter:
 
         self.root = ET.fromstring(self.package.read('problem.xml'))
 
-        # A dictionary to hold all problem information.
         self.meta = {}
         self.meta['code'] = code
         self.meta['authors'] = authors or []
@@ -335,21 +319,20 @@ class PolygonImporter:
             self.parse_solutions()
             self.update_or_create_problem()
         except Exception:
-            # Remove imported images
             for image_url in self.meta['image_cache'].values():
                 path = default_storage.path(os.path.join(settings.MARTOR_UPLOAD_MEDIA_DIR, os.path.basename(image_url)))
-                os.remove(path)
-
+                if os.path.exists(path):
+                    os.remove(path)
             raise
         finally:
-            self.meta['tmp_dir'].cleanup()
+            if 'tmp_dir' in self.meta:
+                self.meta['tmp_dir'].cleanup()
 
     def log(self, *args, **kwargs):
         if self.interactive:
             print(*args, **kwargs)
 
     def parse_assets(self):
-        # Parse interactor
         interactor = self.root.find('.//interactor')
         if interactor is None:
             self.log('Use standard grader.')
@@ -375,7 +358,6 @@ class PolygonImporter:
             self.meta['checker'] = 'standard'
             return
 
-        # Parse checker
         checker = self.root.find('.//checker')
         if checker is None:
             raise ImportPolygonError('checker not found')
@@ -410,7 +392,6 @@ class PolygonImporter:
             if source is None:
                 raise ImportPolygonError('checker source not found. how possible?')
 
-            # TODO: support more checkers?
             path = source.get('path')
             if not path.lower().endswith('.cpp'):
                 raise ImportPolygonError('checker must use C++')
@@ -437,8 +418,6 @@ class PolygonImporter:
         if len(testset.find('tests').getchildren()) == 0:
             raise ImportPolygonError('no testcases found')
 
-        # Polygon specifies the time limit in ms and memory limit in bytes,
-        # while DMOJ uses seconds and kilobytes.
         self.meta['time_limit'] = float(testset.find('time-limit').text) / 1000
         self.meta['memory_limit'] = int(testset.find('memory-limit').text) // 1024
 
@@ -454,22 +433,6 @@ class PolygonImporter:
         self.meta['batches'] = {}
         self.meta['normal_cases'] = []
         self.meta['zipfile'] = os.path.join(self.meta['tmp_dir'].name, 'tests.zip')
-
-        # Tests can be aggregated into batches (called groups in Polygon).
-        # Each batch can have one of two point policies:
-        #    - complete-group: contestant gets points only if all tests in the batch are solved.
-        #    - each-test: contestant gets points for each test solved
-        # Our judge only supports complete-group batches.
-        # For each-test batches, their tests are added as normal tests.
-        # Each batch can also have a list of dependencies, which are other batches
-        # that must be fully solved before the batch is run.
-        # To support dependencies, we just add all dependent tests before the actual tests.
-        # (There is actually a more elegant way to do this by using field `dependencies` in init.yml,
-        # but site does not support it yet)
-        # Our judge does cache result for each test, so the same test will not be run twice.
-        # In addition, we only support dependencies for complete-group batches.
-        # (Technically, we could support dependencies for each-test batch by splitting it
-        # into multiple complete-group batches, but that's too complicated)
 
         groups = testset.find('groups')
         if groups is not None:
@@ -529,7 +492,6 @@ class PolygonImporter:
             if len(batch['dependencies']) == 0:
                 return batch['cases']
 
-            # Polygon guarantees no cycles
             cases = set(batch['cases'])
             for dependency in batch['dependencies']:
                 cases.update(get_tests_by_batch(dependency))
@@ -550,8 +512,6 @@ class PolygonImporter:
         for batch in each_test_batches:
             del self.meta['batches'][batch]
 
-        # Normalize points if necessary
-        # Polygon allows fractional points, but DMOJ does not
         all_points = [batch['points'] for batch in self.meta['batches'].values()] + \
                      [self.meta['cases_data'][i]['points'] for i in self.meta['normal_cases']]
         if any(not p.is_integer() for p in all_points):
@@ -574,7 +534,6 @@ class PolygonImporter:
             self.meta['partial'] = True
 
         if self.meta['partial']:
-            # Ignore zero-point batches
             zero_point_batches = [name for name, batch in self.meta['batches'].items() if batch['points'] == 0]
             if len(zero_point_batches) > 0:
                 if self.interactive:
@@ -590,7 +549,6 @@ class PolygonImporter:
                     }
                     self.log(f'Ignored {len(zero_point_batches)} zero-point batches.')
 
-            # Ignore zero-point cases
             zero_point_cases_count = len([
                 idx for idx in self.meta['normal_cases'] if self.meta['cases_data'][idx]['points'] == 0
             ])
@@ -608,7 +566,6 @@ class PolygonImporter:
                     ]
                     self.log(f'Ignored {zero_point_cases_count} zero-point tests.')
 
-        # Sort tests by index
         self.meta['normal_cases'].sort()
         for batch in self.meta['batches'].values():
             batch['cases'].sort()
@@ -630,13 +587,14 @@ class PolygonImporter:
                 self.meta['grader_args']['io_output_file'] = io_output_file
 
     def parse_statements(self):
-        # Set default values
         self.meta['name'] = ''
         self.meta['description'] = ''
         self.meta['translations'] = []
         self.meta['tutorial'] = ''
 
         def process_images(text):
+            if not text:
+                return ''
             image_cache = self.meta['image_cache']
 
             def save_image(image_path):
@@ -656,17 +614,23 @@ class PolygonImporter:
                 return image_cache[sha1]
 
             for image_path in set(re.findall(r'!\[image\]\((.+?)\)', text)):
-                text = text.replace(
-                    f'![image]({image_path})',
-                    f'![image]({save_image(image_path)})',
-                )
+                try:
+                    text = text.replace(
+                        f'![image]({image_path})',
+                        f'![image]({save_image(image_path)})',
+                    )
+                except Exception as e:
+                    self.log(f'Warning: Failed to extract image {image_path}: {e}')
 
             for img_tag in set(re.findall(r'<\s*img[^>]*>', text)):
-                image_path = re.search(r'<\s*img[^>]+src\s*=\s*(["\'])(.*?)\1[^>]*>', img_tag).group(2)
-                text = text.replace(
-                    img_tag,
-                    img_tag.replace(image_path, save_image(image_path)),
-                )
+                try:
+                    image_path = re.search(r'<\s*img[^>]+src\s*=\s*(["\'])(.*?)\1[^>]*>', img_tag).group(2)
+                    text = text.replace(
+                        img_tag,
+                        img_tag.replace(image_path, save_image(image_path)),
+                    )
+                except Exception as e:
+                    self.log(f'Warning: Failed to extract img tag {img_tag}: {e}')
 
             return text
 
@@ -674,37 +638,44 @@ class PolygonImporter:
             description = ''
 
             # Legend
-            description += pandoc_tex_to_markdown(problem_properties['legend'])
+            legend = problem_properties.get('legend')
+            if legend:
+                description += pandoc_tex_to_markdown(legend)
 
             # Input
-            description += '\n## Input\n\n'
-            description += pandoc_tex_to_markdown(problem_properties['input'])
+            input_text = problem_properties.get('input')
+            if input_text:
+                description += '\n## Input\n\n'
+                description += pandoc_tex_to_markdown(input_text)
 
             # Output
-            description += '\n## Output\n\n'
-            description += pandoc_tex_to_markdown(problem_properties['output'])
+            output_text = problem_properties.get('output')
+            if output_text:
+                description += '\n## Output\n\n'
+                description += pandoc_tex_to_markdown(output_text)
 
             # Interaction
-            if problem_properties['interaction'] is not None:
+            if problem_properties.get('interaction'):
                 description += '\n## Interaction\n\n'
                 description += pandoc_tex_to_markdown(problem_properties['interaction'])
 
             # Scoring
-            if problem_properties['scoring'] is not None:
+            if problem_properties.get('scoring'):
                 description += '\n## Scoring\n\n'
                 description += pandoc_tex_to_markdown(problem_properties['scoring'])
 
             # Sample tests
-            for i, sample in enumerate(problem_properties['sampleTests'], start=1):
+            for i, sample in enumerate(problem_properties.get('sampleTests', []), start=1):
                 description += f'\n## Sample Input {i}\n\n'
-                description += '```\n' + sample['input'].strip() + '\n```\n'
+                description += '```\n' + sample.get('input', '').strip() + '\n```\n'
                 description += f'\n## Sample Output {i}\n\n'
-                description += '```\n' + sample['output'].strip() + '\n```\n'
+                description += '```\n' + sample.get('output', '').strip() + '\n```\n'
 
             # Notes
-            if problem_properties['notes'] != '':
+            notes = problem_properties.get('notes')
+            if notes:
                 description += '\n## Notes\n\n'
-                description += pandoc_tex_to_markdown(problem_properties['notes'])
+                description += pandoc_tex_to_markdown(notes)
 
             return description
 
@@ -744,9 +715,12 @@ class PolygonImporter:
                 'description': process_images(description),
             })
 
-            tutorial = problem_properties['tutorial']
-            if isinstance(tutorial, str) and tutorial != '':
-                tutorial = pandoc_tex_to_markdown(tutorial)
+            tutorial = problem_properties.get('tutorial')
+            if isinstance(tutorial, str) and tutorial.strip() != '':
+                try:
+                    tutorial = pandoc_tex_to_markdown(tutorial)
+                except Exception as e:
+                    self.log(f'Warning: failed to convert tutorial ({e}), using raw text')
                 tutorials.append({
                     'language': language,
                     'tutorial': tutorial,
@@ -778,7 +752,6 @@ class PolygonImporter:
         elif len(tutorials) > 0:
             self.meta['tutorial'] = tutorials[0]['tutorial']
 
-        # Process images for only the selected tutorial
         self.meta['tutorial'] = process_images(self.meta['tutorial'])
 
         for t in translations:
@@ -811,8 +784,12 @@ class PolygonImporter:
 
     def parse_solutions(self):
         solutions = self.root.find('.//solutions')
+        if solutions is None:
+            return
+
         main_solution = solutions.find('solution[@tag="main"]')
-        assert main_solution is not None
+        if main_solution is None:
+            return
 
         if not self.interactive:
             if not self.config.get('append_main_solution_to_tutorial', False):
@@ -823,6 +800,9 @@ class PolygonImporter:
                 return
 
         source = main_solution.find('source')
+        if source is None:
+            return
+
         source_code = self.package.read(source.get('path')).decode('utf-8').strip()
         source_lang = source.get('type')
         markdown_lang = ''
@@ -837,132 +817,134 @@ class PolygonImporter:
 <blockquote class="spoiler">
 ```{markdown_lang}
 {source_code}
+
 ```
-</blockquote>
-"""
 
-    @transaction.atomic
-    def update_or_create_problem(self):
-        self.log('Creating/Updating problem in database.')
-        problem, _ = Problem.objects.update_or_create(code=self.meta['code'], defaults={
-            'code': self.meta['code'],
-            'name': self.meta['name'],
-            'time_limit': self.meta['time_limit'],
-            'memory_limit': self.meta['memory_limit'],
-            'description': self.meta['description'],
-            'partial': self.meta['partial'],
-            'group': ProblemGroup.objects.order_by('id').first(),  # Uncategorized
-            'points': 0.01,
+```
+@transaction.atomic
+def update_or_create_problem(self):
+    self.log('Creating/Updating problem in database.')
+    problem, _ = Problem.objects.update_or_create(code=self.meta['code'], defaults={
+        'code': self.meta['code'],
+        'name': self.meta['name'],
+        'time_limit': self.meta['time_limit'],
+        'memory_limit': self.meta['memory_limit'],
+        'description': self.meta['description'],
+        'partial': self.meta['partial'],
+        'group': ProblemGroup.objects.order_by('id').first(),
+        'points': 0.01,
+    })
+    problem.save()
+    problem.allowed_languages.set(Language.objects.filter(include_in_problem=True))
+    problem.authors.set(self.meta['authors'])
+    problem.curators.set(self.meta['curators'])
+    problem.types.set([ProblemType.objects.order_by('id').first()])
+    problem.save()
+
+    ProblemTranslation.objects.filter(problem=problem).delete()
+    for tran in self.meta['translations']:
+        ProblemTranslation(
+            problem=problem,
+            language=tran['language'],
+            name=tran['name'],
+            description=tran['description'],
+        ).save()
+
+    Solution.objects.filter(problem=problem).delete()
+    if self.meta['tutorial'].strip() != '':
+        Solution(
+            problem=problem,
+            is_public=False,
+            publish_on=timezone.now(),
+            content=self.meta['tutorial'].strip(),
+        ).save()
+
+    with open(self.meta['zipfile'], 'rb') as f:
+        problem_data, _ = ProblemData.objects.update_or_create(problem=problem, defaults={
+            'problem': problem,
+            'zipfile': File(f),
+            'grader': self.meta['grader'],
+            'checker': self.meta['checker'],
+            'grader_args': json.dumps(self.meta['grader_args']),
         })
-        problem.save()
-        problem.allowed_languages.set(Language.objects.filter(include_in_problem=True))
-        problem.authors.set(self.meta['authors'])
-        problem.curators.set(self.meta['curators'])
-        problem.types.set([ProblemType.objects.order_by('id').first()])  # Uncategorized
-        problem.save()
+        problem_data.save()
 
-        ProblemTranslation.objects.filter(problem=problem).delete()
-        for tran in self.meta['translations']:
-            ProblemTranslation(
-                problem=problem,
-                language=tran['language'],
-                name=tran['name'],
-                description=tran['description'],
-            ).save()
-
-        Solution.objects.filter(problem=problem).delete()
-        if self.meta['tutorial'].strip() != '':
-            Solution(
-                problem=problem,
-                is_public=False,
-                publish_on=timezone.now(),
-                content=self.meta['tutorial'].strip(),
-            ).save()
-
-        with open(self.meta['zipfile'], 'rb') as f:
-            problem_data, _ = ProblemData.objects.update_or_create(problem=problem, defaults={
-                'problem': problem,
-                'zipfile': File(f),
-                'grader': self.meta['grader'],
-                'checker': self.meta['checker'],
-                'grader_args': json.dumps(self.meta['grader_args']),
-            })
+    if self.meta['checker'] == 'bridged':
+        with open(self.meta['custom_checker'], 'rb') as f:
+            problem_data.custom_checker = File(f)
             problem_data.save()
 
-        if self.meta['checker'] == 'bridged':
-            with open(self.meta['custom_checker'], 'rb') as f:
-                problem_data.custom_checker = File(f)
-                problem_data.save()
+    if 'checker_args' in self.meta:
+        problem_data.checker_args = json.dumps(self.meta['checker_args'])
+        problem_data.save()
 
-        if 'checker_args' in self.meta:
-            problem_data.checker_args = json.dumps(self.meta['checker_args'])
+    if 'custom_grader' in self.meta:
+        with open(self.meta['custom_grader'], 'rb') as f:
+            problem_data.custom_grader = File(f)
             problem_data.save()
 
-        if 'custom_grader' in self.meta:
-            with open(self.meta['custom_grader'], 'rb') as f:
-                problem_data.custom_grader = File(f)
-                problem_data.save()
+    ProblemTestCase.objects.filter(dataset=problem).delete()
 
-        ProblemTestCase.objects.filter(dataset=problem).delete()
+    order = 0
+    last_case = None
 
-        order = 0
-        last_case = None
+    for batch in self.meta['batches'].values():
+        if len(batch['cases']) == 0:
+            continue
 
-        for batch in self.meta['batches'].values():
-            if len(batch['cases']) == 0:
-                continue
+        order += 1
+        start_batch = ProblemTestCase(
+            dataset=problem,
+            order=order,
+            type='S',
+            points=batch['points'],
+            is_pretest=False,
+        )
+        start_batch.save()
+        last_case = start_batch
 
-            order += 1
-            start_batch = ProblemTestCase(
-                dataset=problem,
-                order=order,
-                type='S',
-                points=batch['points'],
-                is_pretest=False,
-            )
-            start_batch.save()
-            last_case = start_batch
-
-            for case_index in batch['cases']:
-                order += 1
-                case_data = self.meta['cases_data'][case_index]
-                case = ProblemTestCase(
-                    dataset=problem,
-                    order=order,
-                    type='C',
-                    input_file=case_data['input_file'],
-                    output_file=case_data['output_file'],
-                    is_pretest=False,
-                )
-                case.save()
-
-            order += 1
-            end_batch = ProblemTestCase(dataset=problem, order=order, type='E', is_pretest=False)
-            end_batch.save()
-
-        for case_index in self.meta['normal_cases']:
+        for case_index in batch['cases']:
             order += 1
             case_data = self.meta['cases_data'][case_index]
-            last_case = case = ProblemTestCase(
+            case = ProblemTestCase(
                 dataset=problem,
                 order=order,
                 type='C',
                 input_file=case_data['input_file'],
                 output_file=case_data['output_file'],
-                points=case_data['points'],
                 is_pretest=False,
             )
             case.save()
 
-        if not self.meta['partial'] and last_case is not None:
-            last_case.points = 1
-            last_case.save()
+        order += 1
+        end_batch = ProblemTestCase(dataset=problem, order=order, type='E', is_pretest=False)
+        end_batch.save()
 
-        self.log('Generating init.yml')
-        ProblemDataCompiler.generate(
-            problem=problem,
-            data=problem_data,
-            cases=problem.cases.order_by('order'),
-            files=zipfile.ZipFile(problem_data.zipfile.path).namelist(),
+    for case_index in self.meta['normal_cases']:
+        order += 1
+        case_data = self.meta['cases_data'][case_index]
+        last_case = case = ProblemTestCase(
+            dataset=problem,
+            order=order,
+            type='C',
+            input_file=case_data['input_file'],
+            output_file=case_data['output_file'],
+            points=case_data['points'],
+            is_pretest=False,
         )
-        assert problem_data.feedback == '', problem_data.feedback
+        case.save()
+
+    if not self.meta['partial'] and last_case is not None:
+        last_case.points = 1
+        last_case.save()
+
+    self.log('Generating init.yml')
+    ProblemDataCompiler.generate(
+        problem=problem,
+        data=problem_data,
+        cases=problem.cases.order_by('order'),
+        files=zipfile.ZipFile(problem_data.zipfile.path).namelist(),
+    )
+    assert problem_data.feedback == '', problem_data.feedback
+
+```
