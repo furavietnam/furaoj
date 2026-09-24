@@ -237,7 +237,6 @@ def pandoc_tex_to_markdown(tex):
                     text=True,
                 )
             except Exception:
-                # Fallback an toan: tra ve text goc, tuyet doi khong gay crash
                 return tex
 
         with open(os.path.join(tmp_dir, 'temp.md'), 'r', encoding='utf-8') as f:
@@ -637,41 +636,34 @@ class PolygonImporter:
         def parse_problem_properties(problem_properties):
             description = ''
 
-            # Legend
             legend = problem_properties.get('legend')
             if legend:
                 description += pandoc_tex_to_markdown(legend)
 
-            # Input
             input_text = problem_properties.get('input')
             if input_text:
                 description += '\n## Input\n\n'
                 description += pandoc_tex_to_markdown(input_text)
 
-            # Output
             output_text = problem_properties.get('output')
             if output_text:
                 description += '\n## Output\n\n'
                 description += pandoc_tex_to_markdown(output_text)
 
-            # Interaction
             if problem_properties.get('interaction'):
                 description += '\n## Interaction\n\n'
                 description += pandoc_tex_to_markdown(problem_properties['interaction'])
 
-            # Scoring
             if problem_properties.get('scoring'):
                 description += '\n## Scoring\n\n'
                 description += pandoc_tex_to_markdown(problem_properties['scoring'])
 
-            # Sample tests
             for i, sample in enumerate(problem_properties.get('sampleTests', []), start=1):
                 description += f'\n## Sample Input {i}\n\n'
                 description += '```\n' + sample.get('input', '').strip() + '\n```\n'
                 description += f'\n## Sample Output {i}\n\n'
                 description += '```\n' + sample.get('output', '').strip() + '\n```\n'
 
-            # Notes
             notes = problem_properties.get('notes')
             if notes:
                 description += '\n## Notes\n\n'
@@ -813,138 +805,130 @@ class PolygonImporter:
         elif source_lang.startswith('java'):
             markdown_lang = 'java'
 
-        self.meta['tutorial'] = self.meta['tutorial'].rstrip() + f"""\n
-<blockquote class="spoiler">
-```{markdown_lang}
-{source_code}
+        self.meta['tutorial'] = self.meta['tutorial'].rstrip() + '\n<blockquote class="spoiler">\n```' + markdown_lang + '\n' + source_code + '\n```\n</blockquote>\n'
 
-```
-
-```
-@transaction.atomic
-def update_or_create_problem(self):
-    self.log('Creating/Updating problem in database.')
-    problem, _ = Problem.objects.update_or_create(code=self.meta['code'], defaults={
-        'code': self.meta['code'],
-        'name': self.meta['name'],
-        'time_limit': self.meta['time_limit'],
-        'memory_limit': self.meta['memory_limit'],
-        'description': self.meta['description'],
-        'partial': self.meta['partial'],
-        'group': ProblemGroup.objects.order_by('id').first(),
-        'points': 0.01,
-    })
-    problem.save()
-    problem.allowed_languages.set(Language.objects.filter(include_in_problem=True))
-    problem.authors.set(self.meta['authors'])
-    problem.curators.set(self.meta['curators'])
-    problem.types.set([ProblemType.objects.order_by('id').first()])
-    problem.save()
-
-    ProblemTranslation.objects.filter(problem=problem).delete()
-    for tran in self.meta['translations']:
-        ProblemTranslation(
-            problem=problem,
-            language=tran['language'],
-            name=tran['name'],
-            description=tran['description'],
-        ).save()
-
-    Solution.objects.filter(problem=problem).delete()
-    if self.meta['tutorial'].strip() != '':
-        Solution(
-            problem=problem,
-            is_public=False,
-            publish_on=timezone.now(),
-            content=self.meta['tutorial'].strip(),
-        ).save()
-
-    with open(self.meta['zipfile'], 'rb') as f:
-        problem_data, _ = ProblemData.objects.update_or_create(problem=problem, defaults={
-            'problem': problem,
-            'zipfile': File(f),
-            'grader': self.meta['grader'],
-            'checker': self.meta['checker'],
-            'grader_args': json.dumps(self.meta['grader_args']),
+    @transaction.atomic
+    def update_or_create_problem(self):
+        self.log('Creating/Updating problem in database.')
+        problem, _ = Problem.objects.update_or_create(code=self.meta['code'], defaults={
+            'code': self.meta['code'],
+            'name': self.meta['name'],
+            'time_limit': self.meta['time_limit'],
+            'memory_limit': self.meta['memory_limit'],
+            'description': self.meta['description'],
+            'partial': self.meta['partial'],
+            'group': ProblemGroup.objects.order_by('id').first(),
+            'points': 0.01,
         })
-        problem_data.save()
+        problem.save()
+        problem.allowed_languages.set(Language.objects.filter(include_in_problem=True))
+        problem.authors.set(self.meta['authors'])
+        problem.curators.set(self.meta['curators'])
+        problem.types.set([ProblemType.objects.order_by('id').first()])
+        problem.save()
 
-    if self.meta['checker'] == 'bridged':
-        with open(self.meta['custom_checker'], 'rb') as f:
-            problem_data.custom_checker = File(f)
+        ProblemTranslation.objects.filter(problem=problem).delete()
+        for tran in self.meta['translations']:
+            ProblemTranslation(
+                problem=problem,
+                language=tran['language'],
+                name=tran['name'],
+                description=tran['description'],
+            ).save()
+
+        Solution.objects.filter(problem=problem).delete()
+        if self.meta['tutorial'].strip() != '':
+            Solution(
+                problem=problem,
+                is_public=False,
+                publish_on=timezone.now(),
+                content=self.meta['tutorial'].strip(),
+            ).save()
+
+        with open(self.meta['zipfile'], 'rb') as f:
+            problem_data, _ = ProblemData.objects.update_or_create(problem=problem, defaults={
+                'problem': problem,
+                'zipfile': File(f),
+                'grader': self.meta['grader'],
+                'checker': self.meta['checker'],
+                'grader_args': json.dumps(self.meta['grader_args']),
+            })
             problem_data.save()
 
-    if 'checker_args' in self.meta:
-        problem_data.checker_args = json.dumps(self.meta['checker_args'])
-        problem_data.save()
+        if self.meta['checker'] == 'bridged':
+            with open(self.meta['custom_checker'], 'rb') as f:
+                problem_data.custom_checker = File(f)
+                problem_data.save()
 
-    if 'custom_grader' in self.meta:
-        with open(self.meta['custom_grader'], 'rb') as f:
-            problem_data.custom_grader = File(f)
+        if 'checker_args' in self.meta:
+            problem_data.checker_args = json.dumps(self.meta['checker_args'])
             problem_data.save()
 
-    ProblemTestCase.objects.filter(dataset=problem).delete()
+        if 'custom_grader' in self.meta:
+            with open(self.meta['custom_grader'], 'rb') as f:
+                problem_data.custom_grader = File(f)
+                problem_data.save()
 
-    order = 0
-    last_case = None
+        ProblemTestCase.objects.filter(dataset=problem).delete()
 
-    for batch in self.meta['batches'].values():
-        if len(batch['cases']) == 0:
-            continue
+        order = 0
+        last_case = None
 
-        order += 1
-        start_batch = ProblemTestCase(
-            dataset=problem,
-            order=order,
-            type='S',
-            points=batch['points'],
-            is_pretest=False,
-        )
-        start_batch.save()
-        last_case = start_batch
+        for batch in self.meta['batches'].values():
+            if len(batch['cases']) == 0:
+                continue
 
-        for case_index in batch['cases']:
+            order += 1
+            start_batch = ProblemTestCase(
+                dataset=problem,
+                order=order,
+                type='S',
+                points=batch['points'],
+                is_pretest=False,
+            )
+            start_batch.save()
+            last_case = start_batch
+
+            for case_index in batch['cases']:
+                order += 1
+                case_data = self.meta['cases_data'][case_index]
+                case = ProblemTestCase(
+                    dataset=problem,
+                    order=order,
+                    type='C',
+                    input_file=case_data['input_file'],
+                    output_file=case_data['output_file'],
+                    is_pretest=False,
+                )
+                case.save()
+
+            order += 1
+            end_batch = ProblemTestCase(dataset=problem, order=order, type='E', is_pretest=False)
+            end_batch.save()
+
+        for case_index in self.meta['normal_cases']:
             order += 1
             case_data = self.meta['cases_data'][case_index]
-            case = ProblemTestCase(
+            last_case = case = ProblemTestCase(
                 dataset=problem,
                 order=order,
                 type='C',
                 input_file=case_data['input_file'],
                 output_file=case_data['output_file'],
+                points=case_data['points'],
                 is_pretest=False,
             )
             case.save()
 
-        order += 1
-        end_batch = ProblemTestCase(dataset=problem, order=order, type='E', is_pretest=False)
-        end_batch.save()
+        if not self.meta['partial'] and last_case is not None:
+            last_case.points = 1
+            last_case.save()
 
-    for case_index in self.meta['normal_cases']:
-        order += 1
-        case_data = self.meta['cases_data'][case_index]
-        last_case = case = ProblemTestCase(
-            dataset=problem,
-            order=order,
-            type='C',
-            input_file=case_data['input_file'],
-            output_file=case_data['output_file'],
-            points=case_data['points'],
-            is_pretest=False,
+        self.log('Generating init.yml')
+        ProblemDataCompiler.generate(
+            problem=problem,
+            data=problem_data,
+            cases=problem.cases.order_by('order'),
+            files=zipfile.ZipFile(problem_data.zipfile.path).namelist(),
         )
-        case.save()
-
-    if not self.meta['partial'] and last_case is not None:
-        last_case.points = 1
-        last_case.save()
-
-    self.log('Generating init.yml')
-    ProblemDataCompiler.generate(
-        problem=problem,
-        data=problem_data,
-        cases=problem.cases.order_by('order'),
-        files=zipfile.ZipFile(problem_data.zipfile.path).namelist(),
-    )
-    assert problem_data.feedback == '', problem_data.feedback
-
-```
+        assert problem_data.feedback == '', problem_data.feedback
