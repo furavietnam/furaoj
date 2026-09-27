@@ -287,12 +287,10 @@
 
         <span id="user-links">
             {% if not request.user.is_authenticated %}
-                <ul>
-                    <li>
-                        <a href="javascript:void(0)" style="margin-right: 5px;">
-                            <span title="{{ _('Settings') }}">
-                                <i class="fa fa-gear" style="color: rgb(200,200,200); font-size: 1.15em"></i>
-                            </span>
+                <ul class="anon-settings-nav">
+                    <li class="anon-settings-item">
+                        <a href="javascript:void(0)" class="nav-gear-btn" title="{{ _('Settings') }}" aria-label="{{ _('Settings') }}">
+                            <i class="fa fa-gear"></i>
                         </a>
                         <ul class="settings-popup" style="min-width: 210px; right: 0; left: auto;">
                             <li>
@@ -417,6 +415,7 @@
                 clearNavTimer();
                 $('#nav-list > li').removeClass('dropdown-open is-open');
                 $('.user-dropdown-nav > li').removeClass('dropdown-open is-open');
+                $('.anon-settings-nav > li').removeClass('dropdown-open is-open');
             }
 
             // Dropdown handler for nav-list items with submenus (e.g. "Thông tin")
@@ -505,12 +504,42 @@
                 });
             }
 
+            // Dropdown handler for anon settings gear (.anon-settings-nav)
+            $('.anon-settings-nav > li').each(function () {
+                var $li = $(this);
+                var $gearBtn = $li.children('.nav-gear-btn');
+
+                $gearBtn.on('click', function (e) {
+                    if (e.which === 2 || e.metaKey || e.ctrlKey || e.shiftKey) {
+                        return;
+                    }
+
+                    var isOpen = $li.hasClass('dropdown-open') || $li.hasClass('is-open');
+
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    if (!isOpen) {
+                        closeAllDropdowns();
+                        $li.addClass('dropdown-open is-open');
+                        startNavTimer($li);
+                    } else {
+                        closeAllDropdowns();
+                    }
+                });
+
+                $li.on('mouseenter mousemove keydown click', function () {
+                    refreshNavTimer($li);
+                });
+            });
+
             // Close dropdowns on outside click (capture phase so stopPropagation won't block it)
             document.addEventListener('click', function (e) {
                 var inNavDropdown = $(e.target).closest('#nav-list > li.dropdown-open, #nav-list > li.is-open').length > 0;
                 var inUserDropdown = $(e.target).closest('.user-dropdown-nav > li.dropdown-open, .user-dropdown-nav > li.is-open').length > 0;
+                var inAnonSettings = $(e.target).closest('.anon-settings-nav > li.dropdown-open, .anon-settings-nav > li.is-open').length > 0;
 
-                if (!inNavDropdown && !inUserDropdown) {
+                if (!inNavDropdown && !inUserDropdown && !inAnonSettings) {
                     closeAllDropdowns();
                 }
             }, true);
