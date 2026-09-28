@@ -581,6 +581,21 @@
     }
 }
 
+.gravatar-main,
+.gravatar-mobile {
+    display: inline-block;
+    line-height: 0;
+
+    img.user-avatar,
+    img.gravatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+        display: block;
+    }
+}
+
 @media (max-width: 760px) {
     .new-comments {
         .gravatar-main {
