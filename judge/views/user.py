@@ -2,6 +2,8 @@ import datetime
 import itertools
 import json
 import os
+import subprocess
+import tempfile
 from operator import attrgetter, itemgetter
 
 import pytz
@@ -32,8 +34,8 @@ from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, FormView, ListView, TemplateView, View
 from reversion import revisions
 
-from judge.forms import CustomAuthenticationForm, ProfileForm, UserBanForm, UserDownloadDataForm, UserForm, \
-    newsletter_id
+from judge.forms import AvatarUploadForm, CustomAuthenticationForm, ProfileForm, UserBanForm, UserDownloadDataForm, \
+    UserForm, newsletter_id
 from judge.models import BlogPost, Organization, Profile, Submission
 from judge.models import Comment
 from judge.performance_points import get_pp_breakdown
@@ -52,7 +54,7 @@ from judge.views.blog import PostListBase
 from .contests import ContestRanking
 
 __all__ = ['UserPage', 'UserAboutPage', 'UserProblemsPage', 'UserCommentPage', 'UserDownloadData', 'UserPrepareData',
-           'users', 'edit_profile']
+           'users', 'edit_profile', 'edit_avatar']
 
 
 def remap_keys(iterable, mapping):
@@ -528,6 +530,94 @@ def edit_profile(request):
         'has_math_config': bool(settings.MATHOID_URL),
         'ignore_user_script': True,
         'TIMEZONE_MAP': settings.TIMEZONE_MAP,
+    })
+
+
+@login_required
+def edit_avatar(request):
+    if request.profile.mute:
+        return generic_message(request, _("Can't edit avatar"), _('Your part is silent, little toad.'), status=403)
+
+    success_msg = None
+
+    if request.method == 'POST':
+        action = request.POST.get('action', 'upload')
+
+        if action == 'reset':
+            if request.profile.avatar:
+                old_avatar_path = os.path.join(settings.MEDIA_ROOT, request.profile.avatar)
+                if os.path.exists(old_avatar_path):
+                    try:
+                        os.remove(old_avatar_path)
+                    except OSError:
+                        pass
+                request.profile.avatar = ''
+                request.profile.save(update_fields=['avatar'])
+            return HttpResponseRedirect(reverse('edit_avatar') + '?reset=1')
+
+        form = AvatarUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            uploaded_file = form.cleaned_data['avatar_image']
+            avatar_dir = os.path.join(settings.MEDIA_ROOT, 'avatars')
+            os.makedirs(avatar_dir, exist_ok=True)
+
+            timestamp = int(timezone.now().timestamp())
+            target_rel_path = f'avatars/user_{request.profile.id}_{timestamp}.webp'
+            target_abs_path = os.path.join(settings.MEDIA_ROOT, target_rel_path)
+
+            suffix = os.path.splitext(uploaded_file.name)[1]
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+                for chunk in uploaded_file.chunks():
+                    tmp.write(chunk)
+                tmp_path = tmp.name
+
+            try:
+                cmd = [
+                    'ffmpeg', '-y',
+                    '-i', tmp_path,
+                    '-vf', "crop='min(iw,ih)':'min(iw,ih)',scale=512:512:flags=lanczos",
+                    '-c:v', 'libwebp',
+                    '-quality', '85',
+                    target_abs_path,
+                ]
+                proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30)
+                if proc.returncode != 0 or not os.path.exists(target_abs_path):
+                    form.add_error('avatar_image', _('Failed to process image with FFmpeg. Please verify image format.'))
+                else:
+                    if request.profile.avatar and request.profile.avatar != target_rel_path:
+                        old_path = os.path.join(settings.MEDIA_ROOT, request.profile.avatar)
+                        if os.path.exists(old_path):
+                            try:
+                                os.remove(old_path)
+                            except OSError:
+                                pass
+
+                    request.profile.avatar = target_rel_path
+                    request.profile.save(update_fields=['avatar'])
+                    return HttpResponseRedirect(reverse('edit_avatar') + '?success=1')
+            except Exception as e:
+                form.add_error('avatar_image', _('Error processing image: %s') % str(e))
+            finally:
+                if os.path.exists(tmp_path):
+                    try:
+                        os.remove(tmp_path)
+                    except OSError:
+                        pass
+    else:
+        form = AvatarUploadForm()
+
+    if request.GET.get('success'):
+        success_msg = _('Avatar successfully updated!')
+    elif request.GET.get('reset'):
+        success_msg = _('Avatar has been reset to default.')
+
+    return render(request, 'user/edit-avatar.html', {
+        'title': _('Change Avatar'),
+        'form': form,
+        'user': request.profile,
+        'profile': request.profile,
+        'avatar_url': request.profile.avatar_url,
+        'success_msg': success_msg,
     })
 
 

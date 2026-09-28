@@ -66,7 +66,7 @@
                                         {% with author=node.author, user=node.author.user %}
                                             <a href="{{ url('user_page', user.username) }}" class="user comment-author-avatar-link" title="{{ user.username }}">
                                                 <span class="author-avatar-circle">
-                                                    <img src="{{ gravatar(author, 75) }}" class="user-gravatar" alt="{{ user.username }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                    <img src="{{ avatar(author, 75) }}" class="user-avatar user-gravatar" alt="{{ user.username }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                                     <span class="author-avatar-fallback" style="display: none;">{{ (author.display_name or user.username)[0]|upper }}</span>
                                                 </span>
                                             </a>

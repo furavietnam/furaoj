@@ -187,7 +187,7 @@ class UserSearchSelect2View(Select2CacheControlMixin, BaseListView):
         self.gravatar_default = request.GET.get('gravatar_default', None)
 
         self.object_list = self.get_queryset().values_list('pk', 'user__username', 'user__email', 'display_rank',
-                                                           'username_display_override')
+                                                           'username_display_override', 'avatar', 'mute')
 
         context = self.get_context_data()
 
@@ -196,9 +196,10 @@ class UserSearchSelect2View(Select2CacheControlMixin, BaseListView):
                 {
                     'text': username_override or username,
                     'id': username,
-                    'gravatar_url': gravatar(email, self.gravatar_size, self.gravatar_default),
+                    'avatar_url': (f'/{avatar.lstrip("/")}' if avatar and not mute else '/static/icons/default-avatar.svg'),
+                    'gravatar_url': (f'/{avatar.lstrip("/")}' if avatar and not mute else '/static/icons/default-avatar.svg'),
                     'display_rank': display_rank,
-                } for pk, username, email, display_rank, username_override in context['object_list']],
+                } for pk, username, email, display_rank, username_override, avatar, mute in context['object_list']],
             'more': context['page_obj'].has_next(),
         })
 
