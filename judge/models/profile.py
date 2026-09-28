@@ -320,6 +320,15 @@ class Profile(models.Model):
             return f'/{self.avatar.lstrip("/")}'
         return '/static/icons/default-avatar.svg'
 
+    background = models.CharField(max_length=255, blank=True, default='', verbose_name=_('custom background image path'),
+                                  help_text=_('Relative path to user custom background WebP image under media.'))
+
+    @property
+    def background_url(self):
+        if self.background and not self.mute:
+            return f'/{self.background.lstrip("/")}'
+        return ''
+
     @classmethod
     def get_ticket_secret(cls, profile_id):
         return (hmac.new(utf8bytes(settings.EVENT_DAEMON_TICKET_KEY), b'%d' % profile_id, hashlib.sha512)

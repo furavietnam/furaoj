@@ -998,3 +998,19 @@ class AvatarUploadForm(Form):
             if image.size > 5 * 1024 * 1024:
                 raise ValidationError(_('Image file size must not exceed 5MB.'))
         return image
+
+
+class BackgroundUploadForm(Form):
+    background_image = forms.FileField(
+        label=_('Select background image'),
+        required=True,
+        validators=[FileExtensionValidator(allowed_extensions=['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'])],
+        help_text=_('Maximum size 10MB. Formats: PNG, JPEG, WEBP, GIF, BMP.')
+    )
+
+    def clean_background_image(self):
+        image = self.cleaned_data.get('background_image')
+        if image:
+            if image.size > 10 * 1024 * 1024:
+                raise ValidationError(_('Image file size must not exceed 10MB.'))
+        return image
