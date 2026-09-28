@@ -271,7 +271,7 @@
                 <div class="info">
                     <div class="user-info">
                         <a href="{{ url('user_page', request.user.username) }}" class="user">
-                            <img src="{{ gravatar(request.user, 80) }}" class="user-gravatar">
+                            <img src="{{ avatar(request.user, 80) }}" class="user-gravatar user-avatar">
                         </a>
                     </div>
                     {% if autofill_replies %}

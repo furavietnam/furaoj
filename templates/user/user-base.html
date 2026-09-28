@@ -13,7 +13,7 @@
         <aside class="user-sidebar">
             <div class="user-profile-card">
                 <div class="user-avatar-wrapper">
-                    <img src="{{ gravatar(user, 180) }}" class="user-gravatar" alt="{{ user.user.username }}">
+                    <img src="{{ avatar(user, 180) }}" class="user-avatar user-gravatar" alt="{{ user.user.username }}">
                 </div>
                 <div class="user-identity">
                     <h2 class="user-name-title">{{ user.display_name or user.user.username }}</h2>

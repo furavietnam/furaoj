@@ -1,0 +1,577 @@
+{% extends "user/user-base.html" %}
+
+{% block title %}{{ _('Change Avatar') }} - {{ request.user.username }} - {{ SITE_NAME }}{% endblock %}
+
+{% block user_media %}
+<style>
+    .avatar-upload-container {
+        max-width: 680px;
+        margin: 20px auto;
+        padding: 24px;
+        background: var(--bg-box, #ffffff);
+        border: 1px solid var(--border-color, #e2e8f0);
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    }
+    .avatar-page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border-color, #e2e8f0);
+        padding-bottom: 16px;
+        margin-bottom: 24px;
+    }
+    .avatar-page-title {
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin: 0;
+        color: var(--text-color, #1e293b);
+    }
+    .avatar-back-link {
+        font-size: 0.95rem;
+        color: #4f46e5;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .avatar-back-link:hover {
+        text-decoration: underline;
+    }
+    .avatar-alert {
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 0.95rem;
+    }
+    .avatar-alert-success {
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        color: #065f46;
+    }
+    .avatar-alert-error {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+    }
+    .current-avatar-card {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 16px;
+        background: var(--bg-secondary, #f8fafc);
+        border-radius: 10px;
+        margin-bottom: 24px;
+    }
+    .current-avatar-img {
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        object-fit: cover;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border: 3px solid #ffffff;
+    }
+    .current-avatar-info {
+        flex: 1;
+    }
+    .current-avatar-info h4 {
+        margin: 0 0 6px 0;
+        font-size: 1.1rem;
+        color: var(--text-color, #1e293b);
+    }
+    .current-avatar-info p {
+        margin: 0 0 10px 0;
+        font-size: 0.88rem;
+        color: #64748b;
+    }
+    .btn-reset-avatar {
+        background: #ef4444;
+        color: #ffffff;
+        border: none;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: background 0.15s;
+    }
+    .btn-reset-avatar:hover {
+        background: #dc2626;
+    }
+    .avatar-dropzone {
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 36px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: var(--bg-secondary, #f8fafc);
+    }
+    .avatar-dropzone:hover, .avatar-dropzone.dragover {
+        border-color: #4f46e5;
+        background: #eef2ff;
+    }
+    .avatar-dropzone-icon {
+        font-size: 48px;
+        color: #6366f1;
+        margin-bottom: 12px;
+    }
+    .avatar-dropzone-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-color, #1e293b);
+        margin-bottom: 6px;
+    }
+    .avatar-dropzone-sub {
+        font-size: 0.88rem;
+        color: #64748b;
+        margin-bottom: 16px;
+    }
+    .btn-choose-file {
+        background: #4f46e5;
+        color: #ffffff;
+        border: none;
+        padding: 10px 22px;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+        transition: all 0.15s;
+    }
+    .btn-choose-file:hover {
+        background: #4338ca;
+        box-shadow: 0 4px 10px rgba(79, 70, 229, 0.4);
+    }
+    .avatar-features-list {
+        margin-top: 24px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border-color, #e2e8f0);
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    .avatar-feature-item {
+        flex: 1 1 200px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.85rem;
+        color: #64748b;
+    }
+    .avatar-feature-item i {
+        color: #10b981;
+        font-size: 1rem;
+    }
+
+    /* Modal Preview Styling */
+    .avatar-modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.65);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 99999;
+        backdrop-filter: blur(4px);
+    }
+    .avatar-modal-backdrop.is-active {
+        display: flex;
+    }
+    .avatar-modal-dialog {
+        background: var(--bg-box, #ffffff);
+        width: 90%;
+        max-width: 480px;
+        border-radius: 16px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        animation: avatarModalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes avatarModalPop {
+        0% { transform: scale(0.95); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    .avatar-modal-header {
+        padding: 18px 24px;
+        border-bottom: 1px solid var(--border-color, #e2e8f0);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .avatar-modal-header h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-color, #1e293b);
+    }
+    .avatar-modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #94a3b8;
+        line-height: 1;
+    }
+    .avatar-modal-close:hover {
+        color: #475569;
+    }
+    .avatar-modal-body {
+        padding: 24px;
+        text-align: center;
+    }
+    .preview-circle-wrapper {
+        width: 180px;
+        height: 180px;
+        margin: 0 auto 16px auto;
+        border-radius: 50%;
+        overflow: hidden;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        border: 4px solid #4f46e5;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .preview-circle-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    .preview-file-details {
+        font-size: 0.9rem;
+        color: var(--text-color, #334155);
+        margin-bottom: 8px;
+    }
+    .preview-hint {
+        font-size: 0.82rem;
+        color: #64748b;
+        margin: 0;
+    }
+    .avatar-modal-footer {
+        padding: 16px 24px;
+        background: var(--bg-secondary, #f8fafc);
+        border-top: 1px solid var(--border-color, #e2e8f0);
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+    .btn-modal-cancel {
+        background: #e2e8f0;
+        color: #334155;
+        border: none;
+        padding: 9px 18px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .btn-modal-cancel:hover {
+        background: #cbd5e1;
+    }
+    .btn-modal-confirm {
+        background: #4f46e5;
+        color: #ffffff;
+        border: none;
+        padding: 9px 20px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.15s;
+    }
+    .btn-modal-confirm:hover {
+        background: #4338ca;
+    }
+    .btn-modal-confirm.is-loading {
+        pointer-events: none;
+        opacity: 0.85;
+    }
+
+    /* Dark Mode Support */
+    body.dark .avatar-upload-container {
+        background: #1e293b;
+        border-color: #334155;
+    }
+    body.dark .avatar-page-header {
+        border-color: #334155;
+    }
+    body.dark .avatar-page-title {
+        color: #f1f5f9;
+    }
+    body.dark .avatar-back-link {
+        color: #818cf8;
+    }
+    body.dark .current-avatar-card {
+        background: #0f172a;
+    }
+    body.dark .current-avatar-img {
+        border-color: #334155;
+    }
+    body.dark .current-avatar-info h4 {
+        color: #f1f5f9;
+    }
+    body.dark .current-avatar-info p {
+        color: #94a3b8;
+    }
+    body.dark .avatar-dropzone {
+        background: #0f172a;
+        border-color: #334155;
+    }
+    body.dark .avatar-dropzone:hover, body.dark .avatar-dropzone.dragover {
+        background: #1e1e38;
+        border-color: #818cf8;
+    }
+    body.dark .avatar-dropzone-title {
+        color: #f1f5f9;
+    }
+    body.dark .avatar-features-list {
+        border-color: #334155;
+    }
+    body.dark .avatar-modal-dialog {
+        background: #1e293b;
+    }
+    body.dark .avatar-modal-header {
+        border-color: #334155;
+    }
+    body.dark .avatar-modal-header h3 {
+        color: #f1f5f9;
+    }
+    body.dark .avatar-modal-footer {
+        background: #0f172a;
+        border-color: #334155;
+    }
+    body.dark .btn-modal-cancel {
+        background: #334155;
+        color: #f1f5f9;
+    }
+    body.dark .btn-modal-cancel:hover {
+        background: #475569;
+    }
+    body.dark .preview-file-details {
+        color: #f1f5f9;
+    }
+</style>
+{% endblock %}
+
+{% block user_content %}
+    {% set user = request.profile %}
+    {% include "user/user-tabs.html" %}
+
+    <div class="avatar-upload-container">
+        <div class="avatar-page-header">
+            <h2 class="avatar-page-title"><i class="fa fa-picture-o"></i> {{ _('Change Avatar') }}</h2>
+            <a href="{{ url('user_edit_profile') }}" class="avatar-back-link">
+                <i class="fa fa-arrow-left"></i> {{ _('Back to Edit Profile') }}
+            </a>
+        </div>
+
+        {% if success_msg %}
+            <div class="avatar-alert avatar-alert-success">
+                <i class="fa fa-check-circle"></i> {{ success_msg }}
+            </div>
+        {% endif %}
+
+        {% if form.avatar_image.errors %}
+            <div class="avatar-alert avatar-alert-error">
+                {% for error in form.avatar_image.errors %}
+                    <div><i class="fa fa-exclamation-triangle"></i> {{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Current Avatar Card -->
+        <div class="current-avatar-card">
+            <img src="{{ avatar_url }}" alt="{{ request.user.username }}" class="current-avatar-img">
+            <div class="current-avatar-info">
+                <h4>{{ request.user.username }}</h4>
+                <p>
+                    {% if profile.avatar %}
+                        <i class="fa fa-check-circle text-success" style="color: #10b981;"></i> {{ _('Custom WebP avatar active') }}
+                    {% else %}
+                        <i class="fa fa-info-circle"></i> {{ _('Using default system avatar') }}
+                    {% endif %}
+                </p>
+                {% if profile.avatar %}
+                    <form method="post" action="{{ url('edit_avatar') }}" style="margin: 0;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="reset">
+                        <button type="submit" class="btn-reset-avatar" onclick="return confirm('{{ _('Are you sure you want to reset your avatar to the default?') }}');">
+                            <i class="fa fa-trash"></i> {{ _('Reset to Default') }}
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Upload Form with Drag and Drop -->
+        <form id="avatar-form" method="post" action="{{ url('edit_avatar') }}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="upload">
+            <input type="file" id="id_avatar_image" name="avatar_image" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp" style="display: none;">
+
+            <div class="avatar-dropzone" id="avatar-dropzone">
+                <div class="avatar-dropzone-icon">
+                    <i class="fa fa-cloud-upload"></i>
+                </div>
+                <div class="avatar-dropzone-title">{{ _('Click or Drag & Drop image here') }}</div>
+                <div class="avatar-dropzone-sub">
+                    {{ _('Supports PNG, JPG, JPEG, WEBP, GIF, BMP (Max 5MB)') }}
+                </div>
+                <button type="button" class="btn-choose-file" id="btn-trigger-picker">
+                    <i class="fa fa-folder-open-o"></i> {{ _('Choose Image File') }}
+                </button>
+            </div>
+        </form>
+
+        <div class="avatar-features-list">
+            <div class="avatar-feature-item">
+                <i class="fa fa-shield"></i> {{ _('Stored locally (Zero Gravatar tracking)') }}
+            </div>
+            <div class="avatar-feature-item">
+                <i class="fa fa-bolt"></i> {{ _('Auto-compressed to lightweight WebP via FFmpeg') }}
+            </div>
+            <div class="avatar-feature-item">
+                <i class="fa fa-crop"></i> {{ _('Auto-centered & squared 512x512') }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Preview -->
+    <div class="avatar-modal-backdrop" id="avatar-preview-modal">
+        <div class="avatar-modal-dialog">
+            <div class="avatar-modal-header">
+                <h3><i class="fa fa-eye"></i> {{ _('Avatar Preview') }}</h3>
+                <button type="button" class="avatar-modal-close" id="btn-modal-close">&times;</button>
+            </div>
+            <div class="avatar-modal-body">
+                <div class="preview-circle-wrapper">
+                    <img id="preview-image" class="preview-circle-img" src="" alt="Preview">
+                </div>
+                <div class="preview-file-details">
+                    <strong id="preview-filename">image.jpg</strong> (<span id="preview-filesize">0 KB</span>)
+                </div>
+                <p class="preview-hint">
+                    {{ _('Your avatar will be square cropped and converted to high-performance WebP.') }}
+                </p>
+            </div>
+            <div class="avatar-modal-footer">
+                <button type="button" class="btn-modal-cancel" id="btn-modal-cancel">{{ _('Cancel') }}</button>
+                <button type="button" class="btn-modal-confirm" id="btn-modal-confirm">
+                    <i class="fa fa-check"></i> <span id="confirm-text">{{ _('Confirm & Upload') }}</span>
+                </button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block user_js_media %}
+<script>
+$(function () {
+    var $dropzone = $('#avatar-dropzone');
+    var $fileInput = $('#id_avatar_image');
+    var $modal = $('#avatar-preview-modal');
+    var $previewImg = $('#preview-image');
+    var $previewFilename = $('#preview-filename');
+    var $previewFilesize = $('#preview-filesize');
+    var $btnConfirm = $('#btn-modal-confirm');
+    var $confirmText = $('#confirm-text');
+    var $form = $('#avatar-form');
+
+    $('#btn-trigger-picker').on('click', function (e) {
+        e.stopPropagation();
+        $fileInput.trigger('click');
+    });
+
+    $dropzone.on('click', function () {
+        $fileInput.trigger('click');
+    });
+
+    $dropzone.on('dragover dragenter', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $dropzone.addClass('dragover');
+    });
+
+    $dropzone.on('dragleave dragend drop', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $dropzone.removeClass('dragover');
+    });
+
+    $dropzone.on('drop', function (e) {
+        var files = e.originalEvent.dataTransfer.files;
+        if (files && files.length > 0) {
+            handleSelectedFile(files[0]);
+        }
+    });
+
+    $fileInput.on('change', function () {
+        if (this.files && this.files.length > 0) {
+            handleSelectedFile(this.files[0]);
+        }
+    });
+
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    function handleSelectedFile(file) {
+        if (!file.type.match(/^image\//)) {
+            alert("{{ _('Please select a valid image file.') }}");
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            alert("{{ _('Selected file is too large! Maximum allowed size is 5MB.') }}");
+            return;
+        }
+
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            $previewImg.attr('src', e.target.result);
+            $previewFilename.text(file.name);
+            $previewFilesize.text(formatFileSize(file.size));
+            $modal.addClass('is-active');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function closeModal() {
+        $modal.removeClass('is-active');
+        $fileInput.val('');
+    }
+
+    $('#btn-modal-close, #btn-modal-cancel').on('click', function () {
+        closeModal();
+    });
+
+    $modal.on('click', function (e) {
+        if ($(e.target).is($modal)) {
+            closeModal();
+        }
+    });
+
+    $btnConfirm.on('click', function () {
+        $btnConfirm.addClass('is-loading');
+        $confirmText.text("{{ _('Compressing WebP & Uploading...') }}");
+        $btnConfirm.prepend('<i class="fa fa-spinner fa-spin"></i> ');
+        $form.submit();
+    });
+});
+</script>
+{% endblock %}

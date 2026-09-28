@@ -66,6 +66,25 @@
             }
         </style>
     {% endif %}
+    {% set custom_bg = None %}
+    {% if user and user.background_url %}
+        {% set custom_bg = user.background_url %}
+    {% elif profile and profile.background_url %}
+        {% set custom_bg = profile.background_url %}
+    {% elif request.user.is_authenticated and request.profile.background_url %}
+        {% set custom_bg = request.profile.background_url %}
+    {% endif %}
+    {% if custom_bg %}
+        <style>
+            body, body[data-theme="dark"], body[data-theme="auto"] {
+                background-image: url("{{ custom_bg }}") !important;
+                background-size: cover !important;
+                background-position: center center !important;
+                background-attachment: fixed !important;
+                background-repeat: no-repeat !important;
+            }
+        </style>
+    {% endif %}
     {% block media %}{% endblock %}
     {% if not INLINE_JQUERY %}
         <script src="{{ JQUERY_JS }}"></script>

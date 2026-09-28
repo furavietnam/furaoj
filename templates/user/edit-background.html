@@ -1,0 +1,621 @@
+{% extends "user/user-base.html" %}
+
+{% block title %}{{ _('Change Background') }} - {{ request.user.username }} - {{ SITE_NAME }}{% endblock %}
+
+{% block user_media %}
+<style>
+    .bg-upload-container {
+        max-width: 760px;
+        margin: 20px auto;
+        padding: 24px;
+        background: var(--bg-box, #ffffff);
+        border: 1px solid var(--border-color, #e2e8f0);
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    }
+    .bg-page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border-color, #e2e8f0);
+        padding-bottom: 16px;
+        margin-bottom: 24px;
+    }
+    .bg-page-title {
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin: 0;
+        color: var(--text-color, #1e293b);
+    }
+    .bg-back-link {
+        font-size: 0.95rem;
+        color: #4f46e5;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .bg-back-link:hover {
+        text-decoration: underline;
+    }
+    .bg-alert {
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 0.95rem;
+    }
+    .bg-alert-success {
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        color: #065f46;
+    }
+    .bg-alert-error {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+    }
+    .current-bg-card {
+        padding: 16px;
+        background: var(--bg-secondary, #f8fafc);
+        border-radius: 10px;
+        margin-bottom: 24px;
+    }
+    .current-bg-preview {
+        width: 100%;
+        height: 160px;
+        border-radius: 8px;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        border: 1px solid var(--border-color, #e2e8f0);
+        margin-bottom: 12px;
+        position: relative;
+        overflow: hidden;
+    }
+    .current-bg-preview.default-pattern {
+        background-color: #fbfbfb;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600'%3E%3Ccircle cx='50' cy='50' r='5' fill='%23555' opacity='0.10'/%3E%3Ccircle cx='450' cy='450' r='5' fill='%23555' opacity='0.10'/%3E%3Ctext x='300' y='300' font-family='sans-serif' font-size='22' font-weight='bold' fill='%23555' opacity='0.08' text-anchor='middle' transform='rotate(-30 300 300)'%3EFura Online Judge%3C/text%3E%3C/svg%3E");
+        background-repeat: repeat;
+        background-size: 300px 300px;
+    }
+    .current-bg-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .current-bg-info h4 {
+        margin: 0 0 4px 0;
+        font-size: 1.05rem;
+        color: var(--text-color, #1e293b);
+    }
+    .current-bg-info p {
+        margin: 0;
+        font-size: 0.88rem;
+        color: #64748b;
+    }
+    .btn-reset-bg {
+        background: #ef4444;
+        color: #ffffff;
+        border: none;
+        padding: 7px 16px;
+        border-radius: 6px;
+        font-size: 0.88rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: background 0.15s;
+    }
+    .btn-reset-bg:hover {
+        background: #dc2626;
+    }
+    .bg-dropzone {
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 40px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: var(--bg-secondary, #f8fafc);
+    }
+    .bg-dropzone:hover, .bg-dropzone.dragover {
+        border-color: #4f46e5;
+        background: #eef2ff;
+    }
+    .bg-dropzone-icon {
+        font-size: 52px;
+        color: #6366f1;
+        margin-bottom: 12px;
+    }
+    .bg-dropzone-title {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--text-color, #1e293b);
+        margin-bottom: 6px;
+    }
+    .bg-dropzone-sub {
+        font-size: 0.88rem;
+        color: #64748b;
+        margin-bottom: 18px;
+    }
+    .btn-choose-bg {
+        background: #4f46e5;
+        color: #ffffff;
+        border: none;
+        padding: 11px 24px;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+        transition: all 0.15s;
+    }
+    .btn-choose-bg:hover {
+        background: #4338ca;
+        box-shadow: 0 4px 10px rgba(79, 70, 229, 0.4);
+    }
+    .bg-features-list {
+        margin-top: 24px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border-color, #e2e8f0);
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+    .bg-feature-item {
+        flex: 1 1 200px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.85rem;
+        color: #64748b;
+    }
+    .bg-feature-item i {
+        color: #10b981;
+        font-size: 1rem;
+    }
+
+    /* Background Modal Preview */
+    .bg-modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.7);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 99999;
+        backdrop-filter: blur(5px);
+    }
+    .bg-modal-backdrop.is-active {
+        display: flex;
+    }
+    .bg-modal-dialog {
+        background: var(--bg-box, #ffffff);
+        width: 92%;
+        max-width: 680px;
+        border-radius: 16px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+        animation: bgModalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes bgModalPop {
+        0% { transform: scale(0.95); opacity: 0; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    .bg-modal-header {
+        padding: 18px 24px;
+        border-bottom: 1px solid var(--border-color, #e2e8f0);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .bg-modal-header h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--text-color, #1e293b);
+    }
+    .bg-modal-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #94a3b8;
+        line-height: 1;
+    }
+    .bg-modal-close:hover {
+        color: #475569;
+    }
+    .bg-modal-body {
+        padding: 24px;
+    }
+    .preview-bg-viewport {
+        width: 100%;
+        height: 240px;
+        border-radius: 10px;
+        background-size: cover;
+        background-position: center center;
+        background-repeat: no-repeat;
+        border: 2px solid #4f46e5;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+    .preview-bg-overlay {
+        background: rgba(255, 255, 255, 0.85);
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #1e293b;
+        backdrop-filter: blur(4px);
+    }
+    .preview-bg-meta {
+        font-size: 0.9rem;
+        color: var(--text-color, #334155);
+        margin-bottom: 8px;
+        text-align: center;
+    }
+    .preview-bg-hint {
+        font-size: 0.82rem;
+        color: #64748b;
+        margin: 0;
+        text-align: center;
+    }
+    .bg-modal-footer {
+        padding: 16px 24px;
+        background: var(--bg-secondary, #f8fafc);
+        border-top: 1px solid var(--border-color, #e2e8f0);
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+    .btn-bg-cancel {
+        background: #e2e8f0;
+        color: #334155;
+        border: none;
+        padding: 9px 18px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .btn-bg-cancel:hover {
+        background: #cbd5e1;
+    }
+    .btn-bg-confirm {
+        background: #4f46e5;
+        color: #ffffff;
+        border: none;
+        padding: 9px 22px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.15s;
+    }
+    .btn-bg-confirm:hover {
+        background: #4338ca;
+    }
+    .btn-bg-confirm.is-loading {
+        pointer-events: none;
+        opacity: 0.85;
+    }
+
+    /* Dark Mode */
+    body.dark .bg-upload-container {
+        background: #1e293b;
+        border-color: #334155;
+    }
+    body.dark .bg-page-header {
+        border-color: #334155;
+    }
+    body.dark .bg-page-title {
+        color: #f1f5f9;
+    }
+    body.dark .bg-back-link {
+        color: #818cf8;
+    }
+    body.dark .current-bg-card {
+        background: #0f172a;
+    }
+    body.dark .current-bg-preview {
+        border-color: #334155;
+    }
+    body.dark .current-bg-preview.default-pattern {
+        background-color: #0b0f19;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600'%3E%3Ccircle cx='50' cy='50' r='5' fill='%23ffffff' opacity='0.03'/%3E%3Ccircle cx='450' cy='450' r='5' fill='%23ffffff' opacity='0.03'/%3E%3Ctext x='300' y='300' font-family='sans-serif' font-size='22' font-weight='bold' fill='%23ffffff' opacity='0.03' text-anchor='middle' transform='rotate(-30 300 300)'%3EFura Online Judge%3C/text%3E%3C/svg%3E");
+    }
+    body.dark .current-bg-info h4 {
+        color: #f1f5f9;
+    }
+    body.dark .current-bg-info p {
+        color: #94a3b8;
+    }
+    body.dark .bg-dropzone {
+        background: #0f172a;
+        border-color: #334155;
+    }
+    body.dark .bg-dropzone:hover, body.dark .bg-dropzone.dragover {
+        background: #1e1e38;
+        border-color: #818cf8;
+    }
+    body.dark .bg-dropzone-title {
+        color: #f1f5f9;
+    }
+    body.dark .bg-features-list {
+        border-color: #334155;
+    }
+    body.dark .bg-modal-dialog {
+        background: #1e293b;
+    }
+    body.dark .bg-modal-header {
+        border-color: #334155;
+    }
+    body.dark .bg-modal-header h3 {
+        color: #f1f5f9;
+    }
+    body.dark .bg-modal-footer {
+        background: #0f172a;
+        border-color: #334155;
+    }
+    body.dark .btn-bg-cancel {
+        background: #334155;
+        color: #f1f5f9;
+    }
+    body.dark .btn-bg-cancel:hover {
+        background: #475569;
+    }
+    body.dark .preview-bg-meta {
+        color: #f1f5f9;
+    }
+    body.dark .preview-bg-overlay {
+        background: rgba(15, 23, 42, 0.85);
+        color: #f1f5f9;
+    }
+</style>
+{% endblock %}
+
+{% block user_content %}
+    {% set user = request.profile %}
+    {% include "user/user-tabs.html" %}
+
+    <div class="bg-upload-container">
+        <div class="bg-page-header">
+            <h2 class="bg-page-title"><i class="fa fa-television"></i> {{ _('Change Background') }}</h2>
+            <a href="{{ url('user_edit_profile') }}" class="bg-back-link">
+                <i class="fa fa-arrow-left"></i> {{ _('Back to Edit Profile') }}
+            </a>
+        </div>
+
+        {% if success_msg %}
+            <div class="bg-alert bg-alert-success">
+                <i class="fa fa-check-circle"></i> {{ success_msg }}
+            </div>
+        {% endif %}
+
+        {% if form.background_image.errors %}
+            <div class="bg-alert bg-alert-error">
+                {% for error in form.background_image.errors %}
+                    <div><i class="fa fa-exclamation-triangle"></i> {{ error }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Current Background Display -->
+        <div class="current-bg-card">
+            {% if background_url %}
+                <div class="current-bg-preview" style="background-image: url('{{ background_url }}');"></div>
+            {% else %}
+                <div class="current-bg-preview default-pattern"></div>
+            {% endif %}
+
+            <div class="current-bg-info">
+                <div>
+                    <h4>{{ _('Active Background Status') }}</h4>
+                    <p>
+                        {% if background_url %}
+                            <i class="fa fa-check-circle text-success" style="color: #10b981;"></i> {{ _('Custom WebP background enabled') }}
+                        {% else %}
+                            <i class="fa fa-info-circle"></i> {{ _('Using system default watermark SVG pattern') }}
+                        {% endif %}
+                    </p>
+                </div>
+                {% if background_url %}
+                    <form method="post" action="{{ url('edit_background') }}" style="margin: 0;">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="reset">
+                        <button type="submit" class="btn-reset-bg" onclick="return confirm('{{ _('Are you sure you want to reset your background to default?') }}');">
+                            <i class="fa fa-trash"></i> {{ _('Reset to Default Pattern') }}
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Upload Form -->
+        <form id="bg-form" method="post" action="{{ url('edit_background') }}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="upload">
+            <input type="file" id="id_background_image" name="background_image" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp" style="display: none;">
+
+            <div class="bg-dropzone" id="bg-dropzone">
+                <div class="bg-dropzone-icon">
+                    <i class="fa fa-picture-o"></i>
+                </div>
+                <div class="bg-dropzone-title">{{ _('Click or Drag & Drop background image here') }}</div>
+                <div class="bg-dropzone-sub">
+                    {{ _('Supports PNG, JPG, JPEG, WEBP, GIF, BMP (Max 10MB)') }}
+                </div>
+                <button type="button" class="btn-choose-bg" id="btn-trigger-bg-picker">
+                    <i class="fa fa-folder-open-o"></i> {{ _('Choose Background File') }}
+                </button>
+            </div>
+        </form>
+
+        <div class="bg-features-list">
+            <div class="bg-feature-item">
+                <i class="fa fa-expand"></i> {{ _('Resolution preserved (No downscaling)') }}
+            </div>
+            <div class="bg-feature-item">
+                <i class="fa fa-bolt"></i> {{ _('High-performance WebP compression via FFmpeg') }}
+            </div>
+            <div class="bg-feature-item">
+                <i class="fa fa-desktop"></i> {{ _('Full-screen cover & fixed background view') }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Background Preview Modal -->
+    <div class="bg-modal-backdrop" id="bg-preview-modal">
+        <div class="bg-modal-dialog">
+            <div class="bg-modal-header">
+                <h3><i class="fa fa-eye"></i> {{ _('Background Preview') }}</h3>
+                <button type="button" class="bg-modal-close" id="btn-bg-modal-close">&times;</button>
+            </div>
+            <div class="bg-modal-body">
+                <div class="preview-bg-viewport" id="preview-bg-viewport">
+                    <div class="preview-bg-overlay">
+                        <i class="fa fa-desktop"></i> {{ _('Full Screen Viewport Simulation') }}
+                    </div>
+                </div>
+                <div class="preview-bg-meta">
+                    <strong id="preview-bg-filename">image.jpg</strong> (<span id="preview-bg-dimensions">-- x --</span>, <span id="preview-bg-filesize">0 KB</span>)
+                </div>
+                <p class="preview-bg-hint">
+                    {{ _('Original image resolution will be preserved and optimized to lightweight WebP.') }}
+                </p>
+            </div>
+            <div class="bg-modal-footer">
+                <button type="button" class="btn-bg-cancel" id="btn-bg-modal-cancel">{{ _('Cancel') }}</button>
+                <button type="button" class="btn-bg-confirm" id="btn-bg-modal-confirm">
+                    <i class="fa fa-check"></i> <span id="confirm-bg-text">{{ _('Confirm & Upload') }}</span>
+                </button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block user_js_media %}
+<script>
+$(function () {
+    var $dropzone = $('#bg-dropzone');
+    var $fileInput = $('#id_background_image');
+    var $modal = $('#bg-preview-modal');
+    var $previewViewport = $('#preview-bg-viewport');
+    var $previewFilename = $('#preview-bg-filename');
+    var $previewDimensions = $('#preview-bg-dimensions');
+    var $previewFilesize = $('#preview-bg-filesize');
+    var $btnConfirm = $('#btn-bg-modal-confirm');
+    var $confirmText = $('#confirm-bg-text');
+    var $form = $('#bg-form');
+
+    $('#btn-trigger-bg-picker').on('click', function (e) {
+        e.stopPropagation();
+        $fileInput.trigger('click');
+    });
+
+    $dropzone.on('click', function () {
+        $fileInput.trigger('click');
+    });
+
+    $dropzone.on('dragover dragenter', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $dropzone.addClass('dragover');
+    });
+
+    $dropzone.on('dragleave dragend drop', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $dropzone.removeClass('dragover');
+    });
+
+    $dropzone.on('drop', function (e) {
+        var files = e.originalEvent.dataTransfer.files;
+        if (files && files.length > 0) {
+            handleSelectedBgFile(files[0]);
+        }
+    });
+
+    $fileInput.on('change', function () {
+        if (this.files && this.files.length > 0) {
+            handleSelectedBgFile(this.files[0]);
+        }
+    });
+
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    function handleSelectedBgFile(file) {
+        if (!file.type.match(/^image\//)) {
+            alert("{{ _('Please select a valid image file.') }}");
+            return;
+        }
+
+        if (file.size > 10 * 1024 * 1024) {
+            alert("{{ _('Selected file is too large! Maximum allowed size is 10MB.') }}");
+            return;
+        }
+
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            var dataUrl = e.target.result;
+            $previewViewport.css('background-image', 'url(' + dataUrl + ')');
+            $previewFilename.text(file.name);
+            $previewFilesize.text(formatFileSize(file.size));
+
+            // Determine image resolution
+            var img = new Image();
+            img.onload = function () {
+                $previewDimensions.text(img.naturalWidth + ' × ' + img.naturalHeight + 'px');
+            };
+            img.src = dataUrl;
+
+            $modal.addClass('is-active');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function closeBgModal() {
+        $modal.removeClass('is-active');
+        $fileInput.val('');
+    }
+
+    $('#btn-bg-modal-close, #btn-bg-modal-cancel').on('click', function () {
+        closeBgModal();
+    });
+
+    $modal.on('click', function (e) {
+        if ($(e.target).is($modal)) {
+            closeBgModal();
+        }
+    });
+
+    $btnConfirm.on('click', function () {
+        $btnConfirm.addClass('is-loading');
+        $confirmText.text("{{ _('Compressing WebP & Uploading...') }}");
+        $btnConfirm.prepend('<i class="fa fa-spinner fa-spin"></i> ');
+        $form.submit();
+    });
+});
+</script>
+{% endblock %}

@@ -6,7 +6,7 @@
             <i class="fa fa-exclamation-circle"></i>
         {% endif %}
     </span>
-    <img src="{{ gravatar(message.user, 20) }}" class="action-gravatar">
+    <img src="{{ avatar(message.user, 20) }}" class="action-gravatar action-avatar">
     {{ link_user(message.user) }}
     {% if message.action == 'close' %}
         {{ _('closed this') }}
