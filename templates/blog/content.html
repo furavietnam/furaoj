@@ -71,7 +71,7 @@
                             <div class="blog-author-badge">
                                 <a href="{{ url('user_page', author.user.username) }}" class="author-avatar-link" title="{{ author.display_name or author.user.username }}">
                                     <span class="author-avatar-circle">
-                                        <img src="{{ avatar(author, 52) }}" alt="{{ author.user.username }}" class="author-avatar-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                        <img src="{{ avatar(author, 52) }}" alt="{{ author.user.username }}" class="author-avatar-img" width="28" height="28" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                         <span class="author-avatar-fallback" style="display: none;">{{ (author.display_name or author.user.username)[0]|upper }}</span>
                                     </span>
                                 </a>

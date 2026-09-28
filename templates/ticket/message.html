@@ -4,7 +4,7 @@
 <section id="message-{{ message.id }}" class="ticket-message">
     <div class="info">
         <a href="{{ url('user_page', message.user.user.username) }}" class="user">
-            <img src="{{ avatar(message.user, 80) }}" class="user-gravatar user-avatar">
+            <img src="{{ avatar(message.user, 80) }}" class="user-gravatar user-avatar" width="80" height="80">
         </a>
     </div>
     <div class="detail">

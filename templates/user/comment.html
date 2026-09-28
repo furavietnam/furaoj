@@ -53,7 +53,7 @@
                             </div>
                             {% with author=comment.author, user=comment.author.user %}
                                 <a href="{{ url('user_page', user.username) }}" class="user gravatar-main">
-                                    <img src="{{ avatar(author, 135) }}" class="gravatar user-avatar">
+                                    <img src="{{ avatar(author, 135) }}" class="gravatar user-avatar" width="48" height="48">
                                 </a>
                             {% endwith %}
                         </div>
@@ -62,7 +62,7 @@
                                 <span>
                                     {% with author=comment.author, user=comment.author.user %}
                                         <a href="{{ url('user_page', user.username) }}" class="user gravatar-mobile">
-                                            <img src="{{ avatar(author, 135) }}" class="gravatar user-avatar">
+                                            <img src="{{ avatar(author, 135) }}" class="gravatar user-avatar" width="48" height="48">
                                         </a>
                                     {% endwith %}
                                     {{ link_user(comment.author) }}&nbsp;
