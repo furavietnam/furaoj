@@ -735,6 +735,23 @@ class PolygonImporter:
             t['tutorial'] = process_images(t['tutorial'])
 
         if len(tutorials) > 0:
+            choices = list(map(itemgetter(0), settings.LANGUAGES))
+            default_lang_map = {'vietnamese': 'vi', 'english': 'en', 'russian': 'ru'}
+            self.meta['tutorials_by_lang'] = {}
+            for t in tutorials:
+                lang = t['language']
+                site_language = self.config.get('polygon_to_site_language_map', {}).get(lang) or default_lang_map.get(lang)
+                if not site_language or site_language not in choices:
+                    if self.interactive:
+                        site_language = input_choice(
+                            f'Please select corresponding site language for tutorial {lang} '
+                            f'(available options are {", ".join(choices)}): ',
+                            choices,
+                        )
+                    else:
+                        site_language = 'en' if 'en' in choices else choices[0]
+                self.meta['tutorials_by_lang'][site_language] = t['tutorial']
+
             languages = [t['language'] for t in tutorials]
             main_tutorial_language = self.config.get('main_tutorial_language', None)
             if not main_tutorial_language or main_tutorial_language not in languages:
@@ -747,8 +764,6 @@ class PolygonImporter:
             if main_tut:
                 self.meta['tutorial'] = main_tut['tutorial']
 
-            choices = list(map(itemgetter(0), settings.LANGUAGES))
-            default_lang_map = {'vietnamese': 'vi', 'english': 'en', 'russian': 'ru'}
             for t in tutorials:
                 lang = t['language']
                 if lang == main_tutorial_language:
@@ -838,6 +853,9 @@ class PolygonImporter:
         for t in self.meta.get('tutorial_translations', []):
             if t.get('content'):
                 t['content'] = t['content'].rstrip() + code_block
+        if 'tutorials_by_lang' in self.meta:
+            for lang in self.meta['tutorials_by_lang']:
+                self.meta['tutorials_by_lang'][lang] = self.meta['tutorials_by_lang'][lang].rstrip() + code_block
 
     @transaction.atomic
     def update_or_create_problem(self):
@@ -869,32 +887,52 @@ class PolygonImporter:
             ).save()
 
         Solution.objects.filter(problem=problem).delete()
-        has_tutorial = bool(self.meta.get('tutorial', '').strip())
-        has_trans_tutorials = bool(self.meta.get('tutorial_translations'))
-        if has_tutorial or has_trans_tutorials:
-            main_content = self.meta.get('tutorial', '').strip()
-            trans_list = list(self.meta.get('tutorial_translations', []))
-            if not main_content and trans_list:
-                first_trans = trans_list.pop(0)
-                main_content = first_trans['content'].strip()
+        tutorials_by_lang = self.meta.get('tutorials_by_lang', {})
+        if not tutorials_by_lang:
+            if self.meta.get('tutorial'):
+                tutorials_by_lang['vi'] = self.meta['tutorial']
+            for t_tran in self.meta.get('tutorial_translations', []):
+                tutorials_by_lang[t_tran['language']] = t_tran['content']
 
+        if tutorials_by_lang:
             is_public = self.config.get('publish_editorial', True)
-            solution = Solution(
-                problem=problem,
-                is_public=is_public,
-                publish_on=timezone.now(),
-                content=main_content,
-            )
-            solution.save()
+            if 'vi' in tutorials_by_lang:
+                vi_content = tutorials_by_lang['vi'].strip()
+                solution = Solution(
+                    problem=problem,
+                    is_public=is_public,
+                    publish_on=timezone.now(),
+                    content=vi_content,
+                )
+                solution.save()
 
-            for t_tran in trans_list:
-                t_content = t_tran['content'].strip()
-                if t_content:
-                    SolutionTranslation(
-                        solution=solution,
-                        language=t_tran['language'],
-                        content=t_content,
-                    ).save()
+                for lang, content in tutorials_by_lang.items():
+                    c_strip = content.strip()
+                    if lang != 'vi' and c_strip:
+                        SolutionTranslation(
+                            solution=solution,
+                            language=lang,
+                            content=c_strip,
+                        ).save()
+            else:
+                primary_lang = 'en' if 'en' in tutorials_by_lang else list(tutorials_by_lang.keys())[0]
+                primary_content = tutorials_by_lang[primary_lang].strip()
+                solution = Solution(
+                    problem=problem,
+                    is_public=is_public,
+                    publish_on=timezone.now(),
+                    content=primary_content,
+                )
+                solution.save()
+
+                for lang, content in tutorials_by_lang.items():
+                    c_strip = content.strip()
+                    if c_strip:
+                        SolutionTranslation(
+                            solution=solution,
+                            language=lang,
+                            content=c_strip,
+                        ).save()
 
         with open(self.meta['zipfile'], 'rb') as f:
             problem_data, _ = ProblemData.objects.update_or_create(problem=problem, defaults={

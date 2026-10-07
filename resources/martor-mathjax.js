@@ -1,38 +1,37 @@
 jQuery(function ($) {
-    $(document).on('martor:preview', function (e, $content) {
-        // Pick the right MathJax typesetting call depending on which version
-        // is loaded and whether startup has finished. The preview fragment is
-        // rendered server-side and may arrive before MathJax v3 has finished
-        // initializing (in which case MathJax.typesetPromise does not yet
-        // exist on the global MathJax object), or the host page may be
-        // running the legacy MathJax v2 which uses MathJax.Hub.Queue.
-        function run_typeset(element) {
-            if (!element) return;
-            if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') {
-                // MathJax v3, startup already complete.
+    function run_typeset(element, $content) {
+        if (!element || !window.MathJax) return;
+        var doTypeset = function () {
+            if (typeof window.MathJax.typesetClear === 'function') {
+                try { window.MathJax.typesetClear([element]); } catch (e) {}
+            }
+            if (typeof window.MathJax.typesetPromise === 'function') {
                 window.MathJax.typesetPromise([element]).then(function () {
                     $content.find('.tex-image').hide();
                     $content.find('.tex-text').show();
+                }).catch(function (err) {
+                    console.warn('MathJax preview typeset warning:', err);
                 });
-            } else if (window.MathJax && window.MathJax.Hub && window.MathJax.Hub.Queue) {
-                // MathJax v2 fallback.
+            } else if (window.MathJax.Hub && window.MathJax.Hub.Queue) {
                 window.MathJax.Hub.Queue(['Typeset', window.MathJax.Hub, element]);
-            } else if (window.MathJax && window.MathJax.startup && window.MathJax.startup.promise
-                       && typeof window.MathJax.startup.promise.then === 'function') {
-                // MathJax v3 is still initializing; wait for startup, then typeset.
-                window.MathJax.startup.promise.then(function () {
-                    if (typeof window.MathJax.typesetPromise === 'function') {
-                        window.MathJax.typesetPromise([element]).then(function () {
-                            $content.find('.tex-image').hide();
-                            $content.find('.tex-text').show();
-                        });
-                    }
-                });
             }
-        }
+        };
 
-        function update_math() {
-            run_typeset($content[0]);
+        if (window.MathJax.startup && window.MathJax.startup.promise
+            && typeof window.MathJax.startup.promise.then === 'function') {
+            window.MathJax.startup.promise.then(doTypeset);
+        } else {
+            doTypeset();
+        }
+    }
+
+    $(document).on('martor:preview', function (e, $content) {
+        var el = $content ? $content[0] : null;
+        if (!el) return;
+
+        if (window.MathJax && (typeof window.MathJax.typesetPromise === 'function' || (window.MathJax.startup && window.MathJax.startup.promise))) {
+            run_typeset(el, $content);
+            return;
         }
 
         var $jax = $content.find('.require-mathjax-support');
@@ -40,14 +39,11 @@ jQuery(function ($) {
             if (!('MathJax' in window)) {
                 $.ajax({
                     type: 'GET',
-                    url: $jax.attr('data-config'),
+                    url: $jax.attr('data-config') || '/static/mathjax_config.js',
                     dataType: 'script',
                     cache: true,
                     success: function () {
-                        // Only set startup.typeset if startup hasn't been
-                        // initialized yet. Clobbering an already-resolved
-                        // MathJax.startup object would break MathJax state on
-                        // pages where it has already loaded.
+                        window.MathJax = window.MathJax || {};
                         window.MathJax.startup = window.MathJax.startup || {};
                         window.MathJax.startup.typeset = false;
                         $.ajax({
@@ -55,13 +51,15 @@ jQuery(function ($) {
                             url: '/static/furaoj/mathjax/4.1.3/tex-chtml.js',
                             dataType: 'script',
                             cache: true,
-                            success: update_math
+                            success: function () {
+                                run_typeset(el, $content);
+                            }
                         });
                     }
                 });
             } else {
-                update_math();
+                run_typeset(el, $content);
             }
         }
-    })
+    });
 });

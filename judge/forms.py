@@ -159,6 +159,13 @@ class ProposeProblemSolutionForm(ModelForm):
             en_trans = self.instance.translations.filter(language='en').first()
             if en_trans:
                 self.fields['content_en'].initial = en_trans.content
+            # Clean up any legacy vi translation that may shadow content
+            vi_trans = self.instance.translations.filter(language='vi').first()
+            if vi_trans:
+                if not (self.instance.content and self.instance.content.strip()) and vi_trans.content:
+                    self.instance.content = vi_trans.content
+                    self.fields['content'].initial = vi_trans.content
+                vi_trans.delete()
             if self.instance.publish_on:
                 self.fields['publish_on'].initial = self.instance.publish_on.date()
         else:
@@ -192,6 +199,8 @@ class ProposeProblemSolutionForm(ModelForm):
                 )
             else:
                 instance.translations.filter(language='en').delete()
+            # Clean up any redundant vi translations
+            instance.translations.filter(language='vi').delete()
 
         if commit:
             save_translations()
@@ -427,9 +436,12 @@ class BaseProposeProblemSolutionFormSet(forms.BaseInlineFormSet):
     def save(self, commit=True):
         instances = []
         for form in self.forms:
-            content = (form.cleaned_data.get('content') or '').strip() if hasattr(form, 'cleaned_data') else ''
-            content_en = (form.cleaned_data.get('content_en') or '').strip() if hasattr(form, 'cleaned_data') else ''
-            if not content and not content_en:
+            if not hasattr(form, 'cleaned_data'):
+                continue
+            content = (form.cleaned_data.get('content') or '').strip()
+            content_en = (form.cleaned_data.get('content_en') or '').strip()
+            is_deleted = form.cleaned_data.get(forms.formsets.DELETION_FIELD_NAME, False)
+            if is_deleted or (not content and not content_en):
                 if form.instance.pk:
                     form.instance.delete()
                 continue

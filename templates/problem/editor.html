@@ -139,15 +139,61 @@
             });
             {% endif %}
 
+            function switchEditorialTab(tabKey) {
+                var btn = $('.editorial-tab-btn[data-tab="' + tabKey + '"]');
+                if (!btn.length) {
+                    btn = $('.editorial-tab-btn[data-tab="tab-editorial-vi"]');
+                    tabKey = 'tab-editorial-vi';
+                }
+                $('.editorial-tab-btn').removeClass('active primary');
+                btn.addClass('active primary');
+                $('.editorial-tab-pane').hide();
+                var activePane = $('#' + tabKey).show();
+
+                if (window.ace) {
+                    activePane.find('.main-martor').each(function () {
+                        var textarea = $(this).find('textarea');
+                        var name = textarea.attr('name') || textarea.attr('id') || '';
+                        var id = name.replace(/^id_/, '');
+                        try {
+                            var aceEditor = ace.edit('martor-' + id);
+                            if (aceEditor) {
+                                aceEditor.resize(true);
+                                aceEditor.renderer.updateFull();
+                            }
+                        } catch (err) {}
+                    });
+                    window.dispatchEvent(new Event('resize'));
+                }
+            }
+
+            var urlParams = new URLSearchParams(window.location.search);
+            var reqLang = urlParams.get('lang');
+            if (reqLang === 'en') {
+                switchEditorialTab('tab-editorial-en');
+            } else {
+                switchEditorialTab('tab-editorial-vi');
+            }
+
             $(document).on('click', '.editorial-tab-btn', function (e) {
                 e.preventDefault();
-                $('.editorial-tab-btn').removeClass('active primary');
-                $(this).addClass('active primary');
                 var target = $(this).data('tab');
-                $('.editorial-tab-pane').hide();
-                $('#' + target).show();
+                switchEditorialTab(target);
+            });
+
+            $('form.form-area').on('submit', function () {
                 if (window.ace) {
-                    window.dispatchEvent(new Event('resize'));
+                    $('.main-martor textarea').each(function () {
+                        var textarea = $(this);
+                        var name = textarea.attr('name') || textarea.attr('id') || '';
+                        var id = name.replace(/^id_/, '');
+                        try {
+                            var aceEditor = ace.edit('martor-' + id);
+                            if (aceEditor) {
+                                textarea.val(aceEditor.getValue());
+                            }
+                        } catch (err) {}
+                    });
                 }
             });
         })
@@ -350,4 +396,10 @@
     </form>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block bodyend %}
+    {% if REQUIRE_JAX %}
+        {% include "mathjax-load.html" %}
+    {% endif %}
 {% endblock %}
