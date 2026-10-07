@@ -17,6 +17,7 @@
 
 {% block js_media %}
     {{ form.media.js }}
+    {{ solution_formset.media.js }}
     {% include "leave-warning.html" %}
 
     <script src="{{ static('furaoj/jquery.formset.js') }}"></script>
@@ -137,14 +138,42 @@
                 });
             });
             {% endif %}
+
+            $(document).on('click', '.editorial-tab-btn', function (e) {
+                e.preventDefault();
+                $('.editorial-tab-btn').removeClass('active primary');
+                $(this).addClass('active primary');
+                var target = $(this).data('tab');
+                $('.editorial-tab-pane').hide();
+                $('#' + target).show();
+                if (window.ace) {
+                    window.dispatchEvent(new Event('resize'));
+                }
+            });
         })
     </script>
 {% endblock %}
 
 {% block media %}
     {{ form.media.css }}
+    {{ solution_formset.media.css }}
     <link rel="stylesheet" type="text/css" href="{{ static('ui_form.css') }}">
     <style>
+        .editorial-tab-btn {
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #334155;
+            padding: 7px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .editorial-tab-btn.active {
+            background: #2563eb !important;
+            color: #ffffff !important;
+            border-color: #2563eb !important;
+        }
         .hidden {
             display: none;
         }
@@ -239,8 +268,72 @@
         </table>
         <hr>
 
-        <center><h3> {{ _('Editorial') }} </h3></center>
-        <table class="django-as-table">{{ solution_formset.as_table() }}</table>
+        <center>
+            <h3> {{ _('Editorial') }} </h3>
+            <span class="helptext">{{ _('You can provide an editorial in Vietnamese and English.') }}</span>
+        </center>
+        {{ solution_formset.management_form }}
+        {% for sform in solution_formset %}
+            {{ sform.id }}
+            {{ sform.problem }}
+            {% if sform.non_field_errors() %}
+                <div class="errornote">{{ sform.non_field_errors() }}</div>
+            {% endif %}
+            <table class="django-as-table">
+                <tr>
+                    <th><label for="{{ sform.is_public.id_for_label }}">{{ _('Public visibility:') }}</label></th>
+                    <td>
+                        {{ sform.is_public.errors }}
+                        {{ sform.is_public }}
+                        <span class="helptext" style="margin-left: 8px;">{{ _('If checked, contestants can view this editorial.') }}</span>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="{{ sform.publish_on.id_for_label }}">{{ _('Publish date:') }}</label></th>
+                    <td>
+                        {{ sform.publish_on.errors }}
+                        {{ sform.publish_on }}
+                        <span class="helptext" style="margin-left: 8px;">{{ _('Leave empty to publish immediately.') }}</span>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="{{ sform.authors.id_for_label }}">{{ _('Authors:') }}</label></th>
+                    <td>
+                        {{ sform.authors.errors }}
+                        {{ sform.authors }}
+                    </td>
+                </tr>
+            </table>
+
+            <div class="editorial-tabs-container" style="margin: 1.5em 0;">
+                <div class="editorial-lang-nav" style="display: flex; gap: 8px; margin-bottom: 12px;">
+                    <button type="button" class="button editorial-tab-btn active" data-tab="tab-editorial-vi" style="display: flex; align-items: center; gap: 6px;">
+                        <span>🇻🇳</span> {{ _('Vietnamese Editorial') }}
+                    </button>
+                    <button type="button" class="button editorial-tab-btn" data-tab="tab-editorial-en" style="display: flex; align-items: center; gap: 6px;">
+                        <span>🇬🇧</span> {{ _('English Editorial') }}
+                    </button>
+                </div>
+
+                <div class="editorial-tab-pane" id="tab-editorial-vi">
+                    <label style="font-weight: 600; margin-bottom: 6px; display: block;">{{ _('Vietnamese Editorial Content') }}:</label>
+                    {{ sform.content.errors }}
+                    {{ sform.content }}
+                </div>
+
+                <div class="editorial-tab-pane" id="tab-editorial-en" style="display: none;">
+                    <label style="font-weight: 600; margin-bottom: 6px; display: block;">{{ _('English Editorial Content (Optional)') }}:</label>
+                    {{ sform.content_en.errors }}
+                    {{ sform.content_en }}
+                </div>
+            </div>
+
+            {% if solution_formset.can_delete and sform.instance.pk %}
+                <div style="margin: 10px 0; color: #dc2626;">
+                    <label>{{ sform.DELETE }} {{ _('Delete editorial') }}</label>
+                </div>
+            {% endif %}
+        {% endfor %}
 
         <table>
             <tr><td style="float: left;">

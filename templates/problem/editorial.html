@@ -16,7 +16,7 @@
 {% block header %}
     <div style="float:right">
         {% if problem.is_editable_by(request.user) %}
-            [<a href="{{ url('admin:judge_problem_change', problem.id) }}">{{ _('Edit') }}</a>]
+            [<a href="{{ url('problem_edit', problem.code) }}">{{ _('Edit') }}</a>]
         {% endif %}
     </div>
 {% endblock %}
@@ -41,7 +41,23 @@
                 </p>
             {% endif %}
         {% endwith %}
-        {{ solution.content|markdown('solution', MATH_ENGINE)|reference|str|safe }}
+
+        {% if has_multiple_languages %}
+            <div class="editorial-lang-switcher" style="display: flex; gap: 8px; margin: 15px 0;">
+                {% if 'vi' in editorial_languages %}
+                    <a href="?lang=vi" class="button {% if active_language == 'vi' %}active primary{% endif %}" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; text-decoration: none; border-radius: 6px; font-weight: 500;">
+                        <span>🇻🇳</span> Tiếng Việt
+                    </a>
+                {% endif %}
+                {% if 'en' in editorial_languages %}
+                    <a href="?lang=en" class="button {% if active_language == 'en' %}active primary{% endif %}" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; text-decoration: none; border-radius: 6px; font-weight: 500;">
+                        <span>🇬🇧</span> English
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        {{ active_editorial_content|markdown('solution', MATH_ENGINE)|reference|str|safe }}
     </div>
     <hr>
     <div id="comments" data-comments-url="{{ url('problem_editorial_comments', problem.code) }}"

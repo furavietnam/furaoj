@@ -25,8 +25,8 @@ from judge.user_translations import gettext as user_gettext
 from judge.utils.url import get_absolute_pdf_url
 
 __all__ = ['ProblemGroup', 'ProblemType', 'OrganizationProblemTag', 'Problem', 'ProblemTranslation',
-           'ProblemClarification', 'License', 'Solution', 'SubmissionSourceAccess', 'TranslatedProblemQuerySet',
-           'EasterEgg', 'ProblemEasterEgg']
+           'ProblemClarification', 'License', 'Solution', 'SolutionTranslation', 'SubmissionSourceAccess',
+           'TranslatedProblemQuerySet', 'EasterEgg', 'ProblemEasterEgg']
 
 
 def disallowed_characters_validator(text):
@@ -717,8 +717,8 @@ class LanguageLimit(models.Model):
 class Solution(models.Model):
     problem = models.OneToOneField(Problem, on_delete=CASCADE, verbose_name=_('associated problem'),
                                    blank=True, related_name='solution')
-    is_public = models.BooleanField(verbose_name=_('public visibility'), default=False)
-    publish_on = models.DateTimeField(verbose_name=_('publish date'))
+    is_public = models.BooleanField(verbose_name=_('public visibility'), default=True)
+    publish_on = models.DateTimeField(verbose_name=_('publish date'), default=timezone.now, blank=True, null=True)
     authors = models.ManyToManyField(Profile, verbose_name=_('authors'), blank=True)
     content = models.TextField(verbose_name=_('editorial content'), validators=[disallowed_characters_validator])
 
@@ -733,7 +733,7 @@ class Solution(models.Model):
         return _('Editorial for %s') % self.problem.name
 
     def is_accessible_by(self, user):
-        if self.is_public and self.publish_on < timezone.now():
+        if self.is_public and (self.publish_on is None or self.publish_on <= timezone.now()):
             return True
         if user.has_perm('judge.see_private_solution'):
             return True
@@ -741,12 +741,35 @@ class Solution(models.Model):
             return True
         return False
 
+    def translated_content(self, language):
+        if not language:
+            return self.content
+        trans = self.translations.filter(language=language).first()
+        if trans and trans.content:
+            return trans.content
+        return self.content
+
     class Meta:
         permissions = (
             ('see_private_solution', _('See hidden solutions')),
         )
         verbose_name = _('solution')
         verbose_name_plural = _('solutions')
+
+
+class SolutionTranslation(models.Model):
+    solution = models.ForeignKey(Solution, verbose_name=_('solution'), related_name='translations', on_delete=CASCADE)
+    language = models.CharField(verbose_name=_('language'), max_length=7, choices=settings.LANGUAGES)
+    content = models.TextField(verbose_name=_('translated editorial content'),
+                               validators=[disallowed_characters_validator])
+
+    class Meta:
+        unique_together = ('solution', 'language')
+        verbose_name = _('solution translation')
+        verbose_name_plural = _('solution translations')
+
+    def __str__(self):
+        return f'{self.solution} ({self.get_language_display()})'
 
 
 class EasterEgg(models.Model):

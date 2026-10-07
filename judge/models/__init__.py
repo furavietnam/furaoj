@@ -9,7 +9,7 @@ from judge.models.interface import BlogPost, BlogPostTag, BlogVote, MiscConfig, 
 from judge.models.notification import Notification, make_notification
 from judge.models.problem import EasterEgg, LanguageLimit, License, OrganizationProblemTag, Problem, \
     ProblemClarification, ProblemEasterEgg, ProblemGroup, ProblemTranslation, ProblemType, Solution, \
-    SubmissionSourceAccess, TranslatedProblemQuerySet
+    SolutionTranslation, SubmissionSourceAccess, TranslatedProblemQuerySet
 from judge.models.problem_data import CHECKERS, ProblemData, ProblemTestCase, problem_data_storage, \
     problem_directory_file
 from judge.models.profile import Badge, Organization, OrganizationMonthlyUsage, OrganizationQuota, \
@@ -26,7 +26,8 @@ revisions.register(Contest, follow=['contest_problems'])
 revisions.register(ContestProblem)
 revisions.register(Organization)
 revisions.register(BlogPost)
-revisions.register(Solution)
+revisions.register(Solution, follow=['translations'])
+revisions.register(SolutionTranslation)
 revisions.register(Judge, fields=['name', 'created', 'auth_key', 'description'])
 revisions.register(Language)
 revisions.register(Comment, fields=['author', 'time', 'page', 'score', 'body', 'hidden', 'parent'])

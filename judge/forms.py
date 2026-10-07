@@ -23,7 +23,7 @@ from django.utils.translation import gettext_lazy as _, ngettext_lazy
 
 from judge.models import BlogPost, Contest, ContestAnnouncement, ContestParticipation, ContestProblem, EasterEgg, \
     Exam, ExamProblem, Language, LanguageLimit, Organization, OrganizationProblemTag, Problem, ProblemEasterEgg, \
-    Profile, Solution, Submission, Tag, WebAuthnCredential
+    Profile, Solution, SolutionTranslation, Submission, Tag, WebAuthnCredential
 from judge.utils.subscription import newsletter_id
 from judge.widgets import AceWidget, EasterEggMatrixFormField, HeavySelect2MultipleWidget, HeavySelect2Widget, \
     MartorWidget, Select2MultipleWidget, Select2Widget
@@ -129,14 +129,83 @@ class UserForm(ModelForm):
 
 
 class ProposeProblemSolutionForm(ModelForm):
+    content = forms.CharField(
+        widget=MartorWidget(attrs={'data-markdownfy-url': reverse_lazy('solution_preview')}),
+        required=False,
+        label=_('Vietnamese editorial / Main editorial'),
+    )
+    content_en = forms.CharField(
+        widget=MartorWidget(attrs={'data-markdownfy-url': reverse_lazy('solution_preview')}),
+        required=False,
+        label=_('English editorial'),
+    )
+    is_public = forms.BooleanField(required=False, initial=True, label=_('Public visibility'))
+    publish_on = forms.DateTimeField(
+        required=False,
+        widget=DateInput(attrs={'type': 'date'}),
+        label=_('Publish date'),
+    )
+
     class Meta:
         model = Solution
         fields = ('is_public', 'publish_on', 'authors', 'content')
         widgets = {
             'authors': HeavySelect2MultipleWidget(data_view='profile_select2', attrs={'style': 'width: 100%'}),
-            'content': MartorWidget(attrs={'data-markdownfy-url': reverse_lazy('solution_preview')}),
-            'publish_on': DateInput(attrs={'type': 'date'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super(ProposeProblemSolutionForm, self).__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            en_trans = self.instance.translations.filter(language='en').first()
+            if en_trans:
+                self.fields['content_en'].initial = en_trans.content
+            if self.instance.publish_on:
+                self.fields['publish_on'].initial = self.instance.publish_on.date()
+        else:
+            self.fields['is_public'].initial = True
+            self.fields['publish_on'].initial = timezone.now().date()
+
+    def clean(self):
+        cleaned_data = super(ProposeProblemSolutionForm, self).clean()
+        content = (cleaned_data.get('content') or '').strip()
+        content_en = (cleaned_data.get('content_en') or '').strip()
+
+        # If user only provided English but not Vietnamese, or vice versa
+        if not content and content_en:
+            cleaned_data['content'] = content_en
+
+        if (content or content_en) and not cleaned_data.get('publish_on'):
+            cleaned_data['publish_on'] = timezone.now()
+
+        return cleaned_data
+
+    def save(self, commit=True):
+        instance = super(ProposeProblemSolutionForm, self).save(commit=commit)
+        content_en = (self.cleaned_data.get('content_en') or '').strip()
+
+        def save_translations():
+            if content_en:
+                SolutionTranslation.objects.update_or_create(
+                    solution=instance,
+                    language='en',
+                    defaults={'content': content_en},
+                )
+            else:
+                instance.translations.filter(language='en').delete()
+
+        if commit:
+            save_translations()
+        else:
+            old_save_m2m = getattr(self, 'save_m2m', None)
+
+            def new_save_m2m():
+                if old_save_m2m:
+                    old_save_m2m()
+                save_translations()
+
+            self.save_m2m = new_save_m2m
+
+        return instance
 
 
 class LanguageLimitForm(ModelForm):
@@ -324,6 +393,7 @@ class ProblemImportPolygonForm(Form):
     ignore_zero_point_cases = forms.BooleanField(required=False, label=_('Ignore zero-point cases'))
     append_main_solution_to_tutorial = forms.BooleanField(required=False, initial=True,
                                                           label=_('Append main solution to tutorial'))
+    publish_editorial = forms.BooleanField(required=False, initial=True, label=_('Publish editorial'))
     main_tutorial_language = forms.CharField(required=False)
     do_update = forms.BooleanField(required=False, initial=False, disabled=True, widget=forms.HiddenInput())
 
@@ -344,7 +414,33 @@ class ProblemImportPolygonStatementFormSet(formset_factory(ProblemImportPolygonS
     pass
 
 
-class ProposeProblemSolutionFormSet(inlineformset_factory(Problem, Solution, form=ProposeProblemSolutionForm)):
+class BaseProposeProblemSolutionFormSet(forms.BaseInlineFormSet):
+    def clean(self):
+        super(BaseProposeProblemSolutionFormSet, self).clean()
+        for form in self.forms:
+            content = (form.cleaned_data.get('content') or '').strip() if hasattr(form, 'cleaned_data') else ''
+            content_en = (form.cleaned_data.get('content_en') or '').strip() if hasattr(form, 'cleaned_data') else ''
+            if not content and not content_en:
+                if form.instance.pk:
+                    form.cleaned_data[forms.formsets.DELETION_FIELD_NAME] = True
+
+    def save(self, commit=True):
+        instances = []
+        for form in self.forms:
+            content = (form.cleaned_data.get('content') or '').strip() if hasattr(form, 'cleaned_data') else ''
+            content_en = (form.cleaned_data.get('content_en') or '').strip() if hasattr(form, 'cleaned_data') else ''
+            if not content and not content_en:
+                if form.instance.pk:
+                    form.instance.delete()
+                continue
+            instances.append(form.save(commit=commit))
+        return instances
+
+
+class ProposeProblemSolutionFormSet(inlineformset_factory(
+    Problem, Solution, form=ProposeProblemSolutionForm,
+    formset=BaseProposeProblemSolutionFormSet, can_delete=True, extra=1, max_num=1,
+)):
     pass
 
 

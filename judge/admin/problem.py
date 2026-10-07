@@ -12,7 +12,7 @@ from reversion.admin import VersionAdmin
 
 from judge.admin.utils import AdminFastPaginationMixin
 from judge.models import EasterEgg, LanguageLimit, OrganizationProblemTag, Problem, ProblemClarification, \
-    ProblemEasterEgg, ProblemTranslation, Profile, Solution
+    ProblemEasterEgg, ProblemTranslation, Profile, Solution, SolutionTranslation
 from judge.utils.easter_egg import save_problem_easter_eggs
 from judge.utils.views import NoBatchDeleteMixin
 from judge.widgets import AdminHeavySelect2MultipleWidget, AdminHeavySelect2Widget, AdminMartorWidget, \
@@ -125,6 +125,28 @@ class ProblemSolutionInline(admin.StackedInline):
     fields = ('is_public', 'publish_on', 'authors', 'content')
     form = ProblemSolutionForm
     extra = 0
+
+
+class SolutionTranslationForm(ModelForm):
+    class Meta:
+        widgets = {'content': AdminMartorWidget(attrs={'data-markdownfy-url': reverse_lazy('solution_preview')})}
+
+
+class SolutionTranslationInline(admin.StackedInline):
+    model = SolutionTranslation
+    fields = ('language', 'content')
+    form = SolutionTranslationForm
+    extra = 0
+
+
+@admin.register(Solution)
+class SolutionAdmin(VersionAdmin):
+    list_display = ['problem', 'is_public', 'publish_on']
+    list_filter = ['is_public']
+    search_fields = ['problem__code', 'problem__name', 'content']
+    filter_horizontal = ['authors']
+    inlines = [SolutionTranslationInline]
+    form = ProblemSolutionForm
 
 
 class ProblemTranslationForm(ModelForm):

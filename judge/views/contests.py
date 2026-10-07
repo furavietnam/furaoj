@@ -319,7 +319,7 @@ class ContestDetail(ContestMixin, TitleMixin, CommentedDetailView):
         context['contest_problems'] = Problem.objects.filter(contests__contest=self.object) \
             .order_by('contests__order').defer('description') \
             .annotate(has_public_editorial=Case(
-                When(solution__is_public=True, solution__publish_on__lte=timezone.now(), then=True),
+                When(Q(solution__is_public=True) & (Q(solution__publish_on__lte=timezone.now()) | Q(solution__publish_on__isnull=True)), then=True),
                 default=False,
                 output_field=BooleanField(),
             )) \
