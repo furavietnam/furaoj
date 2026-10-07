@@ -30,7 +30,7 @@ from judge.comments import CommentedDetailView
 from judge.forms import LanguageLimitFormSet, ProblemCloneForm, ProblemEditForm, ProblemEditTypeGroupForm, \
     ProblemImportPolygonForm, ProblemImportPolygonStatementFormSet, ProblemSubmitForm, ProposeProblemSolutionFormSet
 from judge.models import Contest, ContestSubmission, Judge, Language, Problem, ProblemGroup, \
-    ProblemTranslation, ProblemType, RuntimeVersion, Solution, Submission, SubmissionSource
+    ProblemTranslation, ProblemType, RuntimeVersion, Solution, SolutionTranslation, Submission, SubmissionSource
 from judge.template_context import misc_config
 from judge.utils.codeforces_polygon import ImportPolygonError, PolygonImporter
 from judge.utils.infinite_paginator import InfinitePaginationMixin
@@ -134,18 +134,49 @@ class ProblemSolution(SolvedProblemMixin, ProblemMixin, TitleMixin, CommentedDet
     template_name = 'problem/editorial.html'
 
     def get_title(self):
-        return _('Editorial for {0}').format(self.object.name)
+        lang = self.request.GET.get('lang', self.request.LANGUAGE_CODE)
+        return _('Editorial for {0}').format(self.object.translated_name(lang))
 
     def get_content_title(self):
+        lang = self.request.GET.get('lang', self.request.LANGUAGE_CODE)
         return mark_safe(escape(_('Editorial for {0}')).format(
-            format_html('<a href="{1}">{0}</a>', self.object.name, reverse('problem_detail', args=[self.object.code])),
+            format_html('<a href="{1}">{0}</a>', self.object.translated_name(lang), reverse('problem_detail', args=[self.object.code])),
         ))
 
     def get_context_data(self, **kwargs):
         context = super(ProblemSolution, self).get_context_data(**kwargs)
 
-        context['solution'] = get_accessible_solution(self.object, self.request)
+        solution = get_accessible_solution(self.object, self.request)
+        context['solution'] = solution
         context['has_solved_problem'] = self.object.id in self.get_completed_problems()
+
+        # Build multilingual editorials dictionary
+        translations_dict = {trans.language: trans.content for trans in solution.translations.all()}
+        default_lang = settings.LANGUAGE_CODE  # 'vi'
+        other_lang = 'en' if default_lang == 'vi' else 'vi'
+
+        editorial_by_lang = {}
+        if default_lang in translations_dict:
+            editorial_by_lang[default_lang] = translations_dict[default_lang]
+        else:
+            editorial_by_lang[default_lang] = solution.content
+
+        if other_lang in translations_dict:
+            editorial_by_lang[other_lang] = translations_dict[other_lang]
+        elif default_lang in translations_dict:
+            editorial_by_lang[other_lang] = solution.content
+
+        # Filter only non-empty languages
+        available_languages = [l for l, c in editorial_by_lang.items() if c and c.strip()]
+        selected_lang = self.request.GET.get('lang', self.request.LANGUAGE_CODE)
+        if selected_lang not in available_languages:
+            selected_lang = self.request.LANGUAGE_CODE if self.request.LANGUAGE_CODE in available_languages else (available_languages[0] if available_languages else default_lang)
+
+        context['active_language'] = selected_lang
+        context['active_editorial_content'] = editorial_by_lang.get(selected_lang, solution.content)
+        context['editorial_languages'] = available_languages
+        context['editorial_by_lang'] = editorial_by_lang
+        context['has_multiple_languages'] = len(available_languages) > 1
         return context
 
     def get_comment_page(self):
@@ -671,7 +702,7 @@ class ProblemList(QueryStringSortMixin, TitleMixin, SolvedProblemMixin, Infinite
         if self.show_types:
             queryset = queryset.prefetch_related('types')
         queryset = queryset.annotate(has_public_editorial=Case(
-            When(solution__is_public=True, solution__publish_on__lte=timezone.now(), then=True),
+            When(Q(solution__is_public=True) & (Q(solution__publish_on__lte=timezone.now()) | Q(solution__publish_on__isnull=True)), then=True),
             default=False,
             output_field=BooleanField(),
         ))
@@ -1012,9 +1043,10 @@ class ProblemImportPolygon(PermissionRequiredMixin, TitleMixin, FormView):
                 'ignore_zero_point_batches': form.cleaned_data['ignore_zero_point_batches'],
                 'ignore_zero_point_cases': form.cleaned_data['ignore_zero_point_cases'],
                 'append_main_solution_to_tutorial': form.cleaned_data['append_main_solution_to_tutorial'],
+                'publish_editorial': form.cleaned_data.get('publish_editorial', True),
                 'main_tutorial_language': form.cleaned_data.get('main_tutorial_language', None),
                 'main_statement_language': None,
-                'polygon_to_site_language_map': {},
+                'polygon_to_site_language_map': {'vietnamese': 'vi', 'english': 'en', 'russian': 'ru'},
             }
             if len(formset) > 1:
                 for statement in formset:
