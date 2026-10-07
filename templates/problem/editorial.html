@@ -16,7 +16,7 @@
 {% block header %}
     <div style="float:right">
         {% if problem.is_editable_by(request.user) %}
-            [<a href="{{ url('problem_edit', problem.code) }}">{{ _('Edit') }}</a>]
+            [<a href="{{ url('problem_edit', problem.code) }}{% if active_language %}?lang={{ active_language }}{% endif %}">{{ _('Edit') }}</a>]
         {% endif %}
     </div>
 {% endblock %}

@@ -133,12 +133,40 @@ class ProblemSolution(SolvedProblemMixin, ProblemMixin, TitleMixin, CommentedDet
     context_object_name = 'problem'
     template_name = 'problem/editorial.html'
 
+    def get_selected_language(self, solution):
+        available_languages = []
+        if solution and solution.content and solution.content.strip():
+            available_languages.append('vi')
+
+        if solution:
+            for trans in solution.translations.all():
+                if trans.language != 'vi' and trans.content and trans.content.strip():
+                    if trans.language not in available_languages:
+                        available_languages.append(trans.language)
+
+        requested_lang = self.request.GET.get('lang')
+        cookie_lang = self.request.COOKIES.get(settings.LANGUAGE_COOKIE_NAME)
+
+        if requested_lang and requested_lang in available_languages:
+            return requested_lang, available_languages
+        if cookie_lang and cookie_lang in available_languages:
+            return cookie_lang, available_languages
+        if settings.LANGUAGE_CODE in available_languages:
+            return settings.LANGUAGE_CODE, available_languages
+        if self.request.LANGUAGE_CODE in available_languages:
+            return self.request.LANGUAGE_CODE, available_languages
+        if available_languages:
+            return available_languages[0], available_languages
+        return settings.LANGUAGE_CODE, available_languages
+
     def get_title(self):
-        lang = self.request.GET.get('lang', self.request.LANGUAGE_CODE)
+        solution = getattr(self.object, 'solution', None)
+        lang, _langs = self.get_selected_language(solution)
         return _('Editorial for {0}').format(self.object.translated_name(lang))
 
     def get_content_title(self):
-        lang = self.request.GET.get('lang', self.request.LANGUAGE_CODE)
+        solution = getattr(self.object, 'solution', None)
+        lang, _langs = self.get_selected_language(solution)
         return mark_safe(escape(_('Editorial for {0}')).format(
             format_html('<a href="{1}">{0}</a>', self.object.translated_name(lang), reverse('problem_detail', args=[self.object.code])),
         ))
@@ -150,27 +178,19 @@ class ProblemSolution(SolvedProblemMixin, ProblemMixin, TitleMixin, CommentedDet
         context['solution'] = solution
         context['has_solved_problem'] = self.object.id in self.get_completed_problems()
 
-        # Build multilingual editorials dictionary
-        translations_dict = {trans.language: trans.content for trans in solution.translations.all()}
-        default_lang = settings.LANGUAGE_CODE  # 'vi'
-        other_lang = 'en' if default_lang == 'vi' else 'vi'
-
         editorial_by_lang = {}
-        if default_lang in translations_dict:
-            editorial_by_lang[default_lang] = translations_dict[default_lang]
-        else:
-            editorial_by_lang[default_lang] = solution.content
+        if solution.content and solution.content.strip():
+            editorial_by_lang['vi'] = solution.content
 
-        if other_lang in translations_dict:
-            editorial_by_lang[other_lang] = translations_dict[other_lang]
-        elif default_lang in translations_dict:
-            editorial_by_lang[other_lang] = solution.content
+        for trans in solution.translations.all():
+            if trans.content and trans.content.strip():
+                if trans.language == 'vi':
+                    if 'vi' not in editorial_by_lang:
+                        editorial_by_lang['vi'] = trans.content
+                else:
+                    editorial_by_lang[trans.language] = trans.content
 
-        # Filter only non-empty languages
-        available_languages = [l for l, c in editorial_by_lang.items() if c and c.strip()]
-        selected_lang = self.request.GET.get('lang', self.request.LANGUAGE_CODE)
-        if selected_lang not in available_languages:
-            selected_lang = self.request.LANGUAGE_CODE if self.request.LANGUAGE_CODE in available_languages else (available_languages[0] if available_languages else default_lang)
+        selected_lang, available_languages = self.get_selected_language(solution)
 
         context['active_language'] = selected_lang
         context['active_editorial_content'] = editorial_by_lang.get(selected_lang, solution.content)
