@@ -5,19 +5,7 @@
     <div class="problem-list-header submission-detail-header">
         <div class="problem-header-left">
             <div class="problem-header-icon sub-header-icon sub-icon-{{ submission.result_class or submission.status }}">
-                {% if not submission.is_graded %}
-                    <i class="fa fa-spinner fa-pulse"></i>
-                {% elif submission.result in ('AC', '_AC') %}
-                    <i class="fa fa-check"></i>
-                {% elif submission.result in ('WA', 'IE') %}
-                    <i class="fa fa-times"></i>
-                {% elif submission.result in ('TLE', 'MLE', 'OLE', 'IR', 'RTE') %}
-                    <i class="fa fa-clock-o"></i>
-                {% elif submission.result == 'CE' %}
-                    <i class="fa fa-exclamation-triangle"></i>
-                {% else %}
-                    <i class="fa fa-file-code-o"></i>
-                {% endif %}
+                {% include "submission/header-icon.html" %}
             </div>
             <div class="problem-header-title-block">
                 <div class="submission-title-line">

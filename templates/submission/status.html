@@ -16,11 +16,38 @@
                     blocked = true;
                     $.ajax({
                         url: '{{ url('submission_testcases_query') }}',
-                        data: {id: '{{ submission.id }}'}
+                        data: {id: '{{ submission.id }}', format: 'json'},
+                        dataType: 'json'
                     }).done(function (data) {
-                        list.empty().html(data).find('.toggle').each(function () {
-                            register_toggle($(this));
-                        });
+                        if (typeof data === 'string') {
+                            list.empty().html(data).find('.toggle').each(function () {
+                                register_toggle($(this));
+                            });
+                        } else {
+                            if (data.testcases_html) {
+                                list.empty().html(data.testcases_html).find('.toggle').each(function () {
+                                    register_toggle($(this));
+                                });
+                            }
+                            if (data.verdict_card_html) {
+                                $('#verdict-card-container').html(data.verdict_card_html);
+                            }
+                            if (data.header_icon_class) {
+                                var $headerIcon = $('.sub-header-icon');
+                                $headerIcon.removeClass(function (index, className) {
+                                    return (className.match(/(^|\s)sub-icon-\S+/g) || []).join(' ');
+                                }).addClass(data.header_icon_class);
+                                if (data.header_icon_html) {
+                                    $headerIcon.html(data.header_icon_html);
+                                }
+                            }
+                            if (data.is_graded) {
+                                $('#abort-button').remove();
+                            }
+                            if (data.easter_egg_html) {
+                                showEasterEgg(data.easter_egg_html);
+                            }
+                        }
                         setTimeout(function () {
                             blocked = false;
                             if (request)
@@ -28,6 +55,7 @@
                         }, 500);
                     }).fail(function (data) {
                         console.log('Failed to update testcases!');
+                        blocked = false;
                     });
 
                     if ($(window).scrollTop() + $(window).height() > $(document).height() - 100)
@@ -53,13 +81,11 @@
                             case 'internal-error':
                             case 'compile-error':
                                 $('#abort-button').remove();
-                                $('#grading-hero-card').remove();
                                 hideEasterEgg();
                                 update();
                                 break;
                             case 'grading-end':
                                 $('#abort-button').remove();
-                                $('#grading-hero-card').remove();
                                 hideEasterEgg();
                                 if (message.easter_egg_html) {
                                     showEasterEgg(message.easter_egg_html);
@@ -145,127 +171,9 @@
 {% endblock %}
 
 {% block body %}
-    {% if submission.is_graded %}
-        <div class="submission-verdict-card verdict-{{ submission.result_class or submission.result }}">
-            <div class="verdict-main-row">
-                <div class="verdict-status-badge">
-                    <span class="verdict-icon">
-                        {% if submission.result in ('AC', '_AC') %}
-                            <i class="fa fa-check"></i>
-                        {% elif submission.result in ('WA', 'IE') %}
-                            <i class="fa fa-times"></i>
-                        {% elif submission.result in ('TLE', 'MLE', 'OLE', 'IR', 'RTE') %}
-                            <i class="fa fa-clock-o"></i>
-                        {% elif submission.result == 'CE' %}
-                            <i class="fa fa-exclamation-triangle"></i>
-                        {% else %}
-                            <i class="fa fa-info-circle"></i>
-                        {% endif %}
-                    </span>
-                    <div class="verdict-text-group">
-                        <span class="verdict-label">{{ submission.long_status }}</span>
-                        {% if submission.is_pretested %}
-                            <span class="verdict-sublabel">{{ _('Pretest Results') }}</span>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div class="verdict-score-badge">
-                    <div class="score-points">
-                        <span class="points-val">
-                            {% if request.in_contest and submission.contest_or_none %}
-                                {{ submission.contest_or_none.points|roundfloat(2) }}
-                            {% else %}
-                                {{ submission.points|floatformat(2) }}
-                            {% endif %}
-                        </span>
-                        <span class="points-slash">/</span>
-                        <span class="points-total">
-                            {% if request.in_contest and submission.contest_or_none %}
-                                {{ submission.contest_or_none.problem.points|floatformat(0) }}
-                            {% else %}
-                                {{ submission.problem.points|floatformat(0) }}
-                            {% endif %}
-                        </span>
-                        <span class="points-unit">{{ _('pts') }}</span>
-                    </div>
-                    {% if submission.case_total %}
-                        <div class="score-cases">
-                            {{ _('Passed') }} <strong>{{ submission.case_points|floatformat(-3) }}</strong> / {{ submission.case_total|floatformat(0) }} {{ _('testcases') }}
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="verdict-stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fa fa-clock-o"></i></div>
-                    <div class="stat-info">
-                        <span class="stat-label">{{ _('Time') }}</span>
-                        <span class="stat-value">
-                            {% if submission.result == 'TLE' %}
-                                &gt; {{ time_limit|floatformat(3) }}s
-                            {% elif submission.time is not none %}
-                                {{ submission.time|floatformat(3) }}s
-                            {% else %}
-                                &mdash;
-                            {% endif %}
-                        </span>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fa fa-database"></i></div>
-                    <div class="stat-info">
-                        <span class="stat-label">{{ _('Memory') }}</span>
-                        <span class="stat-value">
-                            {% if submission.memory is not none %}
-                                {{ submission.memory|kbdetailformat }}
-                            {% else %}
-                                &mdash;
-                            {% endif %}
-                        </span>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fa fa-code"></i></div>
-                    <div class="stat-info">
-                        <span class="stat-label">{{ _('Language') }}</span>
-                        <span class="stat-value">{{ submission.language.name }}</span>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fa fa-server"></i></div>
-                    <div class="stat-info">
-                        <span class="stat-label">{{ _('Judge') }}</span>
-                        <span class="stat-value">
-                            {% if submission.judged_on %}
-                                {{ submission.judged_on.name }}
-                            {% else %}
-                                &mdash;
-                            {% endif %}
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    {% else %}
-        <div class="submission-verdict-card verdict-grading" id="grading-hero-card">
-            <div class="verdict-main-row">
-                <div class="verdict-status-badge">
-                    <span class="verdict-icon">
-                        <i class="fa fa-spinner fa-pulse"></i>
-                    </span>
-                    <div class="verdict-text-group">
-                        <span class="verdict-label" id="grading-label">{{ submission.long_status or _('Grading...') }}</span>
-                        <span class="verdict-sublabel">{{ _('The system is currently grading testcases in real-time') }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    {% endif %}
+    <div id="verdict-card-container">
+        {% include "submission/verdict-card.html" %}
+    </div>
 
     <div id="easter-egg-container" class="easter-egg-card" style="display:none;">
         <div id="easter-egg-content"></div>

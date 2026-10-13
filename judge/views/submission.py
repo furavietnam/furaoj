@@ -14,6 +14,7 @@ from django.db.models import Prefetch, Q
 from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseNotFound, HttpResponseRedirect, \
     JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -301,6 +302,23 @@ class SubmissionTestCaseQuery(SubmissionStatus):
         if 'id' not in request.GET or not request.GET['id'].isdigit():
             return HttpResponseBadRequest()
         self.kwargs[self.pk_url_kwarg] = kwargs[self.pk_url_kwarg] = int(request.GET['id'])
+        if request.GET.get('format') == 'json' or request.headers.get('accept') == 'application/json':
+            self.object = self.get_object()
+            context = self.get_context_data(object=self.object)
+            testcases_html = render_to_string('submission/status-testcases.html', context, request=request)
+            verdict_card_html = render_to_string('submission/verdict-card.html', context, request=request)
+            header_icon_html = render_to_string('submission/header-icon.html', context, request=request)
+            return JsonResponse({
+                'is_graded': self.object.is_graded,
+                'status': self.object.status,
+                'result': self.object.result,
+                'result_class': self.object.result_class,
+                'testcases_html': testcases_html,
+                'verdict_card_html': verdict_card_html,
+                'header_icon_html': header_icon_html,
+                'header_icon_class': 'sub-icon-%s' % (self.object.result_class or self.object.status),
+                'easter_egg_html': context.get('easter_egg_html'),
+            })
         return super(SubmissionTestCaseQuery, self).get(request, *args, **kwargs)
 
 

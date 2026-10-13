@@ -259,10 +259,10 @@
                                         <strong>{{ submission.case_points|floatformat(-3) }}</strong> / {{ submission.case_total|floatformat(0) }} {{ _('testcases') }}
                                         {% if request.in_contest and submission.contest_or_none %}
                                              {% with contest=submission.contest_or_none %}
-                                                ({{ contest.points|roundfloat(2) }}/{{ contest.problem.points|floatformat(0) }} {{ _('pts') }})
+                                                ({{ contest.points|floatformat(2) }}/{{ contest.problem.points|floatformat(2) }} {{ _('pts') }})
                                             {% endwith %}
                                         {% else %}
-                                            {% with points=submission.points|floatformat(2), total=submission.problem.points|floatformat(0) %}
+                                            {% with points=submission.points|floatformat(2), total=submission.problem.points|floatformat(2) %}
                                                 ({{ points }}/{{ total }} {{ _('pts') }})
                                             {% endwith %}
                                         {% endif %}
