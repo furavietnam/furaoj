@@ -17,7 +17,9 @@
 
 {% block js_media %}
     {{ form.media.js }}
-    {{ solution_formset.media.js }}
+    {% if solution_formset %}
+        {{ solution_formset.media.js }}
+    {% endif %}
     {% include "leave-warning.html" %}
 
     <script src="{{ static('furaoj/jquery.formset.js') }}"></script>
@@ -202,7 +204,9 @@
 
 {% block media %}
     {{ form.media.css }}
-    {{ solution_formset.media.css }}
+    {% if solution_formset %}
+        {{ solution_formset.media.css }}
+    {% endif %}
     <link rel="stylesheet" type="text/css" href="{{ static('ui_form.css') }}">
     <style>
         .editorial-tab-btn {
@@ -285,14 +289,17 @@
         </div>
     {% endif %}
     <form action="" method="post" class="form-area" enctype="multipart/form-data" style="display: flex; justify-content: center; flex-direction: column;">
-        {% if form.errors or solution_formset.errors %}
+        {% if form.errors or (solution_formset and solution_formset.errors) %}
             <p class="errornote"> {{ _('Please correct the error below.') }}</p>
         {% endif %}
         {% csrf_token %}
-        {{ lang_limit_formset.management_form }}
+        {% if lang_limit_formset %}
+            {{ lang_limit_formset.management_form }}
+        {% endif %}
         <table class="django-as-table">{{ form.as_table() }}</table>
         <hr>
 
+        {% if lang_limit_formset %}
         <center>
             <h3 id="lang_limit_title">{{ _('Language-specific resource limit') }} <i class="fa fa-caret-up"></i></h3>
             <span class="helptext">{{ _('Only use this feature if you really need to!') }}</span>
@@ -313,7 +320,9 @@
             </tbody>
         </table>
         <hr>
+        {% endif %}
 
+        {% if solution_formset %}
         <center>
             <h3> {{ _('Editorial') }} </h3>
             <span class="helptext">{{ _('You can provide an editorial in Vietnamese and English.') }}</span>
@@ -380,6 +389,7 @@
                 </div>
             {% endif %}
         {% endfor %}
+        {% endif %}
 
         <table>
             <tr><td style="float: left;">
