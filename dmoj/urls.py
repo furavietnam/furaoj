@@ -135,6 +135,8 @@ urlpatterns = [
         path('/submit', problem.ProblemSubmit.as_view(), name='problem_submit'),
         path('/resubmit/<int:submission>', problem.ProblemSubmit.as_view(), name='problem_submit'),
         path('/update-polygon', problem.ProblemUpdatePolygon.as_view(), name='problem_update_polygon'),
+        path('/live-run', problem.ProblemLiveRunView.as_view(), name='problem_live_run'),
+        path('/draft', problem.ProblemDraftView.as_view(), name='problem_draft'),
 
         path('/rank/', paged_list_view(ranked_submission.RankedSubmissions, 'ranked_submissions')),
         path('/submissions/', paged_list_view(submission.ProblemSubmissions, 'chronological_submissions')),

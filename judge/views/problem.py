@@ -12,7 +12,7 @@ from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.db import transaction
 from django.db.models import BooleanField, Case, Prefetch, Q, When
 from django.db.utils import ProgrammingError
-from django.http import Http404, HttpResponse, HttpResponseForbidden, HttpResponseRedirect
+from django.http import Http404, HttpResponse, HttpResponseForbidden, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.template.loader import get_template
 from django.urls import reverse
@@ -29,11 +29,12 @@ from reversion import revisions
 from judge.comments import CommentedDetailView
 from judge.forms import LanguageLimitFormSet, ProblemCloneForm, ProblemEditForm, ProblemEditTypeGroupForm, \
     ProblemImportPolygonForm, ProblemImportPolygonStatementFormSet, ProblemSubmitForm, ProposeProblemSolutionFormSet
-from judge.models import Contest, ContestSubmission, Judge, Language, Problem, ProblemGroup, \
+from judge.models import Contest, ContestSubmission, Judge, Language, Problem, ProblemDraft, ProblemGroup, \
     ProblemTranslation, ProblemType, RuntimeVersion, Solution, SolutionTranslation, Submission, SubmissionSource
 from judge.template_context import misc_config
 from judge.utils.codeforces_polygon import ImportPolygonError, PolygonImporter
 from judge.utils.infinite_paginator import InfinitePaginationMixin
+from judge.utils.live_runner import execute_live_run
 from judge.utils.opengraph import generate_opengraph
 from judge.utils.pdfoid import PDF_RENDERING_ENABLED, render_pdf
 from judge.utils.problems import hot_problems, user_attempted_ids, \
@@ -1257,3 +1258,92 @@ class ProblemDelete(ProblemMixin, TitleMixin, DetailView):
         except PermissionDenied:
             return generic_message(request, _("Can't delete problem"),
                                    _('You are not allowed to delete this problem.'), status=403)
+
+
+class ProblemLiveRunView(LoginRequiredMixin, ProblemMixin, SingleObjectMixin, View):
+    def post(self, request, *args, **kwargs):
+        if len(request.body) > 1048576:
+            return JsonResponse({'status': 'ERROR', 'error': 'payload_too_large', 'message': _('Payload exceeds 1MB.')}, status=400)
+
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+        except Exception:
+            return JsonResponse({'status': 'ERROR', 'error': 'invalid_json', 'message': _('Invalid JSON.')}, status=400)
+
+        problem = self.get_object()
+        source = data.get('source', '')
+        if len(source.encode('utf-8')) > 1048576:
+            return JsonResponse({'status': 'ERROR', 'error': 'source_too_large', 'message': _('Source code exceeds 1MB.')}, status=400)
+
+        testcases = data.get('testcases', [])
+        if not isinstance(testcases, list) or len(testcases) > 5:
+            return JsonResponse({'status': 'ERROR', 'error': 'too_many_testcases', 'message': _('Maximum 5 custom testcases allowed.')}, status=400)
+
+        lang_id = data.get('language')
+        lang_key = data.get('language_key')
+        language = None
+        if lang_id:
+            language = Language.objects.filter(id=lang_id).first()
+        elif lang_key:
+            language = Language.objects.filter(key=lang_key).first()
+
+        if not language or language not in problem.allowed_languages.all():
+            return JsonResponse({'status': 'ERROR', 'error': 'invalid_language', 'message': _('Selected language is not allowed for this problem.')}, status=400)
+
+        result = execute_live_run(problem, language.key, source, testcases)
+        return JsonResponse(result)
+
+
+class ProblemDraftView(LoginRequiredMixin, ProblemMixin, SingleObjectMixin, View):
+    def get(self, request, *args, **kwargs):
+        problem = self.get_object()
+        draft = ProblemDraft.objects.filter(user=request.profile, problem=problem).first()
+        if draft:
+            return JsonResponse({
+                'status': 'OK',
+                'source': draft.source,
+                'language': draft.language_id,
+                'testcases': draft.testcases,
+                'updated_at': draft.updated_at.isoformat(),
+            })
+        return JsonResponse({
+            'status': 'OK',
+            'source': '',
+            'language': None,
+            'testcases': [],
+            'updated_at': None,
+        })
+
+    def post(self, request, *args, **kwargs):
+        if len(request.body) > 1048576:
+            return JsonResponse({'status': 'ERROR', 'error': 'payload_too_large', 'message': _('Payload exceeds 1MB.')}, status=400)
+
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+        except Exception:
+            return JsonResponse({'status': 'ERROR', 'error': 'invalid_json', 'message': _('Invalid JSON.')}, status=400)
+
+        problem = self.get_object()
+        source = data.get('source', '')
+        if len(source.encode('utf-8')) > 1048576:
+            return JsonResponse({'status': 'ERROR', 'error': 'source_too_large', 'message': _('Source code exceeds 1MB.')}, status=400)
+
+        testcases = data.get('testcases', [])
+        if not isinstance(testcases, list) or len(testcases) > 5:
+            return JsonResponse({'status': 'ERROR', 'error': 'too_many_testcases', 'message': _('Maximum 5 custom testcases allowed.')}, status=400)
+
+        lang_id = data.get('language')
+        if lang_id and not Language.objects.filter(id=lang_id).exists():
+            lang_id = None
+
+        draft, _ = ProblemDraft.objects.update_or_create(
+            user=request.profile,
+            problem=problem,
+            defaults={
+                'source': source,
+                'language_id': lang_id,
+                'testcases': testcases,
+            },
+        )
+        return JsonResponse({'status': 'OK', 'updated_at': draft.updated_at.isoformat()})
+
