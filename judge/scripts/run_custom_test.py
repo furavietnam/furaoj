@@ -85,11 +85,20 @@ def main():
         return
 
     config_file_io = None
+    symlinks = {}
     if file_io_data and isinstance(file_io_data, dict):
         inp_file = file_io_data.get('input')
         out_file = file_io_data.get('output')
         if inp_file and out_file:
             config_file_io = ConfigNode({'input': inp_file, 'output': out_file})
+            if inp_file.lower() != inp_file:
+                symlinks[inp_file.lower()] = inp_file
+            if inp_file.upper() != inp_file:
+                symlinks[inp_file.upper()] = inp_file
+            if out_file.lower() != out_file:
+                symlinks[out_file.lower()] = out_file
+            if out_file.upper() != out_file:
+                symlinks[out_file.upper()] = out_file
 
     results = []
     try:
@@ -104,6 +113,7 @@ def main():
                         time=time_limit,
                         memory=memory_limit,
                         file_io=config_file_io,
+                        symlinks=symlinks,
                         stdin=input_stream,
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,
@@ -130,6 +140,24 @@ def main():
 
                     out_str = out.decode('utf-8', 'replace')
                     err_str = err.decode('utf-8', 'replace')
+
+                    # If out_str is empty and file I/O is configured, check if file was written directly in sandbox
+                    if (not out_str or not out_str.strip()) and hasattr(executor, '_dir') and executor._dir and file_io_data:
+                        out_target = file_io_data.get('output', '')
+                        candidates = [out_target, out_target.lower(), out_target.upper()]
+                        for cand in candidates:
+                            if not cand:
+                                continue
+                            cand_path = os.path.join(executor._dir, cand)
+                            if os.path.isfile(cand_path) and not os.path.islink(cand_path):
+                                try:
+                                    with open(cand_path, 'r', encoding='utf-8', errors='replace') as f:
+                                        file_content = f.read(65536)
+                                        if file_content:
+                                            out_str = file_content
+                                            break
+                                except Exception:
+                                    pass
 
                     if proc.is_tle:
                         status = 'TLE'
