@@ -39,7 +39,16 @@
     function resizeAceEditor() {
         var editor = getAceEditor();
         if (editor && typeof editor.resize === 'function') {
-            editor.resize();
+            try {
+                if (typeof editor.setAutoScrollEditorIntoView === 'function') {
+                    editor.setAutoScrollEditorIntoView(false);
+                }
+                if (typeof editor.setOption === 'function') {
+                    editor.setOption('maxLines', null);
+                    editor.setOption('minLines', null);
+                }
+            } catch (e) {}
+            editor.resize(true);
         }
     }
 
@@ -665,6 +674,7 @@
                         var editor = getAceEditor();
                         if (editor) {
                             editor.setValue(resp.source, 1);
+                            resizeAceEditor();
                         } else {
                             $('#id_source').val(resp.source);
                         }
@@ -757,7 +767,7 @@
                 scheduleSaveDraft();
             });
             loadDraft();
-            editor.resize();
+            resizeAceEditor();
         }
 
         // 1. Listen for Django Ace's custom event
