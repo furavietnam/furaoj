@@ -1,5 +1,7 @@
 <style>
-/* Full Wide and Compact Viewport Layout for Problem Detail with Live IDE */
+/* ========================================================
+   1. VIEWPORT & CONTAINER LAYOUT FOR LIVE IDE
+   ======================================================== */
 #page-container > br:first-of-type {
     display: none !important;
 }
@@ -37,25 +39,14 @@ body.body-live-ide-wide #content,
     min-height: 0 !important;
 }
 
-.problem-title {
-    margin: 2px 0 4px 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    flex-shrink: 0 !important;
-}
-
-.problem-title h2 {
-    margin: 0 !important;
-    font-size: 1.25rem !important;
-    line-height: 1.2 !important;
-}
-
-.problem-title .title-state {
-    font-size: 1.4em !important;
-    margin-top: 0 !important;
-}
-
+/* Hide legacy title rows and rulers when Live IDE is rendered */
+body.body-live-ide-wide #title_row,
+body.body-live-ide-wide .problem-title,
+body:has(#live-ide-container) #title_row,
+body:has(#live-ide-container) .problem-title,
+#content.content-live-ide-wide > h2,
+#content.content-live-ide-wide > .problem-title,
+#content.content-live-ide-wide > hr,
 #content > hr {
     display: none !important;
 }
@@ -69,6 +60,34 @@ body.body-live-ide-wide #content,
     height: 100% !important;
 }
 
+/* Base Theme Variables (Light Mode) */
+#live-ide-container,
+#live-submissions-modal {
+    --live-bg-main: #ffffff;
+    --live-bg-sidebar: #f8fafc;
+    --live-bg-infocard: #f1f5f9;
+    --live-bg-card: #ffffff;
+    --live-bg-toolbar: #f8fafc;
+    --live-bg-drawer: #f8fafc;
+    --live-bg-drawer-header: #f1f5f9;
+    --live-bg-input: #ffffff;
+    --live-bg-input-readonly: #f8fafc;
+    --live-border-color: #cbd5e1;
+    --live-border-light: #e2e8f0;
+    --live-text-primary: #0f172a;
+    --live-text-secondary: #334155;
+    --live-text-muted: #64748b;
+    --live-resizer-bg: #e2e8f0;
+    --live-resizer-hover: #0284c7;
+    --live-hover-bg: #e2e8f0;
+    --live-active-tab-bg: #ffffff;
+    --live-active-tab-text: #0284c7;
+    --live-code-badge: #0284c7;
+    --live-modal-bg: #ffffff;
+    --live-modal-header-bg: #f8fafc;
+    --live-modal-border: #cbd5e1;
+}
+
 #live-ide-container {
     display: flex;
     flex-direction: row;
@@ -78,8 +97,8 @@ body.body-live-ide-wide #content,
     width: 100%;
     border-radius: 6px;
     overflow: hidden;
-    background: #fff;
-    border: 1px solid #dcdcdc;
+    background: var(--live-bg-main);
+    border: 1px solid var(--live-border-color);
     margin: 0 !important;
     box-sizing: border-box;
 }
@@ -103,6 +122,298 @@ body:has(#live-ide-container) footer br {
     display: none !important;
 }
 
+/* ========================================================
+   2. LEFTMOST SIDEBAR (NAV, STATS & ADMIN)
+   ======================================================== */
+.live-sidebar-left {
+    width: 250px;
+    min-width: 250px;
+    max-width: 250px;
+    flex: 0 0 250px;
+    background: var(--live-bg-sidebar);
+    border-right: 1px solid var(--live-border-light);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: width 0.2s ease, min-width 0.2s ease, max-width 0.2s ease, flex 0.2s ease;
+    z-index: 6;
+}
+
+.live-sidebar-left.collapsed {
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    flex: 0 0 42px !important;
+}
+
+.live-sidebar-left.collapsed .sidebar-header-title,
+.live-sidebar-left.collapsed .sidebar-content-scroll {
+    display: none !important;
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    height: 42px;
+    border-bottom: 1px solid var(--live-border-light);
+    background: var(--live-bg-infocard);
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.live-sidebar-left.collapsed .sidebar-header {
+    justify-content: center;
+    padding: 8px 0;
+}
+
+.sidebar-header-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--live-text-primary);
+}
+
+.btn-sidebar-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    border: 1px solid var(--live-border-color);
+    background: var(--live-bg-card);
+    color: var(--live-text-secondary);
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.15s ease;
+}
+.btn-sidebar-toggle:hover {
+    background: var(--live-hover-bg);
+    color: var(--live-text-primary);
+}
+
+.sidebar-content-scroll {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-section {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--live-border-light);
+}
+
+.sidebar-section-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--live-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sidebar-menu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sidebar-menu-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+}
+
+.sidebar-menu-btn {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--live-text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s ease;
+}
+.sidebar-menu-btn:hover {
+    background: var(--live-hover-bg);
+    color: var(--live-text-primary);
+}
+
+.sidebar-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    color: var(--live-text-muted);
+    text-decoration: none;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+.sidebar-icon-btn:hover {
+    background: var(--live-hover-bg);
+    color: var(--live-text-primary);
+}
+
+/* Submission Stats Donut Chart */
+.sidebar-chart-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 6px 0;
+}
+
+.sidebar-chart-box {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    margin: 0 auto;
+}
+
+.sidebar-chart-box canvas {
+    width: 140px !important;
+    height: 140px !important;
+}
+
+.chart-center-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.chart-count-val {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--live-text-primary);
+    line-height: 1.1;
+}
+
+.chart-count-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--live-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.verdict-legend-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+    width: 100%;
+    justify-content: center;
+}
+
+.verdict-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--live-bg-infocard);
+    border: 1px solid var(--live-border-light);
+    font-size: 0.72rem;
+    color: var(--live-text-secondary);
+}
+
+.verdict-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.verdict-code {
+    font-weight: 700;
+}
+
+.verdict-count {
+    font-weight: 600;
+}
+
+/* Admin Panel Section */
+.sidebar-admin-section {
+    border-bottom: none;
+    margin-top: auto;
+    background: var(--live-bg-infocard);
+    border-top: 1px solid var(--live-border-light);
+}
+
+.sidebar-admin-title {
+    color: #4f46e5 !important;
+}
+
+.sidebar-admin-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    color: var(--live-text-secondary);
+    font-size: 0.83rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+.sidebar-admin-link:hover {
+    background: var(--live-hover-bg);
+    color: var(--live-text-primary);
+}
+
+.sidebar-admin-danger {
+    color: #dc2626 !important;
+}
+.sidebar-admin-danger:hover {
+    background: #fee2e2 !important;
+    color: #b91c1c !important;
+}
+
+.sidebar-ticket-badge {
+    margin-left: auto;
+    padding: 1px 6px;
+    background: #ef4444;
+    color: #fff;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+/* ========================================================
+   3. SPLIT PANES (LEFT STATEMENT & RIGHT IDE)
+   ======================================================== */
+.live-workspace-panes {
+    display: flex;
+    flex-direction: row;
+    flex: 1 1 0;
+    min-width: 0;
+    height: 100%;
+    overflow: hidden;
+    background: var(--live-bg-main);
+}
+
 .live-pane {
     display: flex;
     flex-direction: column;
@@ -112,22 +423,22 @@ body:has(#live-ide-container) footer br {
 
 #live-pane-left {
     flex: 0 0 42%;
-    min-width: 320px;
-    max-width: 75%;
-    border-right: 1px solid #e0e0e0;
-    background: #fafafa;
+    min-width: 280px;
+    max-width: 80%;
+    border-right: 1px solid var(--live-border-light);
+    background: var(--live-bg-sidebar);
 }
 
 #live-pane-right {
     flex: 1 1 0;
-    min-width: 450px;
-    background: #fff;
+    min-width: 320px;
+    background: var(--live-bg-main);
 }
 
 /* Resizer Handle */
 #live-pane-resizer {
     width: 8px;
-    background: #e8e8e8;
+    background: var(--live-resizer-bg);
     cursor: col-resize;
     user-select: none;
     flex-shrink: 0;
@@ -138,46 +449,120 @@ body:has(#live-ide-container) footer br {
     z-index: 5;
 }
 #live-pane-resizer:hover, #live-pane-resizer:focus {
-    background: #2563eb;
+    background: var(--live-resizer-hover);
     outline: none;
 }
 .resizer-handle {
     width: 2px;
     height: 32px;
-    background: #aaa;
+    background: #94a3b8;
     border-radius: 1px;
 }
 #live-pane-resizer:hover .resizer-handle {
-    background: #fff;
+    background: #ffffff;
 }
 
-/* Left Pane: Info Card & Problem Statement */
+/* ========================================================
+   4. PROBLEM INFO CARD (WITH TITLE & CODE)
+   ======================================================== */
 .problem-info-card {
-    padding: 12px 16px;
-    background: #f1f5f9;
-    border-bottom: 1px solid #e2e8f0;
+    padding: 10px 14px;
+    background: var(--live-bg-infocard);
+    border-bottom: 1px solid var(--live-border-light);
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.problem-info-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 8px;
+}
+
+.problem-title-display {
+    display: inline-flex;
     align-items: center;
     gap: 8px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--live-text-primary);
+    overflow: hidden;
+}
+
+.problem-status-link {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    cursor: pointer;
+    line-height: 1;
+    color: inherit;
+}
+.problem-status-link:hover .problem-status-icon {
+    transform: scale(1.18);
+    transition: transform 0.15s ease;
+}
+
+.problem-status-icon {
+    font-size: 1.15rem;
+    flex-shrink: 0;
+}
+.problem-status-icon.solved-problem-color {
+    color: #16a34a !important;
+}
+.problem-status-icon.attempted-problem-color {
+    color: #dc2626 !important;
+}
+.problem-status-icon.unattempted-problem-color {
+    color: #94a3b8 !important;
+}
+
+.problem-code-badge {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--live-code-badge);
+    flex-shrink: 0;
+}
+
+.problem-name-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.live-org-tag a {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    background: #e2e8f0;
+    color: #334155;
+    text-decoration: none;
 }
 
 .problem-meta-badges {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
 }
 
 .meta-badge {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    background: #fff;
-    border: 1px solid #cbd5e1;
+    gap: 5px;
+    padding: 3px 8px;
+    background: var(--live-bg-card);
+    border: 1px solid var(--live-border-color);
     border-radius: 4px;
-    font-size: 0.85rem;
-    color: #334155;
+    font-size: 0.82rem;
+    color: var(--live-text-secondary);
     font-weight: 500;
 }
 
@@ -198,33 +583,90 @@ body:has(#live-ide-container) footer br {
 .problem-statement-scroll {
     flex: 1 1 auto;
     overflow-y: auto;
-    padding: 20px 24px;
-    background: #fff;
+    padding: 16px 20px;
+    background: var(--live-bg-main);
+    color: var(--live-text-secondary);
+    line-height: 1.6;
 }
 
-.problem-title-header h2 {
-    margin-top: 0;
-    margin-bottom: 16px;
-    font-size: 1.5rem;
-    color: #0f172a;
+.problem-statement-scroll h1,
+.problem-statement-scroll h2,
+.problem-statement-scroll h3,
+.problem-statement-scroll h4 {
+    color: var(--live-text-primary);
+    margin-top: 1.2em;
+    margin-bottom: 0.6em;
+}
+
+.problem-statement-scroll pre,
+.problem-statement-scroll code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.problem-statement-scroll pre {
+    background: #f1f5f9;
+    border: 1px solid var(--live-border-light);
+    border-radius: 4px;
+    padding: 10px 14px;
+    overflow-x: auto;
+}
+
+.problem-statement-scroll table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 12px 0;
+}
+
+.problem-statement-scroll th,
+.problem-statement-scroll td {
+    border: 1px solid var(--live-border-light);
+    padding: 6px 10px;
+}
+
+.problem-statement-scroll th {
+    background: var(--live-bg-infocard);
+    color: var(--live-text-primary);
+    font-weight: 700;
 }
 
 .problem-clarify-row {
-    margin-top: 24px;
-    padding-top: 16px;
-    border-top: 1px solid #e2e8f0;
+    margin-top: 20px;
+    padding-top: 14px;
+    border-top: 1px solid var(--live-border-light);
 }
 
-/* Right Pane: Live IDE Toolbar */
+.clarify-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: var(--live-bg-card);
+    border: 1px solid var(--live-border-color);
+    border-radius: 4px;
+    color: var(--live-text-secondary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+.clarify-btn:hover {
+    background: var(--live-hover-bg);
+    color: var(--live-text-primary);
+}
+
+/* ========================================================
+   5. RIGHT PANE: TOOLBAR & ACE EDITOR
+   ======================================================== */
 .live-ide-toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 16px;
-    background: #f8fafc;
-    border-bottom: 1px solid #e2e8f0;
+    padding: 6px 14px;
+    background: var(--live-bg-toolbar);
+    border-bottom: 1px solid var(--live-border-light);
     gap: 12px;
     flex-wrap: wrap;
+    flex-shrink: 0;
 }
 
 .toolbar-left, .toolbar-right {
@@ -234,19 +676,19 @@ body:has(#live-ide-container) footer br {
 }
 
 .live-lang-select {
-    padding: 6px 12px;
-    border: 1px solid #cbd5e1;
+    padding: 5px 10px;
+    border: 1px solid var(--live-border-color);
     border-radius: 4px;
-    font-size: 0.9rem;
-    background: #fff;
-    color: #0f172a;
+    font-size: 0.88rem;
+    background: var(--live-bg-card);
+    color: var(--live-text-primary);
     font-weight: 500;
     cursor: pointer;
 }
 
 .draft-status-indicator {
     font-size: 0.82rem;
-    color: #64748b;
+    color: var(--live-text-muted);
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -261,7 +703,7 @@ body:has(#live-ide-container) footer br {
     gap: 6px;
     padding: 6px 14px;
     border-radius: 4px;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     font-weight: 600;
     border: none;
     cursor: pointer;
@@ -348,13 +790,15 @@ body:has(#live-ide-container) footer br {
     width: 100% !important;
 }
 
-/* CP Editor style Testcase Drawer */
+/* ========================================================
+   6. TESTCASE DRAWER (CP-EDITOR STYLE)
+   ======================================================== */
 .testcase-drawer {
     flex: 0 0 240px;
     display: flex;
     flex-direction: column;
-    border-top: 1px solid #cbd5e1;
-    background: #f8fafc;
+    border-top: 1px solid var(--live-border-color);
+    background: var(--live-bg-drawer);
     transition: flex-basis 0.15s ease;
     overflow: hidden;
 }
@@ -369,8 +813,8 @@ body:has(#live-ide-container) footer br {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #f1f5f9;
-    border-bottom: 1px solid #e2e8f0;
+    background: var(--live-bg-drawer-header);
+    border-bottom: 1px solid var(--live-border-light);
     padding: 0 12px;
     height: 38px;
     flex-shrink: 0;
@@ -396,9 +840,9 @@ body:has(#live-ide-container) footer br {
     padding: 6px 14px !important;
     font-size: 0.85rem !important;
     font-weight: 600 !important;
-    color: #475569 !important;
-    background: #e2e8f0 !important;
-    border: 1px solid #cbd5e1 !important;
+    color: var(--live-text-muted) !important;
+    background: var(--live-bg-drawer-header) !important;
+    border: 1px solid var(--live-border-color) !important;
     border-bottom: none !important;
     border-radius: 4px 4px 0 0 !important;
     cursor: pointer !important;
@@ -407,15 +851,15 @@ body:has(#live-ide-container) footer br {
 }
 
 .tc-tab-btn:hover {
-    color: #0f172a !important;
-    background: #cbd5e1 !important;
+    color: var(--live-text-primary) !important;
+    background: var(--live-hover-bg) !important;
 }
 
 .tc-tab-btn.active {
-    color: #0284c7 !important;
-    background: #ffffff !important;
-    border-color: #cbd5e1 !important;
-    border-bottom: 2px solid #0284c7 !important;
+    color: var(--live-active-tab-text) !important;
+    background: var(--live-active-tab-bg) !important;
+    border-color: var(--live-border-color) !important;
+    border-bottom: 2px solid var(--live-active-tab-text) !important;
 }
 
 .tc-tab-status-dot {
@@ -428,10 +872,10 @@ body:has(#live-ide-container) footer br {
 
 .tab-btn-add {
     padding: 4px 10px !important;
-    border: 1px dashed #94a3b8 !important;
-    background: #fff !important;
+    border: 1px dashed var(--live-text-muted) !important;
+    background: var(--live-bg-card) !important;
     border-radius: 4px !important;
-    color: #475569 !important;
+    color: var(--live-text-secondary) !important;
     cursor: pointer !important;
     font-size: 0.85rem !important;
     margin-left: 6px !important;
@@ -439,7 +883,7 @@ body:has(#live-ide-container) footer br {
 .tab-btn-add:hover {
     border-color: #0284c7 !important;
     color: #0284c7 !important;
-    background: #f0f9ff !important;
+    background: var(--live-hover-bg) !important;
 }
 
 .drawer-header-actions {
@@ -451,7 +895,7 @@ body:has(#live-ide-container) footer br {
 .btn-drawer-toggle {
     background: transparent;
     border: none;
-    color: #64748b;
+    color: var(--live-text-muted);
     cursor: pointer;
     padding: 4px 8px;
 }
@@ -465,7 +909,6 @@ body:has(#live-ide-container) footer br {
     gap: 6px;
 }
 
-/* Testcase Panel Inputs / Outputs */
 .tc-panel-content {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -482,7 +925,7 @@ body:has(#live-ide-container) footer br {
 .tc-field-group label {
     font-size: 0.78rem;
     font-weight: 700;
-    color: #475569;
+    color: var(--live-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     display: flex;
@@ -495,9 +938,10 @@ body:has(#live-ide-container) footer br {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-size: 0.85rem;
     padding: 6px 8px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--live-border-color);
     border-radius: 4px;
-    background: #fff;
+    background: var(--live-bg-input);
+    color: var(--live-text-primary);
     resize: vertical;
     box-sizing: border-box;
 }
@@ -516,11 +960,11 @@ body:has(#live-ide-container) footer br {
 }
 
 .tc-textarea[readonly] {
-    background: #f8fafc;
-    color: #0f172a;
+    background: var(--live-bg-input-readonly);
+    color: var(--live-text-primary);
 }
 
-/* Verdict Badges (Color + Icon + Text) */
+/* Verdict Badges */
 .badge-verdict {
     display: inline-flex;
     align-items: center;
@@ -543,7 +987,7 @@ body:has(#live-ide-container) footer br {
 
 .tc-meta-info {
     font-size: 0.78rem;
-    color: #64748b;
+    color: var(--live-text-muted);
     display: inline-flex;
     gap: 8px;
     align-items: center;
@@ -582,7 +1026,552 @@ body:has(#live-ide-container) footer br {
     font-family: monospace;
 }
 
-/* Responsive Breakpoints */
+body.live-modal-open {
+    overflow: hidden !important;
+}
+
+/* ========================================================
+   7. SUBMISSIONS MODAL
+   ======================================================== */
+.live-submissions-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+}
+
+.live-submissions-modal.active {
+    display: flex;
+}
+
+.live-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(2px);
+}
+
+.live-modal-dialog {
+    position: relative;
+    width: 90vw;
+    max-width: 1200px;
+    height: 85vh;
+    background: var(--live-modal-bg);
+    border: 1px solid var(--live-modal-border);
+    border-radius: 8px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 2;
+}
+
+.live-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px;
+    background: var(--live-modal-header-bg);
+    border-bottom: 1px solid var(--live-modal-border);
+}
+
+.live-modal-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--live-text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.live-modal-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-modal-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    color: var(--live-text-secondary);
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+.btn-modal-action:hover {
+    background: var(--live-hover-bg);
+    color: var(--live-text-primary);
+}
+
+.btn-modal-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    border: none;
+    background: transparent;
+    color: var(--live-text-secondary);
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: all 0.15s ease;
+}
+.btn-modal-close:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.live-modal-body {
+    position: relative;
+    flex: 1 1 auto;
+    overflow: hidden;
+    background: var(--live-modal-bg);
+}
+
+.live-modal-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--live-text-muted);
+    background: var(--live-modal-bg);
+    z-index: 1;
+}
+
+#live-submissions-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* ========================================================
+   8. DARK THEME & AUTO THEME SUPPORT (COMPLETE RULES)
+   ======================================================== */
+body[data-theme="dark"] #live-ide-container,
+body[data-theme="dark"] #live-submissions-modal {
+    color-scheme: dark;
+    --live-bg-main: #0f172a;
+    --live-bg-sidebar: #1e293b;
+    --live-bg-infocard: #1e293b;
+    --live-bg-card: #0f172a;
+    --live-bg-toolbar: #1e293b;
+    --live-bg-drawer: #0f172a;
+    --live-bg-drawer-header: #1e293b;
+    --live-bg-input: #020617;
+    --live-bg-input-readonly: #0f172a;
+    --live-border-color: #334155;
+    --live-border-light: #334155;
+    --live-text-primary: #f8fafc;
+    --live-text-secondary: #cbd5e1;
+    --live-text-muted: #94a3b8;
+    --live-resizer-bg: #334155;
+    --live-resizer-hover: #38bdf8;
+    --live-hover-bg: #334155;
+    --live-active-tab-bg: #0f172a;
+    --live-active-tab-text: #38bdf8;
+    --live-code-badge: #38bdf8;
+    --live-modal-bg: #1e293b;
+    --live-modal-header-bg: #0f172a;
+    --live-modal-border: #334155;
+}
+
+body[data-theme="dark"] #live-ide-container,
+body[data-theme="dark"] #live-pane-left,
+body[data-theme="dark"] #live-pane-right,
+body[data-theme="dark"] .problem-statement-scroll {
+    background-color: #0f172a !important;
+    color: #e2e8f0 !important;
+}
+
+body[data-theme="dark"] .problem-statement-scroll h1,
+body[data-theme="dark"] .problem-statement-scroll h2,
+body[data-theme="dark"] .problem-statement-scroll h3,
+body[data-theme="dark"] .problem-statement-scroll h4 {
+    color: #f8fafc !important;
+}
+
+body[data-theme="dark"] .problem-statement-scroll p,
+body[data-theme="dark"] .problem-statement-scroll li,
+body[data-theme="dark"] .problem-statement-scroll span {
+    color: #cbd5e1 !important;
+}
+
+body[data-theme="dark"] .problem-statement-scroll pre,
+body[data-theme="dark"] .problem-statement-scroll code {
+    background-color: #020617 !important;
+    border-color: #334155 !important;
+    color: #38bdf8 !important;
+}
+
+body[data-theme="dark"] .problem-statement-scroll table,
+body[data-theme="dark"] .problem-statement-scroll th,
+body[data-theme="dark"] .problem-statement-scroll td {
+    border-color: #334155 !important;
+}
+body[data-theme="dark"] .problem-statement-scroll th {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+}
+body[data-theme="dark"] .problem-statement-scroll td {
+    color: #cbd5e1 !important;
+}
+
+body[data-theme="dark"] .problem-statement-scroll blockquote {
+    background-color: #1e293b !important;
+    border-left-color: #38bdf8 !important;
+    color: #cbd5e1 !important;
+}
+
+body[data-theme="dark"] .problem-info-card {
+    background-color: #1e293b !important;
+    border-bottom-color: #334155 !important;
+}
+
+body[data-theme="dark"] .meta-badge {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+}
+
+body[data-theme="dark"] .meta-badge-pdf {
+    background-color: #450a0a !important;
+    border-color: #7f1d1d !important;
+    color: #fca5a5 !important;
+}
+
+body[data-theme="dark"] .live-ide-toolbar {
+    background-color: #1e293b !important;
+    border-bottom-color: #334155 !important;
+}
+
+body[data-theme="dark"] .live-lang-select {
+    background-color: #020617 !important;
+    border-color: #334155 !important;
+    color: #f8fafc !important;
+}
+
+body[data-theme="dark"] .testcase-drawer {
+    background-color: #0f172a !important;
+    border-top-color: #334155 !important;
+}
+
+body[data-theme="dark"] .drawer-header {
+    background-color: #1e293b !important;
+    border-bottom-color: #334155 !important;
+}
+
+body[data-theme="dark"] .tc-tab-btn {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #94a3b8 !important;
+}
+
+body[data-theme="dark"] .tc-tab-btn:hover {
+    background-color: #334155 !important;
+    color: #f8fafc !important;
+}
+
+body[data-theme="dark"] .tc-tab-btn.active {
+    background-color: #0f172a !important;
+    border-bottom-color: #38bdf8 !important;
+    color: #38bdf8 !important;
+}
+
+body[data-theme="dark"] .tab-btn-add {
+    background-color: #1e293b !important;
+    border-color: #475569 !important;
+    color: #94a3b8 !important;
+}
+
+body[data-theme="dark"] .tc-field-group label {
+    color: #94a3b8 !important;
+}
+
+body[data-theme="dark"] .tc-textarea {
+    background-color: #020617 !important;
+    border-color: #334155 !important;
+    color: #f8fafc !important;
+}
+
+body[data-theme="dark"] .tc-textarea[readonly] {
+    background-color: #0f172a !important;
+    color: #f8fafc !important;
+}
+
+body[data-theme="dark"] .compile-error-panel {
+    background-color: #450a0a !important;
+    border-color: #7f1d1d !important;
+    color: #fca5a5 !important;
+}
+
+body[data-theme="dark"] #live-pane-resizer {
+    background-color: #334155 !important;
+}
+
+body[data-theme="dark"] #live-pane-resizer:hover {
+    background-color: #38bdf8 !important;
+}
+
+body[data-theme="dark"] .resizer-handle {
+    background-color: #64748b !important;
+}
+
+body[data-theme="dark"] .clarify-btn {
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+}
+
+body[data-theme="dark"] .sidebar-admin-section {
+    background-color: #0f172a !important;
+    border-top-color: #334155 !important;
+}
+
+body[data-theme="dark"] .sidebar-admin-title {
+    color: #818cf8 !important;
+}
+
+body[data-theme="dark"] .sidebar-admin-danger:hover {
+    background-color: #450a0a !important;
+    color: #fca5a5 !important;
+}
+
+body[data-theme="dark"] .btn-modal-close:hover {
+    background-color: #450a0a !important;
+    color: #fca5a5 !important;
+}
+
+body[data-theme="dark"] .meta-badge-pdf:hover {
+    background-color: #7f1d1d !important;
+    border-color: #ef4444 !important;
+    color: #fee2e2 !important;
+}
+
+/* Auto Theme Support via prefers-color-scheme: dark */
+@media (prefers-color-scheme: dark) {
+    body[data-theme="auto"] #live-ide-container,
+    body[data-theme="auto"] #live-submissions-modal {
+        color-scheme: dark;
+        --live-bg-main: #0f172a;
+        --live-bg-sidebar: #1e293b;
+        --live-bg-infocard: #1e293b;
+        --live-bg-card: #0f172a;
+        --live-bg-toolbar: #1e293b;
+        --live-bg-drawer: #0f172a;
+        --live-bg-drawer-header: #1e293b;
+        --live-bg-input: #020617;
+        --live-bg-input-readonly: #0f172a;
+        --live-border-color: #334155;
+        --live-border-light: #334155;
+        --live-text-primary: #f8fafc;
+        --live-text-secondary: #cbd5e1;
+        --live-text-muted: #94a3b8;
+        --live-resizer-bg: #334155;
+        --live-resizer-hover: #38bdf8;
+        --live-hover-bg: #334155;
+        --live-active-tab-bg: #0f172a;
+        --live-active-tab-text: #38bdf8;
+        --live-code-badge: #38bdf8;
+        --live-modal-bg: #1e293b;
+        --live-modal-header-bg: #0f172a;
+        --live-modal-border: #334155;
+    }
+
+    body[data-theme="auto"] #live-ide-container,
+    body[data-theme="auto"] #live-pane-left,
+    body[data-theme="auto"] #live-pane-right,
+    body[data-theme="auto"] .problem-statement-scroll {
+        background-color: #0f172a !important;
+        color: #e2e8f0 !important;
+    }
+
+    body[data-theme="auto"] .problem-statement-scroll h1,
+    body[data-theme="auto"] .problem-statement-scroll h2,
+    body[data-theme="auto"] .problem-statement-scroll h3,
+    body[data-theme="auto"] .problem-statement-scroll h4 {
+        color: #f8fafc !important;
+    }
+
+    body[data-theme="auto"] .problem-statement-scroll p,
+    body[data-theme="auto"] .problem-statement-scroll li,
+    body[data-theme="auto"] .problem-statement-scroll span {
+        color: #cbd5e1 !important;
+    }
+
+    body[data-theme="auto"] .problem-statement-scroll pre,
+    body[data-theme="auto"] .problem-statement-scroll code {
+        background-color: #020617 !important;
+        border-color: #334155 !important;
+        color: #38bdf8 !important;
+    }
+
+    body[data-theme="auto"] .problem-statement-scroll table,
+    body[data-theme="auto"] .problem-statement-scroll th,
+    body[data-theme="auto"] .problem-statement-scroll td {
+        border-color: #334155 !important;
+    }
+    body[data-theme="auto"] .problem-statement-scroll th {
+        background-color: #1e293b !important;
+        color: #f8fafc !important;
+    }
+    body[data-theme="auto"] .problem-statement-scroll td {
+        color: #cbd5e1 !important;
+    }
+
+    body[data-theme="auto"] .problem-statement-scroll blockquote {
+        background-color: #1e293b !important;
+        border-left-color: #38bdf8 !important;
+        color: #cbd5e1 !important;
+    }
+
+    body[data-theme="auto"] .problem-info-card {
+        background-color: #1e293b !important;
+        border-bottom-color: #334155 !important;
+    }
+
+    body[data-theme="auto"] .meta-badge {
+        background-color: #0f172a !important;
+        border-color: #334155 !important;
+        color: #cbd5e1 !important;
+    }
+
+    body[data-theme="auto"] .meta-badge-pdf {
+        background-color: #450a0a !important;
+        border-color: #7f1d1d !important;
+        color: #fca5a5 !important;
+    }
+
+    body[data-theme="auto"] .live-ide-toolbar {
+        background-color: #1e293b !important;
+        border-bottom-color: #334155 !important;
+    }
+
+    body[data-theme="auto"] .live-lang-select {
+        background-color: #020617 !important;
+        border-color: #334155 !important;
+        color: #f8fafc !important;
+    }
+
+    body[data-theme="auto"] .testcase-drawer {
+        background-color: #0f172a !important;
+        border-top-color: #334155 !important;
+    }
+
+    body[data-theme="auto"] .drawer-header {
+        background-color: #1e293b !important;
+        border-bottom-color: #334155 !important;
+    }
+
+    body[data-theme="auto"] .tc-tab-btn {
+        background-color: #1e293b !important;
+        border-color: #334155 !important;
+        color: #94a3b8 !important;
+    }
+
+    body[data-theme="auto"] .tc-tab-btn:hover {
+        background-color: #334155 !important;
+        color: #f8fafc !important;
+    }
+
+    body[data-theme="auto"] .tc-tab-btn.active {
+        background-color: #0f172a !important;
+        border-bottom-color: #38bdf8 !important;
+        color: #38bdf8 !important;
+    }
+
+    body[data-theme="auto"] .tab-btn-add {
+        background-color: #1e293b !important;
+        border-color: #475569 !important;
+        color: #94a3b8 !important;
+    }
+
+    body[data-theme="auto"] .tc-field-group label {
+        color: #94a3b8 !important;
+    }
+
+    body[data-theme="auto"] .tc-textarea {
+        background-color: #020617 !important;
+        border-color: #334155 !important;
+        color: #f8fafc !important;
+    }
+
+    body[data-theme="auto"] .tc-textarea[readonly] {
+        background-color: #0f172a !important;
+        color: #f8fafc !important;
+    }
+
+    body[data-theme="auto"] .compile-error-panel {
+        background-color: #450a0a !important;
+        border-color: #7f1d1d !important;
+        color: #fca5a5 !important;
+    }
+
+    body[data-theme="auto"] #live-pane-resizer {
+        background-color: #334155 !important;
+    }
+
+    body[data-theme="auto"] #live-pane-resizer:hover {
+        background-color: #38bdf8 !important;
+    }
+
+    body[data-theme="auto"] .resizer-handle {
+        background-color: #64748b !important;
+    }
+
+    body[data-theme="auto"] .clarify-btn {
+        background-color: #1e293b !important;
+        border-color: #334155 !important;
+        color: #cbd5e1 !important;
+    }
+
+    body[data-theme="auto"] .sidebar-admin-section {
+        background-color: #0f172a !important;
+        border-top-color: #334155 !important;
+    }
+
+    body[data-theme="auto"] .sidebar-admin-title {
+        color: #818cf8 !important;
+    }
+
+    body[data-theme="auto"] .sidebar-admin-danger:hover {
+        background-color: #450a0a !important;
+        color: #fca5a5 !important;
+    }
+
+    body[data-theme="auto"] .btn-modal-close:hover {
+        background-color: #450a0a !important;
+        color: #fca5a5 !important;
+    }
+
+    body[data-theme="auto"] .meta-badge-pdf:hover {
+        background-color: #7f1d1d !important;
+        border-color: #ef4444 !important;
+        color: #fee2e2 !important;
+    }
+}
+
+/* ========================================================
+   9. RESPONSIVE BREAKPOINTS
+   ======================================================== */
 @media (max-width: 1024px) {
     body.body-live-ide-wide,
     body:has(#live-ide-container),
@@ -599,6 +1588,25 @@ body:has(#live-ide-container) footer br {
         height: auto !important;
         min-height: auto !important;
     }
+    .live-workspace-panes {
+        flex-direction: column !important;
+        height: auto !important;
+        min-height: auto !important;
+    }
+    .live-sidebar-left {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        flex: 0 0 auto !important;
+        border-right: none !important;
+        border-bottom: 1px solid var(--live-border-light);
+    }
+    .live-sidebar-left.collapsed {
+        height: 42px !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+    }
     #live-pane-left, #live-pane-right {
         flex: 1 1 auto;
         max-width: 100%;
@@ -610,6 +1618,10 @@ body:has(#live-ide-container) footer br {
     }
     .live-editor-container {
         min-height: 400px;
+    }
+    .live-modal-dialog {
+        width: 96vw;
+        height: 90vh;
     }
 }
 
@@ -623,6 +1635,10 @@ body:has(#live-ide-container) footer br {
     }
     .toolbar-left, .toolbar-right {
         justify-content: space-between;
+    }
+    .problem-info-header {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }
 </style>

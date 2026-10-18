@@ -6,12 +6,16 @@
     var liveRunUrl = '{{ url("problem_live_run", problem.code) }}';
     var draftUrl = '{{ url("problem_draft", problem.code) }}';
 
+    window.submission_stats = {{ submission_stats_json|default('{"categories": [], "total": 0}') }};
+    window.submission_colors = {{ submission_colors_json|default('{}') }};
+
     var state = {
         activeTab: 0,
         testcases: [
             { id: 1, input: '', expected: '', actual: '', status: '', time: 0, memory: 0 }
         ],
         isDrawerCollapsed: false,
+        isSidebarCollapsed: false,
         saveTimeout: null,
         isRunning: false
     };
@@ -39,16 +43,308 @@
         }
     }
 
-    /* Resizer logic */
+    /* ========================================================
+       Theme Detection & Synchronization (Dark / Light / Auto)
+       ======================================================== */
+    function isDarkTheme() {
+        var theme = $('body').attr('data-theme') || '';
+        if (theme === 'dark') return true;
+        if (theme === 'light') return false;
+        if (window.matchMedia) {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches;
+        }
+        return false;
+    }
+
+    function applyTheme() {
+        var dark = isDarkTheme();
+        var editor = getAceEditor();
+        if (editor && typeof editor.setTheme === 'function') {
+            var targetTheme = dark ? 'ace/theme/tomorrow_night' : 'ace/theme/textmate';
+            try {
+                if (editor.getTheme() !== targetTheme) {
+                    editor.setTheme(targetTheme);
+                }
+            } catch (e) {
+                editor.setTheme(targetTheme);
+            }
+        }
+        if (window.liveDonutChart) {
+            updateChartTheme(window.liveDonutChart, dark);
+        }
+        var iframe = document.getElementById('live-submissions-iframe');
+        if (iframe && iframe.contentDocument && iframe.contentDocument.body) {
+            var theme = $('body').attr('data-theme') || '';
+            if (theme) {
+                $(iframe.contentDocument.body).attr('data-theme', theme);
+            }
+        }
+    }
+
+    function initThemeWatchers() {
+        if (window.matchMedia) {
+            try {
+                var mq = window.matchMedia('(prefers-color-scheme: dark)');
+                var mqHandler = function() {
+                    applyTheme();
+                };
+                if (mq.addEventListener) {
+                    mq.addEventListener('change', mqHandler);
+                } else if (mq.addListener) {
+                    mq.addListener(mqHandler);
+                }
+            } catch (e) {}
+        }
+
+        if (window.MutationObserver) {
+            var observer = new MutationObserver(function(mutations) {
+                for (var i = 0; i < mutations.length; i++) {
+                    if (mutations[i].attributeName === 'data-theme') {
+                        applyTheme();
+                        break;
+                    }
+                }
+            });
+            observer.observe(document.body, { attributes: true, attributeFilter: ['data-theme'] });
+        }
+
+        // Apply immediately upon initializing watchers
+        applyTheme();
+    }
+
+    /* ========================================================
+       Sidebar Collapse / Expand
+       ======================================================== */
+    function initSidebar() {
+        var $sidebar = $('#live-sidebar-left');
+        var $toggleBtn = $('#btn-toggle-sidebar');
+        if (!$sidebar.length) return;
+
+        var savedCollapsed = localStorage.getItem('live_ide_sidebar_collapsed');
+        var shouldCollapse = savedCollapsed === '1' || (savedCollapsed === null && window.innerWidth <= 1024);
+
+        if (shouldCollapse) {
+            $sidebar.addClass('collapsed');
+            state.isSidebarCollapsed = true;
+            $toggleBtn.find('i').removeClass('fa-angle-double-left').addClass('fa-angle-double-right');
+            $toggleBtn.attr('title', '{{ _("Mở rộng thanh bên") }}');
+        }
+
+        $toggleBtn.on('click', function() {
+            state.isSidebarCollapsed = !state.isSidebarCollapsed;
+            $sidebar.toggleClass('collapsed', state.isSidebarCollapsed);
+            var $icon = $toggleBtn.find('i');
+            if (state.isSidebarCollapsed) {
+                $icon.removeClass('fa-angle-double-left').addClass('fa-angle-double-right');
+                $toggleBtn.attr('title', '{{ _("Mở rộng thanh bên") }}');
+                localStorage.setItem('live_ide_sidebar_collapsed', '1');
+            } else {
+                $icon.removeClass('fa-angle-double-right').addClass('fa-angle-double-left');
+                $toggleBtn.attr('title', '{{ _("Thu gọn thanh bên") }}');
+                localStorage.setItem('live_ide_sidebar_collapsed', '0');
+            }
+            setTimeout(function() {
+                resizeAceEditor();
+                if (window.liveDonutChart) {
+                    window.liveDonutChart.resize();
+                }
+            }, 210);
+        });
+    }
+
+    /* ========================================================
+       Submissions Quick-View Modal
+       ======================================================== */
+    function initSubmissionsModal() {
+        var $modal = $('#live-submissions-modal');
+        var $iframe = $('#live-submissions-iframe');
+        var $spinner = $('#live-submissions-spinner');
+        if (!$modal.length) return;
+
+        window.openSubmissionsModal = function(url, title) {
+            if (!url) return;
+            $('#live-submissions-modal-title .modal-title-text').text(title || '{{ _("Bài nộp") }}');
+            $('#live-submissions-modal-newtab').attr('href', url);
+            $spinner.show();
+            $iframe.attr('src', url);
+            $modal.addClass('active').attr('aria-hidden', 'false');
+            $('body').addClass('live-modal-open');
+        };
+
+        window.closeSubmissionsModal = function() {
+            $modal.removeClass('active').attr('aria-hidden', 'true');
+            $iframe.attr('src', 'about:blank');
+            $('body').removeClass('live-modal-open');
+        };
+
+        $iframe.on('load', function() {
+            $spinner.hide();
+            try {
+                var iframeUrl = $iframe[0].contentWindow.location.href;
+                if (iframeUrl && iframeUrl !== 'about:blank') {
+                    $('#live-submissions-modal-newtab').attr('href', iframeUrl);
+                }
+            } catch (e) {}
+        });
+
+        $(document).on('click', '.btn-open-sub-modal', function(e) {
+            e.preventDefault();
+            var url = $(this).data('url');
+            var title = $(this).data('title');
+            window.openSubmissionsModal(url, title);
+        });
+
+        $('#live-submissions-modal-overlay, #btn-close-submissions-modal').on('click', function() {
+            window.closeSubmissionsModal();
+        });
+
+        $(document).on('keydown', function(e) {
+            if (e.key === 'Escape' && $modal.hasClass('active')) {
+                window.closeSubmissionsModal();
+            }
+        });
+    }
+
+    /* ========================================================
+       Interactive Submission Stats Donut Chart
+       ======================================================== */
+    function getVerdictColors() {
+        var defaultColors = {
+            'AC': '#16a34a',
+            'PAC': '#84cc16',
+            'WA': '#dc2626',
+            'CE': '#d97706',
+            'TLE': '#ea580c',
+            'MLE': '#7c3aed',
+            'RTE': '#991b1b',
+            'ERR': '#e11d48'
+        };
+        return $.extend({}, defaultColors, window.submission_colors || {});
+    }
+
+    function updateChartTheme(chart, isDark) {
+        if (!chart) return;
+        var borderColor = isDark ? '#1e293b' : '#ffffff';
+        if (chart.data && chart.data.datasets && chart.data.datasets[0]) {
+            chart.data.datasets[0].borderColor = borderColor;
+            var stats = window.submission_stats || { categories: [], total: 0 };
+            if (!stats.total) {
+                chart.data.datasets[0].backgroundColor = [isDark ? '#334155' : '#e2e8f0'];
+            }
+        }
+        if (chart.options && chart.options.tooltips) {
+            chart.options.tooltips.backgroundColor = isDark ? 'rgba(15, 23, 42, 0.96)' : 'rgba(255, 255, 255, 0.96)';
+            chart.options.tooltips.titleFontColor = isDark ? '#f8fafc' : '#0f172a';
+            chart.options.tooltips.bodyFontColor = isDark ? '#cbd5e1' : '#334155';
+            chart.options.tooltips.borderColor = isDark ? '#334155' : '#cbd5e1';
+        }
+        chart.update();
+    }
+
+    function initDonutChart() {
+        var canvas = document.getElementById('live-submission-donut');
+        if (!canvas) return;
+
+        if (typeof Chart === 'undefined') {
+            var attempts = 0;
+            var timer = setInterval(function() {
+                attempts++;
+                if (typeof Chart !== 'undefined') {
+                    clearInterval(timer);
+                    initDonutChart();
+                } else if (attempts > 30) {
+                    clearInterval(timer);
+                }
+            }, 100);
+            return;
+        }
+
+        var stats = window.submission_stats || { categories: [], total: 0 };
+        var total = stats.total || 0;
+        $('#chart-total-count').text(total);
+
+        var colors = getVerdictColors();
+        var isDark = isDarkTheme();
+        var borderColor = isDark ? '#1e293b' : '#ffffff';
+
+        var categories = stats.categories || [];
+        var activeCategories = categories.filter(function(c) { return c.count > 0; });
+
+        var dataVals = activeCategories.length > 0 ? activeCategories.map(function(c) { return c.count; }) : [1];
+        var bgColors = activeCategories.length > 0 ? activeCategories.map(function(c) { return colors[c.code] || '#94a3b8'; }) : [isDark ? '#334155' : '#e2e8f0'];
+        var labels = activeCategories.length > 0 ? activeCategories.map(function(c) { return c.name; }) : [total === 0 ? '{{ _("Chưa có bài nộp") }}' : ''];
+
+        var ctx = canvas.getContext('2d');
+        if (window.liveDonutChart) {
+            window.liveDonutChart.destroy();
+        }
+
+        window.liveDonutChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: dataVals,
+                    backgroundColor: bgColors,
+                    borderColor: borderColor,
+                    borderWidth: 2
+                }],
+                labels: labels
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                animation: false,
+                cutoutPercentage: 72,
+                legend: {
+                    display: false
+                },
+                tooltips: {
+                    enabled: activeCategories.length > 0,
+                    backgroundColor: isDark ? 'rgba(15, 23, 42, 0.96)' : 'rgba(255, 255, 255, 0.96)',
+                    titleFontColor: isDark ? '#f8fafc' : '#0f172a',
+                    bodyFontColor: isDark ? '#cbd5e1' : '#334155',
+                    borderColor: isDark ? '#334155' : '#cbd5e1',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(tooltipItem, data) {
+                            var cat = activeCategories[tooltipItem.index];
+                            if (!cat) return '';
+                            var pct = total > 0 ? Math.round((cat.count / total) * 100) : 0;
+                            return ' ' + cat.name + ' (' + cat.code + '): ' + cat.count + ' (' + pct + '%)';
+                        }
+                    }
+                }
+            }
+        });
+
+        // Render compact verdict legend
+        var $legend = $('#live-verdict-legend');
+        $legend.empty();
+        categories.forEach(function(cat) {
+            var catColor = colors[cat.code] || '#94a3b8';
+            var $item = $('<div class="verdict-legend-item"></div>')
+                .append($('<span class="verdict-dot"></span>').css('background-color', catColor))
+                .append($('<span class="verdict-code"></span>').text(cat.code))
+                .append($('<span class="verdict-count"></span>').text(cat.count));
+            $legend.append($item);
+        });
+    }
+
+    /* ========================================================
+       Pane Resizer (accounts for workspace container)
+       ======================================================== */
     function initResizer() {
         var $resizer = $('#live-pane-resizer');
         var $left = $('#live-pane-left');
-        var $container = $('#live-ide-container');
-        if (!$resizer.length) return;
+        var $panes = $('#live-workspace-panes');
+        if (!$resizer.length || !$panes.length) return;
 
         var savedPct = localStorage.getItem('live_ide_split_' + problemCode) || localStorage.getItem('live_ide_split_pct');
         if (savedPct) {
-            $left.css('flex', '0 0 ' + savedPct + '%');
+            var val = parseFloat(savedPct);
+            if (!isNaN(val) && val >= 20 && val <= 80) {
+                $left.css('flex', '0 0 ' + val + '%');
+            }
         }
 
         var isDragging = false;
@@ -60,10 +356,11 @@
 
         $(document).on('mousemove', function(e) {
             if (!isDragging) return;
-            var containerOffset = $container.offset().left;
-            var containerWidth = $container.width();
-            var pointerX = e.pageX - containerOffset;
-            var pct = Math.max(20, Math.min(80, (pointerX / containerWidth) * 100));
+            var panesWidth = $panes.width();
+            if (panesWidth <= 0) return;
+
+            var pointerOffset = e.pageX - $panes.offset().left;
+            var pct = Math.max(20, Math.min(80, (pointerOffset / panesWidth) * 100));
             $left.css('flex', '0 0 ' + pct + '%');
             resizeAceEditor();
         });
@@ -72,27 +369,34 @@
             if (isDragging) {
                 isDragging = false;
                 $('body').css({ cursor: '', userSelect: '' });
-                var curWidth = ($left.width() / $container.width()) * 100;
-                localStorage.setItem('live_ide_split_' + problemCode, curWidth.toFixed(1));
+                var panesWidth = $panes.width();
+                if (panesWidth > 0) {
+                    var curPct = ($left.width() / panesWidth) * 100;
+                    localStorage.setItem('live_ide_split_' + problemCode, curPct.toFixed(1));
+                }
             }
         });
 
-        // Keyboard arrow resize on separator
         $resizer.on('keydown', function(e) {
-            var curPct = ($left.width() / $container.width()) * 100;
+            var panesWidth = $panes.width();
+            var curPct = panesWidth > 0 ? ($left.width() / panesWidth) * 100 : 42;
             if (e.key === 'ArrowLeft') {
                 curPct = Math.max(20, curPct - 5);
                 $left.css('flex', '0 0 ' + curPct + '%');
                 resizeAceEditor();
+                localStorage.setItem('live_ide_split_' + problemCode, curPct.toFixed(1));
             } else if (e.key === 'ArrowRight') {
                 curPct = Math.min(80, curPct + 5);
                 $left.css('flex', '0 0 ' + curPct + '%');
                 resizeAceEditor();
+                localStorage.setItem('live_ide_split_' + problemCode, curPct.toFixed(1));
             }
         });
     }
 
-    /* Testcase UI Rendering */
+    /* ========================================================
+       Testcase Tabs & Runner
+       ======================================================== */
     function renderTabs() {
         var $tabs = $('#testcase-tabs-list');
         $tabs.empty();
@@ -149,7 +453,7 @@
             '    <textarea class="tc-textarea" id="tc-actual" readonly style="height: 160px;" placeholder="{{ _("Kết quả chạy sẽ hiển thị tại đây...") }}">' + escapeHtml(tc.actual || tc.feedback || '') + '</textarea>',
             '  </div>',
             '</div>'
-        ].join('\n');
+        ].join('');
 
         $panels.html(html);
 
@@ -157,26 +461,26 @@
             tc.input = $(this).val();
             scheduleSaveDraft();
         });
-
         $('#tc-expected').on('input', function() {
             tc.expected = $(this).val();
             scheduleSaveDraft();
         });
-
         $('.btn-del-tc').on('click', function() {
-            removeTestcase(state.activeTab);
+            deleteTestcase(state.activeTab);
         });
     }
 
     function selectTab(idx) {
+        if (idx < 0 || idx >= state.testcases.length) return;
         state.activeTab = idx;
         renderTabs();
     }
 
     function addTestcase() {
         if (state.testcases.length >= 5) return;
+        var newId = state.testcases.length + 1;
         state.testcases.push({
-            id: state.testcases.length + 1,
+            id: newId,
             input: '',
             expected: '',
             actual: '',
@@ -189,7 +493,7 @@
         scheduleSaveDraft();
     }
 
-    function removeTestcase(idx) {
+    function deleteTestcase(idx) {
         if (state.testcases.length <= 1) return;
         state.testcases.splice(idx, 1);
         if (state.activeTab >= state.testcases.length) {
@@ -199,164 +503,190 @@
         scheduleSaveDraft();
     }
 
-    function escapeHtml(text) {
-        return $('<div>').text(text).html();
-    }
-
-    function stripAnsi(str) {
+    function escapeHtml(str) {
         if (!str) return '';
         return String(str)
-            .replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '')
-            .replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 
-    /* Build & Run execution */
+    /* Run Custom Testcases via Live Runner */
     function runTests() {
         if (state.isRunning) return;
         var editor = getAceEditor();
-        var code = editor ? editor.getSession().getValue() : $('#id_source').val();
-        if (!code || !code.trim()) {
-            alert('{{ _("Vui lòng nhập mã nguồn trước khi chạy.") }}');
+        var source = editor ? editor.getValue() : $('#id_source').val();
+        if (!source || !source.trim()) {
+            alert('{{ _("Vui lòng nhập mã nguồn trước khi chạy thử.") }}');
             return;
         }
 
-        var langId = $('#live-lang-select').val();
         var langKey = $('#live-lang-select option:selected').data('key');
+        if (!langKey) {
+            alert('{{ _("Vui lòng chọn ngôn ngữ lập trình.") }}');
+            return;
+        }
+
+        state.isRunning = true;
+        $('#btn-build-run').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> <span>{{ _("Đang chạy...") }}</span>');
+        $('#live-compile-error').addClass('hidden');
+
+        // Expand drawer if collapsed
+        if (state.isDrawerCollapsed) {
+            toggleDrawer();
+        }
 
         var payload = {
-            language: langId,
-            language_key: langKey,
-            source: code,
+            language: langKey,
+            source: source,
             testcases: state.testcases.map(function(tc) {
-                return { id: tc.id, input: tc.input, expected: tc.expected };
+                return {
+                    id: tc.id,
+                    input: tc.input || '',
+                    expected: tc.expected || ''
+                };
             })
         };
 
-        state.isRunning = true;
-        var $btn = $('#btn-build-run');
-        var originalBtnHtml = $btn.html();
-        $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> {{ _("Đang biên dịch & chạy...") }}');
-        $('#run-overall-status').text('{{ _("Đang thực thi...") }}');
-        $('#live-compile-error').addClass('hidden');
-        $('#live-compile-error-msg').empty();
-
         $.ajax({
             url: liveRunUrl,
-            type: 'POST',
+            method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(payload),
-            headers: { 'X-CSRFToken': getCsrfToken() },
+            headers: {
+                'X-CSRFToken': getCsrfToken()
+            },
             success: function(resp) {
+                state.isRunning = false;
+                $('#btn-build-run').prop('disabled', false).html('<i class="fa fa-play"></i> <span>{{ _("Build & Run") }}</span>');
+
                 if (resp.status === 'CE') {
                     $('#live-compile-error').removeClass('hidden');
-                    $('#live-compile-error-msg').text(stripAnsi(resp.compile_error || '{{ _("Lỗi biên dịch không xác định") }}'));
-                    $('#run-overall-status').html('<span style="color: #dc2626; font-weight: 700;">{{ _("Compile Error") }}</span>');
+                    $('#compile-error-text').text(resp.compile_error || 'Compile error');
                     state.testcases.forEach(function(tc) {
                         tc.status = 'CE';
                         tc.actual = '';
-                        tc.feedback = '{{ _("Biên dịch thất bại (Compile Error)") }}';
                     });
-                    renderTabs();
-                    if (state.isDrawerCollapsed) toggleDrawer();
-                } else if (resp.status === 'OK') {
-                    var acCount = 0;
-                    (resp.results || []).forEach(function(res, i) {
-                        if (state.testcases[i]) {
-                            state.testcases[i].status = res.status;
-                            state.testcases[i].actual = stripAnsi(res.output);
-                            state.testcases[i].feedback = stripAnsi(res.feedback);
-                            state.testcases[i].time = res.execution_time;
-                            state.testcases[i].memory = res.memory;
-                            if (res.status === 'AC') acCount++;
+                } else if (resp.status === 'OK' && resp.results) {
+                    $('#live-compile-error').addClass('hidden');
+                    resp.results.forEach(function(res, idx) {
+                        if (state.testcases[idx]) {
+                            state.testcases[idx].status = res.status;
+                            state.testcases[idx].actual = res.actual || '';
+                            state.testcases[idx].feedback = res.feedback || '';
+                            state.testcases[idx].time = res.time || 0;
+                            state.testcases[idx].memory = res.memory || 0;
                         }
                     });
-                    renderTabs();
-                    $('#run-overall-status').html('<span style="color: #16a34a; font-weight: 700;">{{ _("Hoàn thành:") }} ' + acCount + '/' + state.testcases.length + ' AC</span>');
-                    if (state.isDrawerCollapsed) toggleDrawer();
-                } else {
-                    alert(stripAnsi(resp.compile_error || '{{ _("Lỗi khi chạy test") }}'));
+                } else if (resp.error) {
+                    alert('Lỗi: ' + resp.error);
                 }
+                renderTabs();
             },
             error: function(xhr) {
-                var err = xhr.responseJSON ? xhr.responseJSON.message : '{{ _("Yêu cầu thất bại") }}';
-                alert('Lỗi: ' + err);
-            },
-            complete: function() {
                 state.isRunning = false;
-                $btn.prop('disabled', false).html(originalBtnHtml);
+                $('#btn-build-run').prop('disabled', false).html('<i class="fa fa-play"></i> <span>{{ _("Build & Run") }}</span>');
+                var err = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : 'Lỗi khi gửi yêu cầu chạy thử.';
+                alert(err);
             }
         });
     }
 
-    /* Submit solution */
+    /* Submit Solution directly */
     function submitSolution() {
         var editor = getAceEditor();
-        var code = editor ? editor.getSession().getValue() : $('#id_source').val();
-        $('#id_source').val(code);
-        $('#id_language').val($('#live-lang-select').val()).trigger('change');
-        saveDraftImmediate();
-        $('#problem_submit').submit();
+        if (editor) {
+            var val = editor.getValue();
+            $('#id_source').val(val);
+        }
+        var selectedId = $('#live-lang-select').val();
+        $('#id_language').val(selectedId);
+        $('#problem_submit').trigger('submit');
     }
 
-    /* Draft save & restore */
+    /* Draft Autosave */
     function scheduleSaveDraft() {
-        $('#live-draft-status').addClass('saving').html('<i class="fa fa-pencil"></i> {{ _("Đang lưu...") }}');
-        clearTimeout(state.saveTimeout);
-        state.saveTimeout = setTimeout(saveDraftImmediate, 2000);
+        var $status = $('#live-draft-status');
+        $status.addClass('saving').html('<i class="fa fa-spinner fa-spin"></i> {{ _("Đang lưu...") }}');
+        if (state.saveTimeout) {
+            clearTimeout(state.saveTimeout);
+        }
+        state.saveTimeout = setTimeout(saveDraftImmediate, 1500);
     }
 
     function saveDraftImmediate() {
-        clearTimeout(state.saveTimeout);
+        if (state.saveTimeout) {
+            clearTimeout(state.saveTimeout);
+            state.saveTimeout = null;
+        }
+
         var editor = getAceEditor();
-        var code = editor ? editor.getSession().getValue() : $('#id_source').val();
+        var source = editor ? editor.getValue() : $('#id_source').val();
+        var langId = $('#live-lang-select').val();
+
         var payload = {
-            language: $('#live-lang-select').val(),
-            source: code || '',
+            language: langId,
+            source: source,
             testcases: state.testcases.map(function(tc) {
-                return { id: tc.id, input: tc.input, expected: tc.expected };
+                return {
+                    id: tc.id,
+                    input: tc.input || '',
+                    expected: tc.expected || ''
+                };
             })
         };
 
         $.ajax({
             url: draftUrl,
-            type: 'POST',
+            method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(payload),
-            headers: { 'X-CSRFToken': getCsrfToken() },
+            headers: {
+                'X-CSRFToken': getCsrfToken()
+            },
             success: function() {
-                $('#live-draft-status').removeClass('saving').html('<i class="fa fa-check-circle" style="color: #16a34a;"></i> {{ _("Đã lưu nháp") }}');
+                $('#live-draft-status').removeClass('saving').html('<i class="fa fa-check-circle"></i> {{ _("Đã lưu nháp") }}');
+            },
+            error: function() {
+                $('#live-draft-status').removeClass('saving').html('<i class="fa fa-exclamation-circle text-danger"></i> {{ _("Lỗi lưu nháp") }}');
             }
         });
     }
 
     function loadDraft() {
-        $.get(draftUrl, function(data) {
-            if (data && data.status === 'OK') {
-                var editor = getAceEditor();
-                if (data.source) {
-                    if (editor) {
-                        editor.getSession().setValue(data.source);
-                    } else {
-                        $('#id_source').val(data.source);
+        $.ajax({
+            url: draftUrl,
+            method: 'GET',
+            success: function(resp) {
+                if (resp && resp.has_draft) {
+                    if (resp.source) {
+                        var editor = getAceEditor();
+                        if (editor) {
+                            editor.setValue(resp.source, 1);
+                        } else {
+                            $('#id_source').val(resp.source);
+                        }
                     }
-                }
-                if (data.language) {
-                    $('#live-lang-select').val(data.language).trigger('change');
-                }
-                if (data.testcases && data.testcases.length) {
-                    state.testcases = data.testcases.map(function(tc, i) {
-                        return {
-                            id: tc.id || (i + 1),
-                            input: tc.input || '',
-                            expected: tc.expected || '',
-                            actual: '',
-                            status: '',
-                            time: 0,
-                            memory: 0
-                        };
-                    });
-                    state.activeTab = 0;
-                    renderTabs();
+                    if (resp.language) {
+                        $('#live-lang-select').val(resp.language).trigger('change');
+                    }
+                    if (resp.testcases && resp.testcases.length > 0) {
+                        state.testcases = resp.testcases.map(function(tc, idx) {
+                            return {
+                                id: tc.id || (idx + 1),
+                                input: tc.input || '',
+                                expected: tc.expected || '',
+                                actual: '',
+                                status: '',
+                                time: 0,
+                                memory: 0
+                            };
+                        });
+                        state.activeTab = 0;
+                        renderTabs();
+                    }
                 }
             }
         });
@@ -376,11 +706,18 @@
         $('body').addClass('body-live-ide-wide');
         $('#content').addClass('content-live-ide-wide');
 
+        initSidebar();
+        initSubmissionsModal();
+        initDonutChart();
         initResizer();
         renderTabs();
+        initThemeWatchers();
 
         $(window).on('resize', function() {
             resizeAceEditor();
+            if (window.liveDonutChart) {
+                window.liveDonutChart.resize();
+            }
         });
 
         $('#btn-add-testcase').on('click', addTestcase);
@@ -413,6 +750,8 @@
         function setupAceEditor(editor) {
             if (!editor || editor._live_ide_initialized) return;
             editor._live_ide_initialized = true;
+
+            applyTheme();
 
             editor.getSession().on('change', function() {
                 scheduleSaveDraft();

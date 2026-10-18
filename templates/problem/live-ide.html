@@ -1,7 +1,215 @@
 <div id="live-ide-container" class="live-ide-split" role="region" aria-label="{{ _('Problem Solving Workspace') }}" data-problem-code="{{ problem.code }}">
-    <!-- Left Pane: Problem Info and Statement -->
-    <section id="live-pane-left" class="live-pane" aria-label="{{ _('Problem Details') }}">
-        <div class="problem-info-card">
+    <!-- Leftmost Sidebar: Navigation, Stats & Admin -->
+    <aside id="live-sidebar-left" class="live-sidebar-left" role="complementary" aria-label="{{ _('Problem Navigation and Stats') }}">
+        <div class="sidebar-header">
+            <span class="sidebar-header-title">
+                <i class="fa fa-bars" aria-hidden="true"></i>
+                <span class="sidebar-header-text">{{ _('Navigation') }}</span>
+            </span>
+            <button type="button" id="btn-toggle-sidebar" class="btn-sidebar-toggle" aria-label="{{ _('Toggle sidebar') }}" title="{{ _('Toggle sidebar') }}">
+                <i class="fa fa-angle-double-left" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <div class="sidebar-content-scroll">
+            <!-- Submissions Section -->
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">
+                    <i class="fa fa-list-alt" aria-hidden="true"></i>
+                    <span>{{ _('Submissions') }}</span>
+                </div>
+                <div class="sidebar-menu-list">
+                    {% if request.in_contest and contest_problem %}
+                        {% set contest = contest_problem.contest %}
+                        <!-- My Submissions -->
+                        {% set my_sub_url = url('contest_user_submissions', contest.key, request.user.username, problem.code) %}
+                        <div class="sidebar-menu-row">
+                            <button type="button" class="sidebar-menu-btn btn-open-sub-modal"
+                                    data-url="{{ my_sub_url }}"
+                                    data-title="{{ _('My submissions') }} - {{ problem.code }}">
+                                <i class="fa fa-user fa-fw" aria-hidden="true"></i>
+                                <span>{{ _('My submissions') }}</span>
+                            </button>
+                            <a href="{{ my_sub_url }}" target="_blank" class="sidebar-icon-btn" title="{{ _('Open in new tab') }}">
+                                <i class="fa fa-external-link" aria-hidden="true"></i>
+                            </a>
+                        </div>
+
+                        {% if contest.can_see_full_submission_list(request.user) %}
+                            <!-- All Submissions -->
+                            {% set all_sub_url = url('chronological_submissions', problem.code) %}
+                            <div class="sidebar-menu-row">
+                                <button type="button" class="sidebar-menu-btn btn-open-sub-modal"
+                                        data-url="{{ all_sub_url }}"
+                                        data-title="{{ _('All submissions') }} - {{ problem.code }}">
+                                    <i class="fa fa-globe fa-fw" aria-hidden="true"></i>
+                                    <span>{{ _('All submissions') }}</span>
+                                </button>
+                                <a href="{{ all_sub_url }}" target="_blank" class="sidebar-icon-btn" title="{{ _('Open in new tab') }}">
+                                    <i class="fa fa-external-link" aria-hidden="true"></i>
+                                </a>
+                            </div>
+
+                            <!-- Best Submissions -->
+                            {% set best_sub_url = url('contest_ranked_submissions', contest.key, problem.code) %}
+                            <div class="sidebar-menu-row">
+                                <button type="button" class="sidebar-menu-btn btn-open-sub-modal"
+                                        data-url="{{ best_sub_url }}"
+                                        data-title="{{ _('Best submissions') }} - {{ problem.code }}">
+                                    <i class="fa fa-trophy fa-fw" aria-hidden="true"></i>
+                                    <span>{{ _('Best submissions') }}</span>
+                                </button>
+                                <a href="{{ best_sub_url }}" target="_blank" class="sidebar-icon-btn" title="{{ _('Open in new tab') }}">
+                                    <i class="fa fa-external-link" aria-hidden="true"></i>
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <!-- All Submissions -->
+                        {% set all_sub_url = url('chronological_submissions', problem.code) %}
+                        <div class="sidebar-menu-row">
+                            <button type="button" class="sidebar-menu-btn btn-open-sub-modal"
+                                    data-url="{{ all_sub_url }}"
+                                    data-title="{{ _('All submissions') }} - {{ problem.code }}">
+                                <i class="fa fa-globe fa-fw" aria-hidden="true"></i>
+                                <span>{{ _('All submissions') }}</span>
+                            </button>
+                            <a href="{{ all_sub_url }}" target="_blank" class="sidebar-icon-btn" title="{{ _('Open in new tab') }}">
+                                <i class="fa fa-external-link" aria-hidden="true"></i>
+                            </a>
+                        </div>
+
+                        <!-- My Submissions -->
+                        {% set my_sub_url = url('user_submissions', problem.code, request.user.username) %}
+                        <div class="sidebar-menu-row">
+                            <button type="button" class="sidebar-menu-btn btn-open-sub-modal"
+                                    data-url="{{ my_sub_url }}"
+                                    data-title="{{ _('My submissions') }} - {{ problem.code }}">
+                                <i class="fa fa-user fa-fw" aria-hidden="true"></i>
+                                <span>{{ _('My submissions') }}</span>
+                            </button>
+                            <a href="{{ my_sub_url }}" target="_blank" class="sidebar-icon-btn" title="{{ _('Open in new tab') }}">
+                                <i class="fa fa-external-link" aria-hidden="true"></i>
+                            </a>
+                        </div>
+
+                        <!-- Best Submissions -->
+                        {% set best_sub_url = url('ranked_submissions', problem.code) %}
+                        <div class="sidebar-menu-row">
+                            <button type="button" class="sidebar-menu-btn btn-open-sub-modal"
+                                    data-url="{{ best_sub_url }}"
+                                    data-title="{{ _('Best submissions') }} - {{ problem.code }}">
+                                <i class="fa fa-trophy fa-fw" aria-hidden="true"></i>
+                                <span>{{ _('Best submissions') }}</span>
+                            </button>
+                            <a href="{{ best_sub_url }}" target="_blank" class="sidebar-icon-btn" title="{{ _('Open in new tab') }}">
+                                <i class="fa fa-external-link" aria-hidden="true"></i>
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Submission Stats Donut Chart Section -->
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">
+                    <i class="fa fa-pie-chart" aria-hidden="true"></i>
+                    <span>{{ _('Submission Statistics') }}</span>
+                </div>
+                <div class="sidebar-chart-wrapper">
+                    <div class="sidebar-chart-box">
+                        <canvas id="live-submission-donut" width="140" height="140"></canvas>
+                        <div class="chart-center-content">
+                            <span id="chart-total-count" class="chart-count-val">0</span>
+                            <span class="chart-count-label">{{ _('Submissions') }}</span>
+                        </div>
+                    </div>
+                    <div id="live-verdict-legend" class="verdict-legend-grid"></div>
+                </div>
+            </div>
+
+            <!-- Admin Panel Section (Only visible to can_edit_problem or staff) -->
+            {% if can_edit_problem or (request.user.is_staff and (perms.judge.change_problem or request.user.is_superuser or has_tickets)) %}
+                <div id="live-sidebar-admin-section" class="sidebar-section sidebar-admin-section">
+                    <div class="sidebar-section-title sidebar-admin-title">
+                        <i class="fa fa-shield" aria-hidden="true"></i>
+                        <span>{{ _('Admin Panel') }}</span>
+                    </div>
+                    <div class="sidebar-menu-list">
+                        {% if can_edit_problem or has_tickets %}
+                            <a href="{{ url('problem_ticket_list', problem.code) }}" target="_blank" class="sidebar-admin-link">
+                                <i class="fa fa-ticket fa-fw" aria-hidden="true"></i>
+                                <span>{{ _('Manage tickets') }}</span>
+                                {% if num_open_tickets %}
+                                    <span class="sidebar-ticket-badge">{{ num_open_tickets }}</span>
+                                {% endif %}
+                            </a>
+                        {% endif %}
+                        {% if can_edit_problem %}
+                            <a href="{{ url('problem_edit', problem.code) }}" target="_blank" class="sidebar-admin-link">
+                                <i class="fa fa-pencil fa-fw" aria-hidden="true"></i>
+                                <span>{{ _('Edit problem') }}</span>
+                            </a>
+                            {% if not problem.is_manually_managed %}
+                                <a href="{{ url('problem_data', problem.code) }}" target="_blank" class="sidebar-admin-link">
+                                    <i class="fa fa-database fa-fw" aria-hidden="true"></i>
+                                    <span>{{ _('Edit test data') }}</span>
+                                </a>
+                            {% endif %}
+                            <a href="{{ url('problem_delete', problem.code) }}?next={{ request.get_full_path()|urlencode }}" target="_blank" class="sidebar-admin-link sidebar-admin-danger">
+                                <i class="fa fa-trash fa-fw" aria-hidden="true"></i>
+                                <span>{{ _('Delete problem') }}</span>
+                            </a>
+                        {% endif %}
+                        {% if editorial and (can_edit_problem or (editorial.is_accessible_by(request.user) and not request.in_contest)) %}
+                            <a href="{{ url('problem_editorial', problem.code) }}{% if language %}?lang={{ language }}{% endif %}" target="_blank" class="sidebar-admin-link">
+                                <i class="fa fa-book fa-fw" aria-hidden="true"></i>
+                                <span>{{ _('Read editorial') }}</span>
+                            </a>
+                        {% endif %}
+                        {% if request.user.is_staff and (perms.judge.change_problem or request.user.is_superuser) %}
+                            <a href="{{ url('admin:judge_problem_change', problem.id) }}" target="_blank" class="sidebar-admin-link">
+                                <i class="fa fa-wrench fa-fw" aria-hidden="true"></i>
+                                <span>{{ _('Admin') }}</span>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </aside>
+
+    <!-- Workspace Panes: Statement, Resizer and Code Editor -->
+    <div id="live-workspace-panes" class="live-workspace-panes">
+        <!-- Left Pane: Problem Info and Statement -->
+        <section id="live-pane-left" class="live-pane" aria-label="{{ _('Problem Details') }}">
+            <div class="problem-info-card">
+                <div class="problem-info-header">
+                    <div class="problem-title-display" title="[{{ problem.code }}] {{ title }}">
+                        {% if request.user.is_authenticated %}
+                            {% set my_sub_link = url('contest_user_submissions', contest_problem.contest.key, request.user.username, problem.code) if (request.in_contest and contest_problem) else url('user_submissions', problem.code, request.user.username) %}
+                            <a href="{{ my_sub_link }}" class="problem-status-link btn-open-sub-modal" data-url="{{ my_sub_link }}" data-title="{{ _('My submissions') }} - {{ problem.code }}" title="{% if problem.id in completed_problem_ids %}{{ _('Solved') }}{% elif problem.id in attempted_problems %}{{ _('Attempted') }}{% else %}{{ _('Unattempted') }}{% endif %}">
+                                {% if problem.id in completed_problem_ids %}
+                                    <i class="solved-problem-color fa fa-check-circle problem-status-icon" aria-label="{{ _('Solved') }}"></i>
+                                {% elif problem.id in attempted_problems %}
+                                    <i class="attempted-problem-color fa fa-frown-o problem-status-icon" aria-label="{{ _('Attempted') }}"></i>
+                                {% else %}
+                                    <i class="unattempted-problem-color fa fa-circle-o problem-status-icon" aria-label="{{ _('Unattempted') }}"></i>
+                                {% endif %}
+                            </a>
+                        {% endif %}
+                        <span class="problem-code-badge">[{{ problem.code }}]</span>
+                        <span class="problem-name-text">{{ title }}</span>
+                    </div>
+                    {% if problem.is_organization_private and problem.organization %}
+                        <span class="organization-tag live-org-tag">
+                            <a href="{{ problem.organization.get_absolute_url() }}" target="_blank">
+                                <i class="fa fa-lock"></i> {{ problem.organization.name }}
+                            </a>
+                        </span>
+                    {% endif %}
+                </div>
+
             <div class="problem-meta-badges">
                 <span class="meta-badge" title="{{ _('Points') }}">
                     <i class="fa fa-star text-warning" aria-hidden="true"></i>
@@ -93,7 +301,7 @@
                     <i class="fa fa-play" aria-hidden="true"></i> <span>{{ _('Build & Run') }}</span>
                 </button>
                 <button type="button" id="btn-live-submit" class="btn-live-action btn-live-submit" title="{{ _('Submit solution for grading') }}">
-                    <i class="fa fa-paper-plane" aria-hidden="true"></i> <span>{{ _('Nộp bài') }}</span>
+                    <i class="fa fa-paper-plane" aria-hidden="true"></i> <span>{{ _('Submit solution') }}</span>
                 </button>
             </div>
         </header>
@@ -106,7 +314,36 @@
         <!-- Testcases Drawer -->
         {% include "problem/live-testcases.html" %}
     </section>
+    </div>
 
     <!-- Hidden iframe for PDF generation / printing -->
     <iframe name="raw_problem" id="raw_problem" style="display:none;visibility:hidden;width:0;height:0;position:absolute;left:-999em;"></iframe>
+
+    <!-- Quick-view Submissions Modal -->
+    <div id="live-submissions-modal" class="live-submissions-modal" role="dialog" aria-modal="true" aria-hidden="true">
+        <div id="live-submissions-modal-overlay" class="live-modal-overlay"></div>
+        <div class="live-modal-dialog">
+            <div class="live-modal-header">
+                <h3 id="live-submissions-modal-title">
+                    <i class="fa fa-list-alt" aria-hidden="true"></i>
+                    <span class="modal-title-text">{{ _('Submissions') }}</span>
+                </h3>
+                <div class="live-modal-actions">
+                    <a id="live-submissions-modal-newtab" href="#" target="_blank" class="btn-modal-action" title="{{ _('Open in new tab') }}">
+                        <i class="fa fa-external-link" aria-hidden="true"></i>
+                    </a>
+                    <button type="button" id="btn-close-submissions-modal" class="btn-modal-close" title="{{ _('Close') }}">
+                        <i class="fa fa-times" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="live-modal-body">
+                <div id="live-submissions-spinner" class="live-modal-loading">
+                    <i class="fa fa-circle-o-notch fa-spin fa-2x"></i>
+                    <span>{{ _('Loading submissions...') }}</span>
+                </div>
+                <iframe id="live-submissions-iframe" src="about:blank" frameborder="0"></iframe>
+            </div>
+        </div>
+    </div>
 </div>

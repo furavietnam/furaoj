@@ -61,6 +61,7 @@
     {% endif %}
     {% include "comments/lazy-load-js.html" %}
     {% if request.user.is_authenticated and form %}
+        <script src="{{ static('libs/chart.js/Chart.js') }}"></script>
         {% include "problem/submit-js.html" %}
         {% include "problem/live-ide-js.html" %}
     {% endif %}
@@ -142,37 +143,37 @@
 {% endblock %}
 
 {% block title_row %}
-    <div class="problem-title">
-        {% if request.user.is_authenticated %}
-            {% if problem.id in completed_problem_ids %}
-                <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
-                    {% if problem.is_public or request.in_contest %}
-                        <i class="solved-problem-color title-state fa fa-check-circle"></i>
-                    {% else %}
-                        <i class="solved-problem-color title-state fa fa-lock"></i>
-                    {% endif %}
-                </a>
-            {% elif problem.id in attempted_problems %}
-                <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
-                    {% if problem.is_public or request.in_contest %}
-                        <i class="attempted-problem-color title-state fa fa-frown-o"></i>
-                    {% else %}
-                        <i class="attempted-problem-color title-state fa fa-lock"></i>
-                    {% endif %}
-                </a>
-            {% endif %}
-        {% endif %}
-        <h2 style="display: inline-block">{{ title }}</h2>
-        {% if problem.is_organization_private and problem.organization %}
-            <span class="organization-tags">
-                <span class="organization-tag">
-                    <a href="{{ problem.organization.get_absolute_url() }}">
-                        <i class="fa fa-lock"></i> {{ problem.organization.name }}
+    {% if not (request.user.is_authenticated and form) %}
+        <div class="problem-title">
+            {% if request.user.is_authenticated %}
+                {% if problem.id in completed_problem_ids %}
+                    <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
+                        {% if problem.is_public or request.in_contest %}
+                            <i class="solved-problem-color title-state fa fa-check-circle"></i>
+                        {% else %}
+                            <i class="solved-problem-color title-state fa fa-lock"></i>
+                        {% endif %}
                     </a>
+                {% elif problem.id in attempted_problems %}
+                    <a href="{{ url('user_submissions', problem.code, request.user.username) }}">
+                        {% if problem.is_public or request.in_contest %}
+                            <i class="attempted-problem-color title-state fa fa-frown-o"></i>
+                        {% else %}
+                            <i class="attempted-problem-color title-state fa fa-lock"></i>
+                        {% endif %}
+                    </a>
+                {% endif %}
+            {% endif %}
+            <h2 style="display: inline-block">{{ title }}</h2>
+            {% if problem.is_organization_private and problem.organization %}
+                <span class="organization-tags">
+                    <span class="organization-tag">
+                        <a href="{{ problem.organization.get_absolute_url() }}">
+                            <i class="fa fa-lock"></i> {{ problem.organization.name }}
+                        </a>
+                    </span>
                 </span>
-            </span>
-        {% endif %}
-        {% if not (request.user.is_authenticated and form) %}
+            {% endif %}
             <span class="spacer"></span>
             {% if has_pdf_render %}
                 <a href="{{ url('problem_pdf', problem.code) }}" class="view-pdf">
@@ -185,8 +186,8 @@
                 </span>
                 {{ _('View as PDF') }}
             </a>
-        {% endif %}
-    </div>
+        </div>
+    {% endif %}
 {% endblock %}
 
 {% block title_ruler %}

@@ -37,7 +37,7 @@ from judge.utils.infinite_paginator import InfinitePaginationMixin
 from judge.utils.live_runner import execute_live_run
 from judge.utils.opengraph import generate_opengraph
 from judge.utils.pdfoid import PDF_RENDERING_ENABLED, render_pdf
-from judge.utils.problems import hot_problems, user_attempted_ids, \
+from judge.utils.problems import get_result_data, hot_problems, user_attempted_ids, \
     user_completed_ids
 from judge.utils.strings import safe_float_or_none, safe_int_or_none
 from judge.utils.tickets import own_ticket_filter
@@ -556,6 +556,27 @@ class ProblemDetail(ProblemMixin, ProblemClarificationsMixin, SolvedProblemMixin
             submit_context = self.get_submit_context()
             context.update(submit_context)
             context['no_judges'] = not context['form'].fields['language'].queryset if context.get('form') else True
+        if contest_problem:
+            if not contest_problem.contest.can_see_full_submission_list(user):
+                context['submission_stats_json'] = mark_safe(json.dumps({'categories': [], 'total': 0}))
+            else:
+                try:
+                    submission_stats = get_result_data(contest_object=contest_problem.contest, problem=self.object)
+                    for category in submission_stats.get('categories', []):
+                        category['name'] = str(_(category['name']))
+                    context['submission_stats_json'] = mark_safe(json.dumps(submission_stats))
+                except Exception:
+                    context['submission_stats_json'] = mark_safe(json.dumps({'categories': [], 'total': 0}))
+        else:
+            try:
+                submission_stats = get_result_data(problem=self.object)
+                for category in submission_stats.get('categories', []):
+                    category['name'] = str(_(category['name']))
+                context['submission_stats_json'] = mark_safe(json.dumps(submission_stats))
+            except Exception:
+                context['submission_stats_json'] = mark_safe(json.dumps({'categories': [], 'total': 0}))
+
+        context['submission_colors_json'] = mark_safe(json.dumps(settings.DMOJ_STATS_SUBMISSION_RESULT_COLORS))
 
         return context
 

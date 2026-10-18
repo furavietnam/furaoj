@@ -107,3 +107,130 @@ int main() {
         self.assertEqual(res['status'], 'OK')
         self.assertEqual(res['results'][0]['status'], 'AC')
         self.assertEqual(res['results'][0]['output'].strip(), '25')
+
+    def test_live_sidebar_and_info_bar_rendering(self):
+        self.client.login(username='e2euser', password='password123')
+        page_url = reverse('problem_detail', args=[self.problem.code])
+        res = self.client.get(page_url)
+        self.assertEqual(res.status_code, 200)
+
+        # 1. Info bar displays [CODE] Problem Name with status icon
+        self.assertContains(res, 'problem-info-header')
+        self.assertContains(res, '[e2eprob]')
+        self.assertContains(res, 'E2E Problem')
+        self.assertContains(res, 'unattempted-problem-color')
+
+        # 2. Leftmost sidebar
+        self.assertContains(res, 'live-sidebar-left')
+        self.assertContains(res, 'btn-toggle-sidebar')
+        self.assertContains(res, reverse('chronological_submissions', args=[self.problem.code]))
+        self.assertContains(res, reverse('user_submissions', args=[self.problem.code, self.user.username]))
+        self.assertContains(res, reverse('ranked_submissions', args=[self.problem.code]))
+
+        # 3. Quick-view Submissions modal
+        self.assertContains(res, 'live-submissions-modal')
+        self.assertContains(res, 'live-submissions-iframe')
+
+        # 4. Donut chart canvas and context data
+        self.assertContains(res, 'live-submission-donut')
+        self.assertIn('submission_stats_json', res.context)
+        self.assertIn('submission_colors_json', res.context)
+        stats = json.loads(res.context['submission_stats_json'])
+        self.assertIn('categories', stats)
+        self.assertEqual(stats['total'], 0)
+
+        # 5. Regular non-staff non-editor user does not see admin panel
+        self.assertNotContains(res, 'id="live-sidebar-admin-section"')
+
+    def test_admin_panel_visibility_for_editor_and_staff(self):
+        from django.contrib.auth.models import Permission
+        perm = Permission.objects.get(codename='edit_own_problem')
+        self.user.user_permissions.add(perm)
+        self.problem.authors.add(self.profile)
+
+        self.client.login(username='e2euser', password='password123')
+        page_url = reverse('problem_detail', args=[self.problem.code])
+        res = self.client.get(page_url)
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, 'id="live-sidebar-admin-section"')
+        self.assertContains(res, reverse('problem_edit', args=[self.problem.code]))
+        self.assertContains(res, reverse('problem_delete', args=[self.problem.code]))
+
+        # Case B: Staff user
+        self.problem.authors.remove(self.profile)
+        self.user.user_permissions.remove(perm)
+        self.user.is_staff = True
+        self.user.is_superuser = True
+        self.user.save()
+        res_staff = self.client.get(page_url)
+        self.assertEqual(res_staff.status_code, 200)
+        self.assertContains(res_staff, 'id="live-sidebar-admin-section"')
+        self.assertContains(res_staff, reverse('admin:judge_problem_change', args=[self.problem.id]))
+
+    def test_problem_status_icon_solved_and_attempted(self):
+        self.client.login(username='e2euser', password='password123')
+        page_url = reverse('problem_detail', args=[self.problem.code])
+
+        # Attempted (WA)
+        sub_wa = Submission.objects.create(
+            user=self.profile,
+            problem=self.problem,
+            language=self.lang_cpp,
+            status='D',
+            result='WA',
+            points=0,
+        )
+        res_wa = self.client.get(page_url)
+        self.assertContains(res_wa, 'attempted-problem-color')
+
+        # Solved (AC)
+        sub_ac = Submission.objects.create(
+            user=self.profile,
+            problem=self.problem,
+            language=self.lang_cpp,
+            status='D',
+            result='AC',
+            points=100,
+        )
+        res_ac = self.client.get(page_url)
+        self.assertContains(res_ac, 'solved-problem-color')
+
+        # Check that submission stats total is updated
+        stats = json.loads(res_ac.context['submission_stats_json'])
+        self.assertEqual(stats['total'], 2)
+
+    def test_editorial_link_only_when_solution_exists(self):
+        from judge.models import Solution
+        from django.contrib.auth.models import Permission
+
+        perm = Permission.objects.get(codename='edit_own_problem')
+        self.user.user_permissions.add(perm)
+        self.problem.authors.add(self.profile)
+        self.client.login(username='e2euser', password='password123')
+
+        page_url = reverse('problem_detail', args=[self.problem.code])
+        editorial_url = reverse('problem_editorial', args=[self.problem.code])
+
+        # 1. No solution exists -> link to editorial is not rendered (avoiding 404)
+        res_no_sol = self.client.get(page_url)
+        self.assertNotContains(res_no_sol, editorial_url)
+
+        # 2. Solution exists -> editorial link is rendered
+        Solution.objects.create(problem=self.problem, content='Official solution', is_public=True)
+        res_with_sol = self.client.get(page_url)
+        self.assertContains(res_with_sol, editorial_url)
+
+    def test_workspace_panes_structure_and_status_link(self):
+        self.client.login(username='e2euser', password='password123')
+        page_url = reverse('problem_detail', args=[self.problem.code])
+        res = self.client.get(page_url)
+
+        # Panes wrapper ensures exact split calculations
+        self.assertContains(res, 'id="live-workspace-panes"')
+        self.assertContains(res, 'class="problem-status-link btn-open-sub-modal"')
+
+        # Theme styles present
+        self.assertContains(res, 'body[data-theme="dark"]')
+        self.assertContains(res, 'body[data-theme="auto"]')
+        self.assertContains(res, 'prefers-color-scheme: dark')
+
