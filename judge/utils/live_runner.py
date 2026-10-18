@@ -47,13 +47,20 @@ def execute_live_run(problem, language_key, source, testcases):
         'testcases': testcases,
     }
 
-    cmd = [
-        'sudo', '-u', 'furaoj', 'docker', 'exec', '-i',
+    base_cmd = [
+        'docker', 'exec', '-i',
         '-e', 'DMOJ_IN_DOCKER=1',
         '-u', 'judge',
         'judge',
         '/env/bin/python3', '/problems/run_custom_test.py',
     ]
+
+    import os
+    import getpass
+    if getpass.getuser() == 'furaoj' or os.access('/var/run/docker.sock', os.W_OK):
+        cmd = base_cmd
+    else:
+        cmd = ['sudo', '-u', 'furaoj'] + base_cmd
 
     master_timeout = max(15.0, 15.0 + time_limit * len(testcases) * 3)
 
