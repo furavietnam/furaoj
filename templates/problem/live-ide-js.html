@@ -98,7 +98,7 @@
         $tabs.empty();
 
         state.testcases.forEach(function(tc, idx) {
-            var dotColor = tc.status === 'AC' ? '#16a34a' : (tc.status === 'WA' || tc.status === 'TLE' || tc.status === 'RTE' ? '#dc2626' : '#0284c7');
+            var dotColor = tc.status === 'AC' ? '#16a34a' : (tc.status === 'CE' ? '#d97706' : (tc.status === 'WA' || tc.status === 'TLE' || tc.status === 'RTE' ? '#dc2626' : '#0284c7'));
             var dotHtml = tc.status ? '<span class="tc-tab-status-dot" style="background:' + dotColor + '"></span> ' : '';
             var $btn = $('<button type="button" class="tc-tab-btn" role="tab"></button>')
                 .attr('id', 'tc-tab-' + idx)
@@ -203,6 +203,13 @@
         return $('<div>').text(text).html();
     }
 
+    function stripAnsi(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '')
+            .replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
+    }
+
     /* Build & Run execution */
     function runTests() {
         if (state.isRunning) return;
@@ -231,6 +238,7 @@
         $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> {{ _("Đang biên dịch & chạy...") }}');
         $('#run-overall-status').text('{{ _("Đang thực thi...") }}');
         $('#live-compile-error').addClass('hidden');
+        $('#live-compile-error-msg').empty();
 
         $.ajax({
             url: liveRunUrl,
@@ -241,16 +249,22 @@
             success: function(resp) {
                 if (resp.status === 'CE') {
                     $('#live-compile-error').removeClass('hidden');
-                    $('#live-compile-error-msg').text(resp.compile_error || '{{ _("Lỗi biên dịch không xác định") }}');
+                    $('#live-compile-error-msg').text(stripAnsi(resp.compile_error || '{{ _("Lỗi biên dịch không xác định") }}'));
                     $('#run-overall-status').html('<span style="color: #dc2626; font-weight: 700;">{{ _("Compile Error") }}</span>');
+                    state.testcases.forEach(function(tc) {
+                        tc.status = 'CE';
+                        tc.actual = '';
+                        tc.feedback = '{{ _("Biên dịch thất bại (Compile Error)") }}';
+                    });
+                    renderTabs();
                     if (state.isDrawerCollapsed) toggleDrawer();
                 } else if (resp.status === 'OK') {
                     var acCount = 0;
                     (resp.results || []).forEach(function(res, i) {
                         if (state.testcases[i]) {
                             state.testcases[i].status = res.status;
-                            state.testcases[i].actual = res.output;
-                            state.testcases[i].feedback = res.feedback;
+                            state.testcases[i].actual = stripAnsi(res.output);
+                            state.testcases[i].feedback = stripAnsi(res.feedback);
                             state.testcases[i].time = res.execution_time;
                             state.testcases[i].memory = res.memory;
                             if (res.status === 'AC') acCount++;
@@ -260,7 +274,7 @@
                     $('#run-overall-status').html('<span style="color: #16a34a; font-weight: 700;">{{ _("Hoàn thành:") }} ' + acCount + '/' + state.testcases.length + ' AC</span>');
                     if (state.isDrawerCollapsed) toggleDrawer();
                 } else {
-                    alert(resp.compile_error || '{{ _("Lỗi khi chạy test") }}');
+                    alert(stripAnsi(resp.compile_error || '{{ _("Lỗi khi chạy test") }}'));
                 }
             },
             error: function(xhr) {

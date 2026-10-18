@@ -1,10 +1,19 @@
 import json
 import logging
+import re
 import subprocess
 from django.conf import settings
 from judge.models import LanguageLimit
 
 logger = logging.getLogger('judge.live_runner')
+
+ANSI_ESCAPE_RE = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+
+
+def strip_ansi(text):
+    if not text:
+        return ''
+    return ANSI_ESCAPE_RE.sub('', str(text))
 
 
 def execute_live_run(problem, language_key, source, testcases):
@@ -73,7 +82,7 @@ def execute_live_run(problem, language_key, source, testcases):
             timeout=master_timeout,
         )
         if proc.returncode != 0:
-            err_msg = proc.stderr.decode('utf-8', 'replace').strip()
+            err_msg = strip_ansi(proc.stderr.decode('utf-8', 'replace').strip())
             logger.error('Live runner failed with code %d: %s', proc.returncode, err_msg)
             return {'status': 'ERROR', 'compile_error': f'Judge execution failed: {err_msg}', 'results': []}
 
@@ -81,10 +90,17 @@ def execute_live_run(problem, language_key, source, testcases):
         json_start = stdout_text.find('{')
         if json_start != -1:
             stdout_text = stdout_text[json_start:]
-        return json.loads(stdout_text)
+        parsed = json.loads(stdout_text)
+        if isinstance(parsed, dict):
+            if parsed.get('compile_error'):
+                parsed['compile_error'] = strip_ansi(parsed['compile_error'])
+            for r in parsed.get('results', []):
+                if isinstance(r, dict) and r.get('feedback'):
+                    r['feedback'] = strip_ansi(r['feedback'])
+        return parsed
     except subprocess.TimeoutExpired:
         logger.error('Live runner timed out after %ds', master_timeout)
         return {'status': 'ERROR', 'compile_error': 'Execution timed out', 'results': []}
     except Exception as e:
         logger.exception('Live runner unexpected error: %s', e)
-        return {'status': 'ERROR', 'compile_error': str(e), 'results': []}
+        return {'status': 'ERROR', 'compile_error': strip_ansi(str(e)), 'results': []}
