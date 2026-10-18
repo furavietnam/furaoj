@@ -136,7 +136,7 @@
             $sidebar.addClass('collapsed');
             state.isSidebarCollapsed = true;
             $toggleBtn.find('i').removeClass('fa-angle-double-left').addClass('fa-angle-double-right');
-            $toggleBtn.attr('title', '{{ _("Mở rộng thanh bên") }}');
+            $toggleBtn.attr('title', '{{ _("Expand sidebar") }}');
         }
 
         $toggleBtn.on('click', function() {
@@ -145,11 +145,11 @@
             var $icon = $toggleBtn.find('i');
             if (state.isSidebarCollapsed) {
                 $icon.removeClass('fa-angle-double-left').addClass('fa-angle-double-right');
-                $toggleBtn.attr('title', '{{ _("Mở rộng thanh bên") }}');
+                $toggleBtn.attr('title', '{{ _("Expand sidebar") }}');
                 localStorage.setItem('live_ide_sidebar_collapsed', '1');
             } else {
                 $icon.removeClass('fa-angle-double-right').addClass('fa-angle-double-left');
-                $toggleBtn.attr('title', '{{ _("Thu gọn thanh bên") }}');
+                $toggleBtn.attr('title', '{{ _("Collapse sidebar") }}');
                 localStorage.setItem('live_ide_sidebar_collapsed', '0');
             }
             setTimeout(function() {
@@ -172,7 +172,7 @@
 
         window.openSubmissionsModal = function(url, title) {
             if (!url) return;
-            $('#live-submissions-modal-title .modal-title-text').text(title || '{{ _("Bài nộp") }}');
+            $('#live-submissions-modal-title .modal-title-text').text(title || '{{ _("Submissions") }}');
             $('#live-submissions-modal-newtab').attr('href', url);
             $spinner.show();
             $iframe.attr('src', url);
@@ -281,7 +281,7 @@
 
         var dataVals = activeCategories.length > 0 ? activeCategories.map(function(c) { return c.count; }) : [1];
         var bgColors = activeCategories.length > 0 ? activeCategories.map(function(c) { return colors[c.code] || '#94a3b8'; }) : [isDark ? '#334155' : '#e2e8f0'];
-        var labels = activeCategories.length > 0 ? activeCategories.map(function(c) { return c.name; }) : [total === 0 ? '{{ _("Chưa có bài nộp") }}' : ''];
+        var labels = activeCategories.length > 0 ? activeCategories.map(function(c) { return c.name; }) : [total === 0 ? '{{ _("No submissions yet") }}' : ''];
 
         var ctx = canvas.getContext('2d');
         if (window.liveDonutChart) {
@@ -447,19 +447,19 @@
             metaHtml = '<span class="tc-meta-info">' + (tc.time ? tc.time + 's' : '') + (tc.memory ? ' | ' + (tc.memory / 1024).toFixed(1) + 'MB' : '') + '</span>';
         }
 
-        var deleteBtnHtml = state.testcases.length > 1 ? '<button type="button" class="btn btn-xs btn-outline-danger btn-del-tc" style="font-size: 0.72rem; padding: 1px 6px;"><i class="fa fa-trash"></i> Xóa test</button>' : '';
+        var deleteBtnHtml = state.testcases.length > 1 ? '<button type="button" class="btn btn-xs btn-outline-danger btn-del-tc" style="font-size: 0.72rem; padding: 1px 6px;"><i class="fa fa-trash"></i> {{ _("Delete test") }}</button>' : '';
 
         var html = [
             '<div class="tc-panel-content" role="tabpanel" aria-labelledby="tc-tab-' + state.activeTab + '">',
             '  <div class="tc-field-group">',
-            '    <label><span>{{ _("Đầu vào (Input)") }}</span> ' + deleteBtnHtml + '</label>',
-            '    <textarea class="tc-textarea" id="tc-input" placeholder="{{ _("Nhập input testcase tại đây...") }}">' + escapeHtml(tc.input) + '</textarea>',
-            '    <label style="margin-top: 6px;">{{ _("Đầu ra mong muốn (Expected - Tùy chọn)") }}</label>',
-            '    <textarea class="tc-textarea" id="tc-expected" placeholder="{{ _("Nhập output kỳ vọng (để so sánh AC/WA)...") }}">' + escapeHtml(tc.expected || '') + '</textarea>',
+            '    <label><span>{{ _("Input") }}</span> ' + deleteBtnHtml + '</label>',
+            '    <textarea class="tc-textarea" id="tc-input" placeholder="{{ _("Enter testcase input here...") }}">' + escapeHtml(tc.input) + '</textarea>',
+            '    <label style="margin-top: 6px;">{{ _("Expected Output (Optional)") }}</label>',
+            '    <textarea class="tc-textarea" id="tc-expected" placeholder="{{ _("Enter expected output to compare AC/WA...") }}">' + escapeHtml(tc.expected || '') + '</textarea>',
             '  </div>',
             '  <div class="tc-field-group">',
-            '    <label><span>{{ _("Đầu ra thực tế (Actual Output)") }}</span> <div>' + statusBadgeHtml + ' ' + metaHtml + '</div></label>',
-            '    <textarea class="tc-textarea" id="tc-actual" readonly style="height: 160px;" placeholder="{{ _("Kết quả chạy sẽ hiển thị tại đây...") }}">' + escapeHtml(tc.actual || tc.feedback || '') + '</textarea>',
+            '    <label><span>{{ _("Actual Output") }}</span> <div>' + statusBadgeHtml + ' ' + metaHtml + '</div></label>',
+            '    <textarea class="tc-textarea" id="tc-actual" readonly style="height: 160px;" placeholder="{{ _("Execution output will appear here...") }}">' + escapeHtml(tc.actual || tc.feedback || '') + '</textarea>',
             '  </div>',
             '</div>'
         ].join('');
@@ -528,18 +528,18 @@
         var editor = getAceEditor();
         var source = editor ? editor.getValue() : $('#id_source').val();
         if (!source || !source.trim()) {
-            alert('{{ _("Vui lòng nhập mã nguồn trước khi chạy thử.") }}');
+            alert('{{ _("Please enter source code before running.") }}');
             return;
         }
 
         var langKey = $('#live-lang-select option:selected').data('key');
         if (!langKey) {
-            alert('{{ _("Vui lòng chọn ngôn ngữ lập trình.") }}');
+            alert('{{ _("Please select a programming language.") }}');
             return;
         }
 
         state.isRunning = true;
-        $('#btn-build-run').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> <span>{{ _("Đang chạy...") }}</span>');
+        $('#btn-build-run').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> <span>{{ _("Running...") }}</span>');
         $('#live-compile-error').addClass('hidden');
 
         // Expand drawer if collapsed
@@ -590,14 +590,14 @@
                         }
                     });
                 } else if (resp.error) {
-                    alert('Lỗi: ' + resp.error);
+                    alert('{{ _("Error:") }} ' + resp.error);
                 }
                 renderTabs();
             },
             error: function(xhr) {
                 state.isRunning = false;
                 $('#btn-build-run').prop('disabled', false).html('<i class="fa fa-play"></i> <span>{{ _("Build & Run") }}</span>');
-                var err = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : 'Lỗi khi gửi yêu cầu chạy thử.';
+                var err = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : '{{ _("Error sending execution request.") }}';
                 alert(err);
             }
         });
@@ -618,7 +618,7 @@
     /* Draft Autosave */
     function scheduleSaveDraft() {
         var $status = $('#live-draft-status');
-        $status.addClass('saving').html('<i class="fa fa-spinner fa-spin"></i> {{ _("Đang lưu...") }}');
+        $status.addClass('saving').html('<i class="fa fa-spinner fa-spin"></i> {{ _("Saving...") }}');
         if (state.saveTimeout) {
             clearTimeout(state.saveTimeout);
         }
@@ -656,10 +656,10 @@
                 'X-CSRFToken': getCsrfToken()
             },
             success: function() {
-                $('#live-draft-status').removeClass('saving').html('<i class="fa fa-check-circle"></i> {{ _("Đã lưu nháp") }}');
+                $('#live-draft-status').removeClass('saving').html('<i class="fa fa-check-circle"></i> {{ _("Draft saved") }}');
             },
             error: function() {
-                $('#live-draft-status').removeClass('saving').html('<i class="fa fa-exclamation-circle text-danger"></i> {{ _("Lỗi lưu nháp") }}');
+                $('#live-draft-status').removeClass('saving').html('<i class="fa fa-exclamation-circle text-danger"></i> {{ _("Failed to save draft") }}');
             }
         });
     }
