@@ -192,6 +192,8 @@ int main() {
             result='AC',
             points=100,
         )
+        from judge.caching import finished_submission
+        finished_submission(sub_ac)
         res_ac = self.client.get(page_url)
         self.assertContains(res_ac, 'solved-problem-color')
 
@@ -229,8 +231,13 @@ int main() {
         self.assertContains(res, 'id="live-workspace-panes"')
         self.assertContains(res, 'class="problem-status-link btn-open-sub-modal"')
 
-        # Theme styles present
-        self.assertContains(res, 'body[data-theme="dark"]')
-        self.assertContains(res, 'body[data-theme="auto"]')
-        self.assertContains(res, 'prefers-color-scheme: dark')
+        # Theme styles compiled into stylesheet
+        import os
+        from django.conf import settings
+        scss_path = os.path.join(settings.BASE_DIR, 'resources', 'live-ide.scss')
+        with open(scss_path, 'r', encoding='utf-8') as f:
+            scss_content = f.read()
+        self.assertIn('body[data-theme="dark"]', scss_content)
+        self.assertIn('body[data-theme="auto"]', scss_content)
+        self.assertIn('prefers-color-scheme: dark', scss_content)
 

@@ -258,7 +258,7 @@
             {% include "problem/problem-detail.html" %}
             <div class="problem-clarify-row">
                 {% if not request.profile.mute %}
-                    <a href="{{ url('new_problem_ticket', problem.code) }}" class="button clarify-btn">
+                    <a href="{{ url('new_problem_ticket', problem.code) }}" class="clarify-btn">
                         <i class="fa fa-question-circle" aria-hidden="true"></i>
                         {% if comment_lock and request.profile.current_contest.live %}
                             {{ _('Request clarification') }}

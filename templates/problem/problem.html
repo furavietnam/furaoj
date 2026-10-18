@@ -5,7 +5,6 @@
     {% endif %}
     {% if request.user.is_authenticated and form %}
         {{ form.media.css }}
-        {% include "problem/live-ide-css.html" %}
     {% endif %}
     <style>
         .title-state {
