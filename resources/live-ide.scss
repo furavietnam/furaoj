@@ -117,10 +117,14 @@ body:has(#live-ide-container) {
         flex-direction: column !important;
         width: 99% !important;
         max-width: calc(100vw - 16px) !important;
-        margin: 48px auto 0 auto !important;
+        margin: 78px auto 0 auto !important;
         padding: 0 4px !important;
         overflow: hidden !important;
         min-height: 0 !important;
+
+        @media (max-width: 960px) {
+            margin: 64px auto 0 auto !important;
+        }
 
         > h2, > .problem-title, > hr {
             display: none !important;
