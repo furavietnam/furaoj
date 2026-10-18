@@ -52,6 +52,17 @@ class LiveIdeEndToEndTestCase(TestCase):
         self.assertEqual(draft.language_id, self.lang_cpp.id)
         self.assertEqual(len(draft.testcases), 1)
 
+        # Simulate F5 (Page Refresh)
+        res_f5 = self.client.get(page_url)
+        self.assertEqual(res_f5.status_code, 200)
+        self.assertIsNotNone(res_f5.context.get('draft'))
+        self.assertEqual(res_f5.context['draft'].source, draft_data['source'])
+        self.assertEqual(res_f5.context['form'].initial.get('source'), draft_data['source'])
+        self.assertEqual(res_f5.context['form'].initial.get('language'), self.lang_cpp)
+        self.assertEqual(res_f5.context['default_lang'], self.lang_cpp)
+        self.assertIn('"testcases": [{"id": 1, "input": "5", "expected": "5"}]', res_f5.context['draft_json'])
+        self.assertContains(res_f5, 'window.initial_draft = {"source":')
+
     def test_e2e_editorial_and_submission_links(self):
         self.client.login(username='e2euser', password='password123')
         page_url = reverse('problem_detail', args=[self.problem.code])

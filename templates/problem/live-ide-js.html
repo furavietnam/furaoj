@@ -8,12 +8,28 @@
 
     window.submission_stats = {{ submission_stats_json|default('{"categories": [], "total": 0}') }};
     window.submission_colors = {{ submission_colors_json|default('{}') }};
+    window.initial_draft = {{ draft_json|default('null') }};
+
+    var initialTestcases = [
+        { id: 1, input: '', expected: '', actual: '', status: '', time: 0, memory: 0 }
+    ];
+    if (window.initial_draft && Array.isArray(window.initial_draft.testcases) && window.initial_draft.testcases.length > 0) {
+        initialTestcases = window.initial_draft.testcases.map(function(tc, idx) {
+            return {
+                id: tc.id || (idx + 1),
+                input: tc.input || '',
+                expected: tc.expected || '',
+                actual: '',
+                status: '',
+                time: 0,
+                memory: 0
+            };
+        });
+    }
 
     var state = {
         activeTab: 0,
-        testcases: [
-            { id: 1, input: '', expected: '', actual: '', status: '', time: 0, memory: 0 }
-        ],
+        testcases: initialTestcases,
         isDrawerCollapsed: false,
         isSidebarCollapsed: false,
         saveTimeout: null,
@@ -820,18 +836,25 @@
             url: draftUrl,
             method: 'GET',
             success: function(resp) {
-                if (resp && resp.has_draft) {
+                if (resp && (resp.has_draft || resp.source || (resp.testcases && resp.testcases.length > 0))) {
                     if (resp.source) {
                         var editor = getAceEditor();
                         if (editor) {
-                            editor.setValue(resp.source, 1);
-                            resizeAceEditor();
+                            var currentVal = editor.getValue();
+                            if (!currentVal || !currentVal.trim()) {
+                                editor.setValue(resp.source, 1);
+                                resizeAceEditor();
+                            }
                         } else {
-                            $('#id_source').val(resp.source);
+                            if (!$('#id_source').val()) {
+                                $('#id_source').val(resp.source);
+                            }
                         }
                     }
                     if (resp.language) {
-                        $('#live-lang-select').val(resp.language).trigger('change');
+                        if ($('#live-lang-select').val() != resp.language) {
+                            $('#live-lang-select').val(resp.language).trigger('change');
+                        }
                     }
                     if (resp.testcases && resp.testcases.length > 0) {
                         state.testcases = resp.testcases.map(function(tc, idx) {
@@ -845,7 +868,9 @@
                                 memory: 0
                             };
                         });
-                        state.activeTab = 0;
+                        if (state.activeTab !== 'console' && state.activeTab >= state.testcases.length) {
+                            state.activeTab = 0;
+                        }
                         renderTabs();
                     }
                 }
@@ -918,6 +943,13 @@
             editor._live_ide_initialized = true;
 
             applyTheme();
+
+            if (window.initial_draft && window.initial_draft.source) {
+                var currentVal = editor.getValue();
+                if (!currentVal || !currentVal.trim()) {
+                    editor.setValue(window.initial_draft.source, 1);
+                }
+            }
 
             editor.getSession().on('change', function() {
                 scheduleSaveDraft();

@@ -326,12 +326,21 @@ class ProblemSubmitMixin:
         )
 
     @cached_property
+    def problem_draft(self):
+        if not self.request.user.is_authenticated:
+            return None
+        return ProblemDraft.objects.filter(user=self.request.profile, problem=self.object).first()
+
+    @cached_property
     def default_language(self):
         if not self.request.user.is_authenticated:
             return None
         # If old_submission exists (for resubmit), use its language
         if hasattr(self, 'old_submission') and self.old_submission is not None:
             return self.old_submission.language
+        if self.problem_draft and self.problem_draft.language:
+            if self.object.allowed_languages.filter(id=self.problem_draft.language_id).exists():
+                return self.problem_draft.language
         return self.request.profile.language
 
     def get_submit_form(self, **kwargs):
@@ -346,11 +355,20 @@ class ProblemSubmitMixin:
             )
         else:
             initial = kwargs.get('initial', {})
-            if 'language' not in initial:
-                initial['language'] = self.default_language
             # For resubmit, include source code
             if hasattr(self, 'old_submission') and self.old_submission is not None:
                 initial['source'] = self.old_submission.source.source
+                if 'language' not in initial:
+                    initial['language'] = self.old_submission.language
+            elif self.problem_draft:
+                if 'source' not in initial and self.problem_draft.source:
+                    initial['source'] = self.problem_draft.source
+                if 'language' not in initial and self.problem_draft.language:
+                    if self.object.allowed_languages.filter(id=self.problem_draft.language_id).exists():
+                        initial['language'] = self.problem_draft.language
+
+            if 'language' not in initial:
+                initial['language'] = self.default_language
 
             form = ProblemSubmitForm(
                 instance=Submission(user=self.request.profile, problem=self.object),
@@ -558,6 +576,18 @@ class ProblemDetail(ProblemMixin, ProblemClarificationsMixin, SolvedProblemMixin
             submit_context = self.get_submit_context()
             context.update(submit_context)
             context['no_judges'] = not context['form'].fields['language'].queryset if context.get('form') else True
+
+            draft = self.problem_draft
+            if draft:
+                context['draft'] = draft
+                context['draft_json'] = mark_safe(json.dumps({
+                    'source': draft.source,
+                    'language': draft.language_id,
+                    'language_key': draft.language.key if draft.language else '',
+                    'testcases': draft.testcases,
+                }))
+            else:
+                context['draft_json'] = 'null'
         if contest_problem:
             if not contest_problem.contest.can_see_full_submission_list(user):
                 context['submission_stats_json'] = mark_safe(json.dumps({'categories': [], 'total': 0}))
@@ -579,6 +609,7 @@ class ProblemDetail(ProblemMixin, ProblemClarificationsMixin, SolvedProblemMixin
                 context['submission_stats_json'] = mark_safe(json.dumps({'categories': [], 'total': 0}))
 
         context['submission_colors_json'] = mark_safe(json.dumps(settings.DMOJ_STATS_SUBMISSION_RESULT_COLORS))
+        context.setdefault('draft_json', 'null')
 
         return context
 
@@ -1336,15 +1367,19 @@ class ProblemDraftView(LoginRequiredMixin, ProblemMixin, SingleObjectMixin, View
         if draft:
             return JsonResponse({
                 'status': 'OK',
+                'has_draft': True,
                 'source': draft.source,
                 'language': draft.language_id,
+                'language_key': draft.language.key if draft.language else '',
                 'testcases': draft.testcases,
                 'updated_at': draft.updated_at.isoformat(),
             })
         return JsonResponse({
             'status': 'OK',
+            'has_draft': False,
             'source': '',
             'language': None,
+            'language_key': '',
             'testcases': [],
             'updated_at': None,
         })

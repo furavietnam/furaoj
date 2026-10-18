@@ -94,6 +94,7 @@ class LiveViewsTestCase(TestCase):
         self.assertEqual(res.status_code, 200)
         data = res.json()
         self.assertEqual(data['status'], 'OK')
+        self.assertFalse(data['has_draft'])
         self.assertEqual(data['source'], '')
 
         # Save draft
@@ -109,6 +110,8 @@ class LiveViewsTestCase(TestCase):
         res2 = self.client.get(url)
         self.assertEqual(res2.status_code, 200)
         data2 = res2.json()
+        self.assertTrue(data2['has_draft'])
         self.assertEqual(data2['source'], 'int main() { return 0; }')
         self.assertEqual(data2['language'], self.lang.id)
+        self.assertEqual(data2['language_key'], self.lang.key)
         self.assertEqual(len(data2['testcases']), 1)
