@@ -47,6 +47,8 @@ from judge.views.widgets import pdf_statement_uploader, submission_uploader
 recjk = re.compile(r'[\u2E80-\u2E99\u2E9B-\u2EF3\u2F00-\u2FD5\u3005\u3007\u3021-\u3029\u3038-\u303A\u303B\u3400-\u4DB5'
                    r'\u4E00-\u9FC3\uF900-\uFA2D\uFA30-\uFA6A\uFA70-\uFAD9\U00020000-\U0002A6D6\U0002F800-\U0002FA1D]')
 
+logger = logging.getLogger('judge.views.problem')
+
 
 def get_contest_problem(problem, profile):
     try:
@@ -1300,18 +1302,30 @@ class ProblemLiveRunView(LoginRequiredMixin, ProblemMixin, SingleObjectMixin, Vi
         if not isinstance(testcases, list) or len(testcases) > 5:
             return JsonResponse({'status': 'ERROR', 'error': 'too_many_testcases', 'message': _('Maximum 5 custom testcases allowed.')}, status=400)
 
-        lang_id = data.get('language')
+        lang_val = data.get('language')
         lang_key = data.get('language_key')
         language = None
-        if lang_id:
-            language = Language.objects.filter(id=lang_id).first()
-        elif lang_key:
+        if lang_key:
             language = Language.objects.filter(key=lang_key).first()
+        if not language and lang_val is not None:
+            if isinstance(lang_val, int) or (isinstance(lang_val, str) and str(lang_val).isdigit()):
+                language = Language.objects.filter(id=int(lang_val)).first()
+            elif isinstance(lang_val, str):
+                language = Language.objects.filter(key=lang_val).first()
 
         if not language or language not in problem.allowed_languages.all():
             return JsonResponse({'status': 'ERROR', 'error': 'invalid_language', 'message': _('Selected language is not allowed for this problem.')}, status=400)
 
-        result = execute_live_run(problem, language.key, source, testcases)
+        try:
+            result = execute_live_run(problem, language.key, source, testcases)
+        except Exception as e:
+            logger.exception('Live run failed for problem %s: %s', problem.code, e)
+            return JsonResponse({
+                'status': 'ERROR',
+                'error': 'execution_failed',
+                'compile_error': str(e),
+                'results': [],
+            }, status=500)
         return JsonResponse(result)
 
 
@@ -1353,9 +1367,18 @@ class ProblemDraftView(LoginRequiredMixin, ProblemMixin, SingleObjectMixin, View
         if not isinstance(testcases, list) or len(testcases) > 5:
             return JsonResponse({'status': 'ERROR', 'error': 'too_many_testcases', 'message': _('Maximum 5 custom testcases allowed.')}, status=400)
 
-        lang_id = data.get('language')
-        if lang_id and not Language.objects.filter(id=lang_id).exists():
-            lang_id = None
+        lang_val = data.get('language')
+        lang_key = data.get('language_key')
+        language = None
+        if lang_key:
+            language = Language.objects.filter(key=lang_key).first()
+        if not language and lang_val is not None:
+            if isinstance(lang_val, int) or (isinstance(lang_val, str) and str(lang_val).isdigit()):
+                language = Language.objects.filter(id=int(lang_val)).first()
+            elif isinstance(lang_val, str):
+                language = Language.objects.filter(key=lang_val).first()
+
+        lang_id = language.id if language else None
 
         draft, _ = ProblemDraft.objects.update_or_create(
             user=request.profile,

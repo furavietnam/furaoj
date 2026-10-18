@@ -51,6 +51,40 @@ class LiveViewsTestCase(TestCase):
         response = self.client.post(url, json.dumps(payload), content_type='application/json')
         self.assertEqual(response.status_code, 400)
 
+    def test_live_run_language_resolution(self):
+        self.client.login(username='viewuser', password='password123')
+        url = reverse('problem_live_run', args=[self.problem.code])
+
+        # Test with invalid language
+        payload_inv = {
+            'language': 'INVALID_LANG',
+            'source': 'int main() {}',
+            'testcases': [],
+        }
+        res_inv = self.client.post(url, json.dumps(payload_inv), content_type='application/json')
+        self.assertEqual(res_inv.status_code, 400)
+        self.assertEqual(res_inv.json()['error'], 'invalid_language')
+
+        # Test with string key as 'language'
+        payload1 = {
+            'language': 'CPP20',
+            'source': 'a' * (1024 * 1024 + 10),
+            'testcases': [],
+        }
+        res1 = self.client.post(url, json.dumps(payload1), content_type='application/json')
+        self.assertEqual(res1.status_code, 400)
+        self.assertEqual(res1.json()['error'], 'payload_too_large')
+
+        # Test with string digits id
+        payload2 = {
+            'language': str(self.lang.id),
+            'source': 'a' * (1024 * 1024 + 10),
+            'testcases': [],
+        }
+        res2 = self.client.post(url, json.dumps(payload2), content_type='application/json')
+        self.assertEqual(res2.status_code, 400)
+        self.assertEqual(res2.json()['error'], 'payload_too_large')
+
     def test_live_draft_save_and_load(self):
         self.client.login(username='viewuser', password='password123')
         url = reverse('problem_draft', args=[self.problem.code])

@@ -532,8 +532,9 @@
             return;
         }
 
+        var langId = $('#live-lang-select').val();
         var langKey = $('#live-lang-select option:selected').data('key');
-        if (!langKey) {
+        if (!langId && !langKey) {
             alert('{{ _("Please select a programming language.") }}');
             return;
         }
@@ -548,7 +549,8 @@
         }
 
         var payload = {
-            language: langKey,
+            language: langId,
+            language_key: langKey,
             source: source,
             testcases: state.testcases.map(function(tc) {
                 return {
@@ -634,9 +636,11 @@
         var editor = getAceEditor();
         var source = editor ? editor.getValue() : $('#id_source').val();
         var langId = $('#live-lang-select').val();
+        var langKey = $('#live-lang-select option:selected').data('key');
 
         var payload = {
             language: langId,
+            language_key: langKey,
             source: source,
             testcases: state.testcases.map(function(tc) {
                 return {
