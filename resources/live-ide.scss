@@ -1006,6 +1006,69 @@ body:has(#live-ide-container) {
     display: inline-block;
 }
 
+.tab-divider {
+    width: 1px;
+    height: 18px;
+    background: var(--live-border-color);
+    margin: 0 4px;
+    flex-shrink: 0;
+}
+
+.tc-tab-console {
+    gap: 6px;
+
+    i {
+        font-size: 0.85rem;
+    }
+}
+
+.console-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+    background: #64748b;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+
+    &.hidden {
+        display: none !important;
+    }
+
+    &.running {
+        background: #0284c7;
+        box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7);
+        animation: consolePulse 1.5s infinite;
+    }
+
+    &.success {
+        background: #16a34a;
+    }
+
+    &.warning, &.ce {
+        background: #d97706;
+    }
+
+    &.error {
+        background: #dc2626;
+    }
+}
+
+@keyframes consolePulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(2, 132, 199, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(2, 132, 199, 0);
+    }
+}
+
 .tab-btn-add {
     display: inline-flex;
     align-items: center;
@@ -1118,6 +1181,10 @@ body:has(#live-ide-container) {
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
+
+    &.hidden {
+        display: none !important;
+    }
 }
 
 .tc-panel-content {
@@ -1211,6 +1278,155 @@ body:has(#live-ide-container) {
     font-size: 0.72rem;
     color: var(--live-text-muted);
     margin-left: 6px;
+}
+
+// 10.1 Console Log Panel & Terminal Body
+.console-panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+
+    &.hidden {
+        display: none !important;
+    }
+}
+
+.console-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2px 2px 6px 2px;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.console-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.console-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--live-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    i {
+        font-size: 0.85rem;
+        color: #0284c7;
+    }
+}
+
+.console-badge {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+
+    &.ready {
+        background: #e2e8f0;
+        color: #475569;
+    }
+
+    &.running {
+        background: #e0f2fe;
+        color: #0369a1;
+    }
+
+    &.success {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    &.error {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    &.ce {
+        background: #fef3c7;
+        color: #b45309;
+    }
+}
+
+.console-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-console-tool {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    background: transparent;
+    border: 1px solid var(--live-border-color);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--live-text-secondary);
+    cursor: pointer;
+    box-shadow: none;
+    transition: all 0.15s ease;
+
+    i {
+        color: var(--live-text-muted);
+        font-size: 0.8rem;
+        transition: color 0.15s ease;
+    }
+
+    span {
+        color: inherit;
+    }
+
+    &:hover {
+        background: var(--live-hover-bg);
+        color: var(--live-text-primary);
+        border-color: var(--live-text-secondary);
+
+        i {
+            color: var(--live-text-primary);
+        }
+    }
+}
+
+.console-log-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: auto;
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 6px;
+    padding: 10px 12px;
+}
+
+.console-log-body {
+    margin: 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: #f1f5f9;
+    white-space: pre-wrap;
+    word-break: break-all;
+
+    &:empty::before {
+        content: attr(data-placeholder);
+        color: #64748b;
+        font-style: italic;
+    }
 }
 
 // 11. Quick-view Submissions Modal
@@ -1400,6 +1616,31 @@ body[data-theme="auto"] {
             background-color: #450a0a;
             color: #fca5a5;
         }
+
+        .console-badge.ready {
+            background: #334155;
+            color: #cbd5e1;
+        }
+        .console-badge.running {
+            background: #075985;
+            color: #bae6fd;
+        }
+        .console-badge.success {
+            background: #14532d;
+            color: #bbf7d0;
+        }
+        .console-badge.error {
+            background: #7f1d1d;
+            color: #fecaca;
+        }
+        .console-badge.ce {
+            background: #78350f;
+            color: #fde68a;
+        }
+        .console-log-scroll {
+            background: #020617;
+            border-color: #1e293b;
+        }
     }
 }
 
@@ -1455,6 +1696,31 @@ body[data-theme="dark"] {
     .sidebar-admin-danger:hover {
         background-color: #450a0a;
         color: #fca5a5;
+    }
+
+    .console-badge.ready {
+        background: #334155;
+        color: #cbd5e1;
+    }
+    .console-badge.running {
+        background: #075985;
+        color: #bae6fd;
+    }
+    .console-badge.success {
+        background: #14532d;
+        color: #bbf7d0;
+    }
+    .console-badge.error {
+        background: #7f1d1d;
+        color: #fecaca;
+    }
+    .console-badge.ce {
+        background: #78350f;
+        color: #fde68a;
+    }
+    .console-log-scroll {
+        background: #020617;
+        border-color: #1e293b;
     }
 }
 

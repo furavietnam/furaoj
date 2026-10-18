@@ -6,6 +6,12 @@
             <button type="button" id="btn-add-testcase" class="tab-btn-add" aria-label="{{ _('Add custom testcase') }}" title="{{ _('Add testcase (max 5)') }}">
                 <i class="fa fa-plus" aria-hidden="true"></i> <span class="sr-only">{{ _('Add') }}</span>
             </button>
+            <span class="tab-divider" aria-hidden="true"></span>
+            <button type="button" id="btn-tab-console" class="tc-tab-btn tc-tab-console" role="tab" aria-selected="false" aria-controls="console-panel" title="{{ _('View execution and build console log') }}">
+                <i class="fa fa-terminal" aria-hidden="true"></i>
+                <span class="tc-tab-label">{{ _('Console') }}</span>
+                <span id="console-status-dot" class="console-status-dot hidden"></span>
+            </button>
         </div>
         <div class="drawer-header-actions">
             <span id="run-overall-status" class="run-overall-status" aria-live="polite"></span>
@@ -28,6 +34,27 @@
         <!-- Panels Container -->
         <div id="testcase-panels" class="panels-container">
             <!-- Rendered by live-ide.js -->
+        </div>
+
+        <!-- Console Log Panel -->
+        <div id="console-panel" class="console-panel hidden" role="tabpanel" aria-labelledby="btn-tab-console">
+            <div class="console-toolbar">
+                <div class="console-info">
+                    <span class="console-title"><i class="fa fa-terminal" aria-hidden="true"></i> {{ _('Build & Execution Log') }}</span>
+                    <span id="console-badge" class="console-badge ready">{{ _('Ready') }}</span>
+                </div>
+                <div class="console-actions">
+                    <button type="button" id="btn-copy-console" class="btn-console-tool" title="{{ _('Copy console output') }}">
+                        <i class="fa fa-clone" aria-hidden="true"></i> <span>{{ _('Copy') }}</span>
+                    </button>
+                    <button type="button" id="btn-clear-console" class="btn-console-tool" title="{{ _('Clear console') }}">
+                        <i class="fa fa-trash-o" aria-hidden="true"></i> <span>{{ _('Clear') }}</span>
+                    </button>
+                </div>
+            </div>
+            <div id="console-log-scroll" class="console-log-scroll">
+                <pre id="console-log-content" class="console-log-body" data-placeholder="{{ _('No build or execution logs yet. Click Build &amp; Run to start.') }}"></pre>
+            </div>
         </div>
     </div>
 </div>

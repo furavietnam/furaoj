@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-18 03:57+0000\n"
+"POT-Creation-Date: 2026-10-18 04:27+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2685,6 +2685,7 @@ msgstr ""
 
 #: judge/models/problem.py:778 judge/models/submission.py:22
 #: judge/models/submission.py:57 judge/utils/problems.py:67
+#: templates/problem/live-ide-js.html:737
 msgid "Accepted"
 msgstr ""
 
@@ -2694,12 +2695,12 @@ msgid "Partially Accepted"
 msgstr ""
 
 #: judge/models/problem.py:780 judge/models/submission.py:24
-#: judge/models/submission.py:59
+#: judge/models/submission.py:59 templates/problem/live-ide-js.html:739
 msgid "Wrong Answer"
 msgstr ""
 
 #: judge/models/problem.py:781 judge/models/submission.py:25
-#: judge/models/submission.py:61
+#: judge/models/submission.py:61 templates/problem/live-ide-js.html:744
 msgid "Time Limit Exceeded"
 msgstr ""
 
@@ -2719,7 +2720,7 @@ msgid "Invalid Return"
 msgstr ""
 
 #: judge/models/problem.py:785 judge/models/submission.py:29
-#: judge/models/submission.py:65
+#: judge/models/submission.py:65 templates/problem/live-ide-js.html:746
 msgid "Runtime Error"
 msgstr ""
 
@@ -4105,7 +4106,8 @@ msgstr ""
 msgid "Timeout"
 msgstr ""
 
-#: judge/utils/problems.py:72
+#: judge/utils/problems.py:72 templates/problem/live-ide-js.html:767
+#: templates/problem/live-ide-js.html:780
 msgid "Error"
 msgstr ""
 
@@ -4184,7 +4186,7 @@ msgstr ""
 
 #: judge/views/blog.py:485 judge/views/contests.py:1475 judge/views/exam.py:194
 #: judge/views/organization.py:475 judge/views/organization.py:996
-#: judge/views/organization.py:1020 judge/views/problem.py:1036
+#: judge/views/organization.py:1020 judge/views/problem.py:1038
 #: judge/views/tag.py:182
 msgid "Created on site"
 msgstr ""
@@ -4207,7 +4209,7 @@ msgstr ""
 
 #: judge/views/blog.py:532 judge/views/comment.py:142
 #: judge/views/contests.py:1545 judge/views/exam.py:250
-#: judge/views/organization.py:525 judge/views/problem.py:1207
+#: judge/views/organization.py:525 judge/views/problem.py:1209
 msgid "Edited from site"
 msgstr ""
 
@@ -4879,156 +4881,156 @@ msgstr ""
 msgid "%s has been restored from the archive."
 msgstr ""
 
-#: judge/views/problem.py:95 judge/views/tag.py:45
+#: judge/views/problem.py:97 judge/views/tag.py:45
 msgid "No such problem"
 msgstr ""
 
-#: judge/views/problem.py:96 judge/views/tag.py:46
+#: judge/views/problem.py:98 judge/views/tag.py:46
 #, python-format
 msgid "Could not find a problem with the code \"%s\"."
 msgstr ""
 
-#: judge/views/problem.py:166 judge/views/problem.py:171
+#: judge/views/problem.py:168 judge/views/problem.py:173
 #, python-brace-format
 msgid "Editorial for {0}"
 msgstr ""
 
-#: judge/views/problem.py:208
+#: judge/views/problem.py:210
 msgid "No such editorial"
 msgstr ""
 
-#: judge/views/problem.py:209
+#: judge/views/problem.py:211
 #, python-format
 msgid "Could not find an editorial with the code \"%s\"."
 msgstr ""
 
-#: judge/views/problem.py:403
+#: judge/views/problem.py:405
 msgid "You submitted too many submissions."
 msgstr ""
 
-#: judge/views/problem.py:409
+#: judge/views/problem.py:411
 msgid "Banned from submitting"
 msgstr ""
 
-#: judge/views/problem.py:410
+#: judge/views/problem.py:412
 msgid ""
 "You have been declared persona non grata for this problem. You are "
 "permanently barred from submitting to this problem."
 msgstr ""
 
-#: judge/views/problem.py:415
+#: judge/views/problem.py:417
 msgid "Too many submissions"
 msgstr ""
 
-#: judge/views/problem.py:416
+#: judge/views/problem.py:418
 msgid "You have exceeded the submission limit for this problem."
 msgstr ""
 
-#: judge/views/problem.py:439
+#: judge/views/problem.py:441
 msgid "No credit"
 msgstr ""
 
-#: judge/views/problem.py:441
+#: judge/views/problem.py:443
 #, python-format
 msgid ""
 "The organization %s has no credit left to execute this submission. Ask the "
 "organization to buy more credit."
 msgstr ""
 
-#: judge/views/problem.py:667 templates/problem/problem-list-tabs.html:7
+#: judge/views/problem.py:669 templates/problem/problem-list-tabs.html:7
 msgid "Problem list"
 msgstr ""
 
-#: judge/views/problem.py:902 judge/views/problem.py:910
+#: judge/views/problem.py:904 judge/views/problem.py:912
 #, python-format
 msgid "Submit to %s"
 msgstr ""
 
-#: judge/views/problem.py:942
+#: judge/views/problem.py:944
 msgid "You are not allowed to submit to this problem."
 msgstr ""
 
-#: judge/views/problem.py:963
+#: judge/views/problem.py:965
 msgid "Clone Problem"
 msgstr ""
 
-#: judge/views/problem.py:991
+#: judge/views/problem.py:993
 #, python-format
 msgid "Cloned problem from %s"
 msgstr ""
 
-#: judge/views/problem.py:1014 judge/views/problem.py:1017
+#: judge/views/problem.py:1016 judge/views/problem.py:1019
 msgid "Creating new problem"
 msgstr ""
 
-#: judge/views/problem.py:1059 templates/problem/create.html:20
+#: judge/views/problem.py:1061 templates/problem/create.html:20
 msgid "Import problem from Codeforces Polygon package"
 msgstr ""
 
-#: judge/views/problem.py:1115
+#: judge/views/problem.py:1117
 msgid "Failed to import problem"
 msgstr ""
 
-#: judge/views/problem.py:1123 templates/problem/editor.html:288
+#: judge/views/problem.py:1125 templates/problem/editor.html:288
 msgid "Update problem from Codeforces Polygon package"
 msgstr ""
 
-#: judge/views/problem.py:1147 judge/views/problem.py:1229
+#: judge/views/problem.py:1149 judge/views/problem.py:1231
 #, python-brace-format
 msgid "Editing problem {0}"
 msgstr ""
 
-#: judge/views/problem.py:1150
+#: judge/views/problem.py:1152
 #, python-format
 msgid "Editing problem %s"
 msgstr ""
 
-#: judge/views/problem.py:1218
+#: judge/views/problem.py:1220
 msgid "Can't edit problem"
 msgstr ""
 
-#: judge/views/problem.py:1219
+#: judge/views/problem.py:1221
 msgid "You are not allowed to edit this problem."
 msgstr ""
 
-#: judge/views/problem.py:1239
+#: judge/views/problem.py:1241
 msgid "Edited types/group from site"
 msgstr ""
 
-#: judge/views/problem.py:1257
+#: judge/views/problem.py:1259
 #, python-format
 msgid "Delete problem %s"
 msgstr ""
 
-#: judge/views/problem.py:1272
+#: judge/views/problem.py:1274
 msgid "Marked as deleted"
 msgstr ""
 
-#: judge/views/problem.py:1280
+#: judge/views/problem.py:1282
 msgid "Can't delete problem"
 msgstr ""
 
-#: judge/views/problem.py:1281
+#: judge/views/problem.py:1283
 msgid "You are not allowed to delete this problem."
 msgstr ""
 
-#: judge/views/problem.py:1287 judge/views/problem.py:1340
+#: judge/views/problem.py:1289 judge/views/problem.py:1354
 msgid "Payload exceeds 1MB."
 msgstr ""
 
-#: judge/views/problem.py:1292 judge/views/problem.py:1345
+#: judge/views/problem.py:1294 judge/views/problem.py:1359
 msgid "Invalid JSON."
 msgstr ""
 
-#: judge/views/problem.py:1297 judge/views/problem.py:1350
+#: judge/views/problem.py:1299 judge/views/problem.py:1364
 msgid "Source code exceeds 1MB."
 msgstr ""
 
-#: judge/views/problem.py:1301 judge/views/problem.py:1354
+#: judge/views/problem.py:1303 judge/views/problem.py:1368
 msgid "Maximum 5 custom testcases allowed."
 msgstr ""
 
-#: judge/views/problem.py:1312
+#: judge/views/problem.py:1317
 msgid "Selected language is not allowed for this problem."
 msgstr ""
 
@@ -6400,14 +6402,15 @@ msgstr ""
 msgid "Click to copy"
 msgstr ""
 
-#: templates/common-content.html:33 templates/submission/source.html:40
-#: templates/urlshortener/detail.html:64 templates/user/edit-profile.html:225
+#: templates/common-content.html:33 templates/problem/live-testcases.html:48
+#: templates/submission/source.html:40 templates/urlshortener/detail.html:64
+#: templates/user/edit-profile.html:225
 msgid "Copy"
 msgstr ""
 
-#: templates/common-content.html:44 templates/status/language-list.html:236
-#: templates/submission/source.html:51 templates/urlshortener/detail.html:14
-#: templates/user/edit-profile.html:236
+#: templates/common-content.html:44 templates/problem/live-ide-js.html:606
+#: templates/status/language-list.html:236 templates/submission/source.html:51
+#: templates/urlshortener/detail.html:14 templates/user/edit-profile.html:236
 msgid "Copied!"
 msgstr ""
 
@@ -7059,6 +7062,7 @@ msgid "Apply"
 msgstr ""
 
 #: templates/contest/ranking.html:479 templates/exam/search-form.html:62
+#: templates/problem/live-testcases.html:51
 #: templates/problem/search-form.html:107 templates/submission/list.html:376
 msgid "Clear"
 msgstr ""
@@ -8264,68 +8268,121 @@ msgstr ""
 msgid "No submissions yet"
 msgstr ""
 
-#: templates/problem/live-ide-js.html:450
+#: templates/problem/live-ide-js.html:464
 msgid "Delete test"
 msgstr ""
 
-#: templates/problem/live-ide-js.html:455
+#: templates/problem/live-ide-js.html:469
 msgid "Input"
 msgstr ""
 
-#: templates/problem/live-ide-js.html:456
+#: templates/problem/live-ide-js.html:470
 msgid "Enter testcase input here..."
 msgstr ""
 
-#: templates/problem/live-ide-js.html:457
+#: templates/problem/live-ide-js.html:471
 msgid "Expected Output (Optional)"
 msgstr ""
 
-#: templates/problem/live-ide-js.html:458
+#: templates/problem/live-ide-js.html:472
 msgid "Enter expected output to compare AC/WA..."
 msgstr ""
 
-#: templates/problem/live-ide-js.html:461
+#: templates/problem/live-ide-js.html:475
 msgid "Actual Output"
 msgstr ""
 
-#: templates/problem/live-ide-js.html:462
+#: templates/problem/live-ide-js.html:476
 msgid "Execution output will appear here..."
 msgstr ""
 
-#: templates/problem/live-ide-js.html:531
+#: templates/problem/live-ide-js.html:596
+#: templates/problem/live-testcases.html:44
+msgid "Ready"
+msgstr ""
+
+#: templates/problem/live-ide-js.html:638
 msgid "Please enter source code before running."
 msgstr ""
 
-#: templates/problem/live-ide-js.html:537
+#: templates/problem/live-ide-js.html:647
 msgid "Please select a programming language."
 msgstr ""
 
-#: templates/problem/live-ide-js.html:542
+#: templates/problem/live-ide-js.html:652
+#: templates/problem/live-ide-js.html:662
 msgid "Running..."
 msgstr ""
 
-#: templates/problem/live-ide-js.html:572
-#: templates/problem/live-ide-js.html:599 templates/problem/live-ide.html:297
+#: templates/problem/live-ide-js.html:666
+msgid "Starting Build & Run"
+msgstr ""
+
+#: templates/problem/live-ide-js.html:667
+msgid "Testcases count:"
+msgstr ""
+
+#: templates/problem/live-ide-js.html:692
+#: templates/problem/live-ide-js.html:776 templates/problem/live-ide.html:297
 msgid "Build & Run"
 msgstr ""
 
-#: templates/problem/live-ide-js.html:593
+#: templates/problem/live-ide-js.html:697
+msgid "Compilation error occurred."
+msgstr ""
+
+#: templates/problem/live-ide-js.html:701
+#: templates/problem/live-testcases.html:29
+#: templates/submission/status-testcases.html:67
+msgid "Compilation Error"
+msgstr ""
+
+#: templates/problem/live-ide-js.html:703
+msgid "Compilation Error:"
+msgstr ""
+
+#: templates/problem/live-ide-js.html:705
+msgid "Build failed in"
+msgstr ""
+
+#: templates/problem/live-ide-js.html:716
+msgid "Compilation succeeded."
+msgstr ""
+
+#: templates/problem/live-ide-js.html:757
+#: templates/submission/verdict-card.html:47
+msgid "Passed"
+msgstr ""
+
+#: templates/problem/live-ide-js.html:760
+msgid "Failed"
+msgstr ""
+
+#: templates/problem/live-ide-js.html:763
+msgid "Done in"
+msgstr ""
+
+#: templates/problem/live-ide-js.html:763
+msgid "Passed:"
+msgstr ""
+
+#: templates/problem/live-ide-js.html:770
 msgid "Error:"
 msgstr ""
 
-#: templates/problem/live-ide-js.html:600
+#: templates/problem/live-ide-js.html:778
 msgid "Error sending execution request."
 msgstr ""
 
-#: templates/problem/live-ide-js.html:621
+#: templates/problem/live-ide-js.html:804
 msgid "Saving..."
 msgstr ""
 
-#: templates/problem/live-ide-js.html:659 templates/problem/live-ide.html:292
+#: templates/problem/live-ide-js.html:844 templates/problem/live-ide.html:292
 msgid "Draft saved"
 msgstr ""
 
-#: templates/problem/live-ide-js.html:662
+#: templates/problem/live-ide-js.html:847
 msgid "Failed to save draft"
 msgstr ""
 
@@ -8494,17 +8551,36 @@ msgstr ""
 msgid "Add testcase (max 5)"
 msgstr ""
 
+#: templates/problem/live-testcases.html:10
+msgid "View execution and build console log"
+msgstr ""
+
 #: templates/problem/live-testcases.html:12
+msgid "Console"
+msgstr ""
+
+#: templates/problem/live-testcases.html:18
 msgid "Toggle testcase drawer height"
 msgstr ""
 
-#: templates/problem/live-testcases.html:12
+#: templates/problem/live-testcases.html:18
 msgid "Toggle drawer"
 msgstr ""
 
-#: templates/problem/live-testcases.html:23
-#: templates/submission/status-testcases.html:67
-msgid "Compilation Error"
+#: templates/problem/live-testcases.html:43
+msgid "Build & Execution Log"
+msgstr ""
+
+#: templates/problem/live-testcases.html:47
+msgid "Copy console output"
+msgstr ""
+
+#: templates/problem/live-testcases.html:50
+msgid "Clear console"
+msgstr ""
+
+#: templates/problem/live-testcases.html:56
+msgid "No build or execution logs yet. Click Build &amp; Run to start."
 msgstr ""
 
 #: templates/problem/manage_submission.html:58
@@ -9580,10 +9656,6 @@ msgstr ""
 #: templates/submission/submission-list-tabs.html:36
 #, python-format
 msgid "%(user)s's"
-msgstr ""
-
-#: templates/submission/verdict-card.html:47
-msgid "Passed"
 msgstr ""
 
 #: templates/submission/verdict-card.html:73

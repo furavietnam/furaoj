@@ -32,6 +32,9 @@ class LiveIdeEndToEndTestCase(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, 'live-ide-container')
         self.assertContains(res, 'live-testcase-drawer')
+        self.assertContains(res, 'btn-tab-console')
+        self.assertContains(res, 'console-panel')
+        self.assertContains(res, 'console-log-content')
 
         # Save draft via draft endpoint
         draft_url = reverse('problem_draft', args=[self.problem.code])

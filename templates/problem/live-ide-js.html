@@ -413,10 +413,11 @@
         state.testcases.forEach(function(tc, idx) {
             var dotColor = tc.status === 'AC' ? '#16a34a' : (tc.status === 'CE' ? '#d97706' : (tc.status === 'WA' || tc.status === 'TLE' || tc.status === 'RTE' ? '#dc2626' : '#0284c7'));
             var dotHtml = tc.status ? '<span class="tc-tab-status-dot" style="background:' + dotColor + '"></span> ' : '';
+            var isTabActive = (state.activeTab === idx);
             var $btn = $('<button type="button" class="tc-tab-btn" role="tab"></button>')
                 .attr('id', 'tc-tab-' + idx)
-                .attr('aria-selected', idx === state.activeTab ? 'true' : 'false')
-                .toggleClass('active', idx === state.activeTab)
+                .attr('aria-selected', isTabActive ? 'true' : 'false')
+                .toggleClass('active', isTabActive)
                 .html(dotHtml + '<span class="tc-tab-label">Test ' + (idx + 1) + '</span>');
 
             $btn.on('click', function() {
@@ -426,7 +427,20 @@
         });
 
         $('#btn-add-testcase').prop('disabled', state.testcases.length >= 5);
-        renderPanel();
+
+        var isConsoleActive = (state.activeTab === 'console');
+        $('#btn-tab-console')
+            .toggleClass('active', isConsoleActive)
+            .attr('aria-selected', isConsoleActive ? 'true' : 'false');
+
+        if (isConsoleActive) {
+            $('#testcase-panels').addClass('hidden');
+            $('#console-panel').removeClass('hidden');
+        } else {
+            $('#console-panel').addClass('hidden');
+            $('#testcase-panels').removeClass('hidden');
+            renderPanel();
+        }
     }
 
     function renderPanel() {
@@ -480,9 +494,19 @@
     }
 
     function selectTab(idx) {
-        if (idx < 0 || idx >= state.testcases.length) return;
-        state.activeTab = idx;
-        renderTabs();
+        if (idx === 'console') {
+            state.activeTab = 'console';
+            renderTabs();
+            var scrollEl = document.getElementById('console-log-scroll');
+            if (scrollEl) {
+                scrollEl.scrollTop = scrollEl.scrollHeight;
+            }
+            return;
+        }
+        if (typeof idx === 'number' && idx >= 0 && idx < state.testcases.length) {
+            state.activeTab = idx;
+            renderTabs();
+        }
     }
 
     function addTestcase() {
@@ -505,8 +529,10 @@
     function deleteTestcase(idx) {
         if (state.testcases.length <= 1) return;
         state.testcases.splice(idx, 1);
-        if (state.activeTab >= state.testcases.length) {
-            state.activeTab = state.testcases.length - 1;
+        if (state.activeTab !== 'console') {
+            if (state.activeTab >= state.testcases.length) {
+                state.activeTab = state.testcases.length - 1;
+            }
         }
         renderTabs();
         scheduleSaveDraft();
@@ -522,6 +548,87 @@
             .replace(/'/g, '&#039;');
     }
 
+    /* Console Helpers */
+    function getTimestamp() {
+        var now = new Date();
+        var h = String(now.getHours()).padStart(2, '0');
+        var m = String(now.getMinutes()).padStart(2, '0');
+        var s = String(now.getSeconds()).padStart(2, '0');
+        return '[' + h + ':' + m + ':' + s + ']';
+    }
+
+    function stripAnsi(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')
+            .replace(/\[[0-9;]*m/g, '')
+            .replace(/\[\d+;\d+m/g, '')
+            .replace(/\[K/g, '');
+    }
+
+    function setConsoleBadge(text, type) {
+        var $badge = $('#console-badge');
+        $badge.removeClass('ready running success error ce').addClass(type).text(text);
+    }
+
+    function setConsoleStatusDot(type) {
+        var $dot = $('#console-status-dot');
+        if (!type) {
+            $dot.addClass('hidden').removeClass('running success warning error ce');
+        } else {
+            $dot.removeClass('hidden running success warning error ce').addClass(type);
+        }
+    }
+
+    function appendConsoleLog(line) {
+        var $log = $('#console-log-content');
+        var currentText = $log.text();
+        var newText = currentText ? (currentText + '\n' + line) : line;
+        $log.text(newText);
+        var scrollEl = document.getElementById('console-log-scroll');
+        if (scrollEl) {
+            scrollEl.scrollTop = scrollEl.scrollHeight;
+        }
+    }
+
+    function clearConsoleLog() {
+        $('#console-log-content').text('');
+        setConsoleBadge('{{ _("Ready") }}', 'ready');
+        setConsoleStatusDot(null);
+    }
+
+    function copyConsoleLog() {
+        var text = $('#console-log-content').text();
+        if (!text) return;
+        var onCopied = function() {
+            var $btn = $('#btn-copy-console');
+            var originalHtml = $btn.html();
+            $btn.html('<i class="fa fa-check text-success"></i> <span>{{ _("Copied!") }}</span>');
+            setTimeout(function() {
+                $btn.html(originalHtml);
+            }, 1500);
+        };
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(onCopied).catch(function() {
+                fallbackCopy(text, onCopied);
+            });
+        } else {
+            fallbackCopy(text, onCopied);
+        }
+    }
+
+    function fallbackCopy(text, cb) {
+        var $temp = $('<textarea>');
+        $('body').append($temp);
+        $temp.val(text).select();
+        try {
+            document.execCommand('copy');
+            if (cb) cb();
+        } catch (e) {}
+        $temp.remove();
+    }
+
     /* Run Custom Testcases via Live Runner */
     function runTests() {
         if (state.isRunning) return;
@@ -533,7 +640,9 @@
         }
 
         var langId = $('#live-lang-select').val();
-        var langKey = $('#live-lang-select option:selected').data('key');
+        var $selectedOpt = $('#live-lang-select option:selected');
+        var langKey = $selectedOpt.data('key');
+        var langName = $selectedOpt.text().trim();
         if (!langId && !langKey) {
             alert('{{ _("Please select a programming language.") }}');
             return;
@@ -547,6 +656,15 @@
         if (state.isDrawerCollapsed) {
             toggleDrawer();
         }
+
+        var startTime = new Date();
+        var ts = getTimestamp();
+        setConsoleBadge('{{ _("Running...") }}', 'running');
+        setConsoleStatusDot('running');
+
+        appendConsoleLog('--------------------------------------------------');
+        appendConsoleLog(ts + ' {{ _("Starting Build & Run") }} (' + (langName || langKey) + ')');
+        appendConsoleLog(ts + ' {{ _("Testcases count:") }} ' + state.testcases.length);
 
         var payload = {
             language: langId,
@@ -572,16 +690,34 @@
             success: function(resp) {
                 state.isRunning = false;
                 $('#btn-build-run').prop('disabled', false).html('<i class="fa fa-play"></i> <span>{{ _("Build & Run") }}</span>');
+                var tsDone = getTimestamp();
+                var duration = ((new Date() - startTime) / 1000).toFixed(2);
 
                 if (resp.status === 'CE') {
+                    var cleanErr = stripAnsi(resp.compile_error || '{{ _("Compilation error occurred.") }}');
                     $('#live-compile-error').removeClass('hidden');
-                    $('#compile-error-text').text(resp.compile_error || 'Compile error');
+                    $('#live-compile-error-msg').text(cleanErr);
+
+                    setConsoleBadge('{{ _("Compilation Error") }}', 'ce');
+                    setConsoleStatusDot('ce');
+                    appendConsoleLog(tsDone + ' [ERROR] {{ _("Compilation Error:") }}');
+                    appendConsoleLog(cleanErr);
+                    appendConsoleLog(tsDone + ' {{ _("Build failed in") }} ' + duration + 's');
+
                     state.testcases.forEach(function(tc) {
                         tc.status = 'CE';
                         tc.actual = '';
                     });
+
+                    // Auto-switch to console tab so user immediately sees full compiler error
+                    selectTab('console');
                 } else if (resp.status === 'OK' && resp.results) {
                     $('#live-compile-error').addClass('hidden');
+                    appendConsoleLog(tsDone + ' [OK] {{ _("Compilation succeeded.") }}');
+
+                    var passed = 0;
+                    var total = resp.results.length;
+
                     resp.results.forEach(function(res, idx) {
                         if (state.testcases[idx]) {
                             state.testcases[idx].status = res.status;
@@ -590,17 +726,62 @@
                             state.testcases[idx].time = res.time || 0;
                             state.testcases[idx].memory = res.memory || 0;
                         }
+
+                        var timeStr = res.time !== undefined ? res.time + 's' : '';
+                        var memStr = res.memory ? ((res.memory / 1024).toFixed(1) + 'MB') : '';
+                        var meta = [timeStr, memStr].filter(Boolean).join(', ');
+                        if (meta) meta = ' (' + meta + ')';
+
+                        if (res.status === 'AC') {
+                            passed++;
+                            appendConsoleLog(tsDone + ' Test #' + (idx + 1) + ': AC - {{ _("Accepted") }}' + meta);
+                        } else if (res.status === 'WA') {
+                            appendConsoleLog(tsDone + ' Test #' + (idx + 1) + ': WA - {{ _("Wrong Answer") }}' + meta);
+                            if (res.feedback) {
+                                appendConsoleLog('    ' + stripAnsi(res.feedback));
+                            }
+                        } else if (res.status === 'TLE') {
+                            appendConsoleLog(tsDone + ' Test #' + (idx + 1) + ': TLE - {{ _("Time Limit Exceeded") }}' + meta);
+                        } else if (res.status === 'RTE') {
+                            appendConsoleLog(tsDone + ' Test #' + (idx + 1) + ': RTE - {{ _("Runtime Error") }}' + meta);
+                            if (res.feedback) {
+                                appendConsoleLog('    ' + stripAnsi(res.feedback));
+                            }
+                        } else {
+                            appendConsoleLog(tsDone + ' Test #' + (idx + 1) + ': ' + (res.status || 'DONE') + meta);
+                        }
                     });
+
+                    var allPassed = (passed === total && total > 0);
+                    if (allPassed) {
+                        setConsoleBadge('{{ _("Passed") }} (' + passed + '/' + total + ')', 'success');
+                        setConsoleStatusDot('success');
+                    } else {
+                        setConsoleBadge('{{ _("Failed") }} (' + passed + '/' + total + ')', 'error');
+                        setConsoleStatusDot('error');
+                    }
+                    appendConsoleLog(tsDone + ' {{ _("Done in") }} ' + duration + 's. {{ _("Passed:") }} ' + passed + '/' + total);
+                    renderTabs();
                 } else if (resp.error) {
-                    alert('{{ _("Error:") }} ' + resp.error);
+                    var errText = stripAnsi(resp.error);
+                    setConsoleBadge('{{ _("Error") }}', 'error');
+                    setConsoleStatusDot('error');
+                    appendConsoleLog(tsDone + ' [ERROR] ' + errText);
+                    alert('{{ _("Error:") }} ' + errText);
+                    renderTabs();
                 }
-                renderTabs();
             },
             error: function(xhr) {
                 state.isRunning = false;
                 $('#btn-build-run').prop('disabled', false).html('<i class="fa fa-play"></i> <span>{{ _("Build & Run") }}</span>');
+                var tsErr = getTimestamp();
                 var err = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : '{{ _("Error sending execution request.") }}';
-                alert(err);
+                var cleanErr = stripAnsi(err);
+                setConsoleBadge('{{ _("Error") }}', 'error');
+                setConsoleStatusDot('error');
+                appendConsoleLog(tsErr + ' [SERVER ERROR] ' + cleanErr);
+                alert(cleanErr);
+                renderTabs();
             }
         });
     }
@@ -735,6 +916,11 @@
         });
 
         $('#btn-add-testcase').on('click', addTestcase);
+        $('#btn-tab-console').on('click', function() {
+            selectTab('console');
+        });
+        $('#btn-clear-console').on('click', clearConsoleLog);
+        $('#btn-copy-console').on('click', copyConsoleLog);
         $('#btn-toggle-drawer').on('click', toggleDrawer);
         $('#btn-build-run').on('click', runTests);
         $('#btn-live-submit').on('click', submitSolution);
