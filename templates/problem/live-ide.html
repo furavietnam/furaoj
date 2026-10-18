@@ -1,0 +1,100 @@
+<div id="live-ide-container" class="live-ide-split" role="region" aria-label="{{ _('Problem Solving Workspace') }}" data-problem-code="{{ problem.code }}">
+    <!-- Left Pane: Problem Info and Statement -->
+    <section id="live-pane-left" class="live-pane" aria-label="{{ _('Problem Details') }}">
+        <div class="problem-info-card">
+            <div class="problem-meta-badges">
+                <span class="meta-badge" title="{{ _('Points') }}">
+                    <i class="fa fa-star text-warning" aria-hidden="true"></i>
+                    <strong>{{ problem.points|floatformat(2) }}</strong> {{ _('pts') }}
+                </span>
+                <span class="meta-badge" title="{{ _('Time limit') }}">
+                    <i class="fa fa-clock-o text-info" aria-hidden="true"></i>
+                    {{ problem.time_limit }}s
+                </span>
+                <span class="meta-badge" title="{{ _('Memory limit') }}">
+                    <i class="fa fa-microchip text-primary" aria-hidden="true"></i>
+                    {{ problem.memory_limit|kbsimpleformat }}
+                </span>
+                {% if problem.io_method.method == 'file' %}
+                    <span class="meta-badge" title="{{ _('File I/O') }}">
+                        <i class="fa fa-file-code-o text-success" aria-hidden="true"></i>
+                        {{ problem.io_method.input }} / {{ problem.io_method.output }}
+                    </span>
+                {% else %}
+                    <span class="meta-badge" title="{{ _('Standard I/O') }}">
+                        <i class="fa fa-terminal" aria-hidden="true"></i> stdin / stdout
+                    </span>
+                {% endif %}
+            </div>
+            {% if contest_problem and contest_problem.contest and submission_limit %}
+                <div class="submissions-remaining-pill">
+                    {% trans left=submissions_left -%}
+                        {{ left }} submission left
+                    {%- pluralize -%}
+                        {{ left }} submissions left
+                    {%- endtrans %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="problem-statement-scroll">
+            {% include "problem/problem-detail.html" %}
+            <div class="problem-clarify-row">
+                {% if not request.profile.mute %}
+                    <a href="{{ url('new_problem_ticket', problem.code) }}" class="button clarify-btn">
+                        <i class="fa fa-question-circle" aria-hidden="true"></i>
+                        {% if comment_lock and request.profile.current_contest.live %}
+                            {{ _('Request clarification') }}
+                        {% else %}
+                            {{ _('Report an issue') }}
+                        {% endif %}
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Resizer Divider Bar -->
+    <div id="live-pane-resizer" role="separator" aria-orientation="vertical" tabindex="0" aria-label="{{ _('Resize split panes') }}" title="{{ _('Drag to resize (or use Left/Right arrows)') }}">
+        <div class="resizer-handle"></div>
+    </div>
+
+    <!-- Right Pane: Code Editor and Testcases -->
+    <section id="live-pane-right" class="live-pane" aria-label="{{ _('Live IDE Workspace') }}">
+        <header class="live-ide-toolbar" role="toolbar" aria-label="{{ _('IDE Actions') }}">
+            <div class="toolbar-left">
+                <label for="live-lang-select" class="sr-only">{{ _('Programming Language') }}</label>
+                <div class="live-lang-dropdown">
+                    <select id="live-lang-select" class="form-control live-lang-select" aria-label="{{ _('Select Language') }}">
+                        {% for lang in form.fields.language.queryset %}
+                            <option value="{{ lang.id }}" data-id="{{ lang.id }}" data-key="{{ lang.key }}" data-ace="{{ lang.ace }}"
+                                    data-fileonly="{{ lang.file_only }}" data-ext="{{ lang.extension }}" data-file-size="{{ lang.file_size_limit }}"
+                                    {% if lang.id == default_lang.id %}selected{% endif %}>
+                                {{ lang.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <span id="live-draft-status" class="draft-status-indicator" aria-live="polite">
+                    <i class="fa fa-check-circle" aria-hidden="true"></i> {{ _('Draft saved') }}
+                </span>
+            </div>
+            <div class="toolbar-right">
+                <button type="button" id="btn-build-run" class="btn-live-action btn-build-run" aria-keyshortcuts="Control+Enter" title="Ctrl + Enter">
+                    <i class="fa fa-play" aria-hidden="true"></i> <span>{{ _('Build & Run') }}</span>
+                </button>
+                <button type="button" id="btn-live-submit" class="btn-live-action btn-live-submit" title="{{ _('Submit solution for grading') }}">
+                    <i class="fa fa-paper-plane" aria-hidden="true"></i> <span>{{ _('Nộp bài') }}</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Hidden submit form containing Ace Editor target -->
+        <div id="live-editor-container" class="live-editor-container">
+            {% include "problem/submit-form.html" %}
+        </div>
+
+        <!-- Testcases Drawer -->
+        {% include "problem/live-testcases.html" %}
+    </section>
+</div>

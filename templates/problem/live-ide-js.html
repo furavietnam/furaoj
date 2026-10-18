@@ -1,0 +1,386 @@
+<script type="text/javascript">
+(function($) {
+    'use strict';
+
+    var problemCode = '{{ problem.code }}';
+    var liveRunUrl = '{{ url("problem_live_run", problem.code) }}';
+    var draftUrl = '{{ url("problem_draft", problem.code) }}';
+
+    var state = {
+        activeTab: 0,
+        testcases: [
+            { id: 1, input: '', expected: '', actual: '', status: '', time: 0, memory: 0 }
+        ],
+        isDrawerCollapsed: false,
+        saveTimeout: null,
+        isRunning: false
+    };
+
+    function getCsrfToken() {
+        var token = $('input[name="csrfmiddlewaretoken"]').val();
+        if (!token) {
+            var match = document.cookie.match(/csrftoken=([^;]+)/);
+            if (match) token = match[1];
+        }
+        return token;
+    }
+
+    /* Resizer logic */
+    function initResizer() {
+        var $resizer = $('#live-pane-resizer');
+        var $left = $('#live-pane-left');
+        var $container = $('#live-ide-container');
+        if (!$resizer.length) return;
+
+        var savedPct = localStorage.getItem('live_ide_split_' + problemCode) || localStorage.getItem('live_ide_split_pct');
+        if (savedPct) {
+            $left.css('flex', '0 0 ' + savedPct + '%');
+        }
+
+        var isDragging = false;
+        $resizer.on('mousedown', function(e) {
+            e.preventDefault();
+            isDragging = true;
+            $('body').css({ cursor: 'col-resize', userSelect: 'none' });
+        });
+
+        $(document).on('mousemove', function(e) {
+            if (!isDragging) return;
+            var containerOffset = $container.offset().left;
+            var containerWidth = $container.width();
+            var pointerX = e.pageX - containerOffset;
+            var pct = Math.max(20, Math.min(80, (pointerX / containerWidth) * 100));
+            $left.css('flex', '0 0 ' + pct + '%');
+            if (window.ace_source) window.ace_source.resize();
+        });
+
+        $(document).on('mouseup', function() {
+            if (isDragging) {
+                isDragging = false;
+                $('body').css({ cursor: '', userSelect: '' });
+                var curWidth = ($left.width() / $container.width()) * 100;
+                localStorage.setItem('live_ide_split_' + problemCode, curWidth.toFixed(1));
+            }
+        });
+
+        // Keyboard arrow resize on separator
+        $resizer.on('keydown', function(e) {
+            var curPct = ($left.width() / $container.width()) * 100;
+            if (e.key === 'ArrowLeft') {
+                curPct = Math.max(20, curPct - 5);
+                $left.css('flex', '0 0 ' + curPct + '%');
+                if (window.ace_source) window.ace_source.resize();
+            } else if (e.key === 'ArrowRight') {
+                curPct = Math.min(80, curPct + 5);
+                $left.css('flex', '0 0 ' + curPct + '%');
+                if (window.ace_source) window.ace_source.resize();
+            }
+        });
+    }
+
+    /* Testcase UI Rendering */
+    function renderTabs() {
+        var $tabs = $('#testcase-tabs-list');
+        $tabs.empty();
+
+        state.testcases.forEach(function(tc, idx) {
+            var $btn = $('<button type="button" class="tc-tab-btn" role="tab"></button>')
+                .attr('id', 'tc-tab-' + idx)
+                .attr('aria-selected', idx === state.activeTab ? 'true' : 'false')
+                .toggleClass('active', idx === state.activeTab)
+                .text('Test ' + (idx + 1));
+
+            if (tc.status) {
+                var dotColor = tc.status === 'AC' ? '#16a34a' : (tc.status === 'WA' || tc.status === 'TLE' || tc.status === 'RTE' ? '#dc2626' : '#0284c7');
+                $btn.prepend($('<span class="tc-tab-status-dot"></span>').css('background', dotColor));
+            }
+
+            $btn.on('click', function() {
+                selectTab(idx);
+            });
+            $tabs.append($btn);
+        });
+
+        $('#btn-add-testcase').prop('disabled', state.testcases.length >= 5);
+        renderPanel();
+    }
+
+    function renderPanel() {
+        var $panels = $('#testcase-panels');
+        $panels.empty();
+        var tc = state.testcases[state.activeTab];
+        if (!tc) return;
+
+        var statusBadgeHtml = '';
+        if (tc.status) {
+            var badgeClass = 'badge-verdict-' + tc.status.toLowerCase();
+            var iconClass = tc.status === 'AC' ? 'fa-check' : (tc.status === 'WA' ? 'fa-times' : (tc.status === 'TLE' ? 'fa-clock-o' : 'fa-exclamation-triangle'));
+            statusBadgeHtml = '<span class="badge-verdict ' + badgeClass + '"><i class="fa ' + iconClass + '"></i> ' + tc.status + '</span>';
+        }
+
+        var metaHtml = '';
+        if (tc.time || tc.memory) {
+            metaHtml = '<span class="tc-meta-info">' + (tc.time ? tc.time + 's' : '') + (tc.memory ? ' | ' + (tc.memory / 1024).toFixed(1) + 'MB' : '') + '</span>';
+        }
+
+        var deleteBtnHtml = state.testcases.length > 1 ? '<button type="button" class="btn btn-xs btn-outline-danger btn-del-tc" style="font-size: 0.72rem; padding: 1px 6px;"><i class="fa fa-trash"></i> Xóa test</button>' : '';
+
+        var html = [
+            '<div class="tc-panel-content" role="tabpanel" aria-labelledby="tc-tab-' + state.activeTab + '">',
+            '  <div class="tc-field-group">',
+            '    <label><span>{{ _("Đầu vào (Input)") }}</span> ' + deleteBtnHtml + '</label>',
+            '    <textarea class="tc-textarea" id="tc-input" placeholder="{{ _("Nhập input testcase tại đây...") }}">' + escapeHtml(tc.input) + '</textarea>',
+            '    <label style="margin-top: 6px;">{{ _("Đầu ra mong muốn (Expected - Tùy chọn)") }}</label>',
+            '    <textarea class="tc-textarea" id="tc-expected" placeholder="{{ _("Nhập output kỳ vọng (để so sánh AC/WA)...") }}">' + escapeHtml(tc.expected || '') + '</textarea>',
+            '  </div>',
+            '  <div class="tc-field-group">',
+            '    <label><span>{{ _("Đầu ra thực tế (Actual Output)") }}</span> <div>' + statusBadgeHtml + ' ' + metaHtml + '</div></label>',
+            '    <textarea class="tc-textarea" id="tc-actual" readonly style="height: 160px;" placeholder="{{ _("Kết quả chạy sẽ hiển thị tại đây...") }}">' + escapeHtml(tc.actual || tc.feedback || '') + '</textarea>',
+            '  </div>',
+            '</div>'
+        ].join('\n');
+
+        $panels.html(html);
+
+        $('#tc-input').on('input', function() {
+            tc.input = $(this).val();
+            scheduleSaveDraft();
+        });
+
+        $('#tc-expected').on('input', function() {
+            tc.expected = $(this).val();
+            scheduleSaveDraft();
+        });
+
+        $('.btn-del-tc').on('click', function() {
+            removeTestcase(state.activeTab);
+        });
+    }
+
+    function selectTab(idx) {
+        state.activeTab = idx;
+        renderTabs();
+    }
+
+    function addTestcase() {
+        if (state.testcases.length >= 5) return;
+        state.testcases.push({
+            id: state.testcases.length + 1,
+            input: '',
+            expected: '',
+            actual: '',
+            status: '',
+            time: 0,
+            memory: 0
+        });
+        state.activeTab = state.testcases.length - 1;
+        renderTabs();
+        scheduleSaveDraft();
+    }
+
+    function removeTestcase(idx) {
+        if (state.testcases.length <= 1) return;
+        state.testcases.splice(idx, 1);
+        if (state.activeTab >= state.testcases.length) {
+            state.activeTab = state.testcases.length - 1;
+        }
+        renderTabs();
+        scheduleSaveDraft();
+    }
+
+    function escapeHtml(text) {
+        return $('<div>').text(text).html();
+    }
+
+    /* Build & Run execution */
+    function runTests() {
+        if (state.isRunning) return;
+        var code = window.ace_source ? window.ace_source.getSession().getValue() : $('#id_source').val();
+        if (!code || !code.trim()) {
+            alert('{{ _("Vui lòng nhập mã nguồn trước khi chạy.") }}');
+            return;
+        }
+
+        var langId = $('#live-lang-select').val();
+        var langKey = $('#live-lang-select option:selected').data('key');
+
+        var payload = {
+            language: langId,
+            language_key: langKey,
+            source: code,
+            testcases: state.testcases.map(function(tc) {
+                return { id: tc.id, input: tc.input, expected: tc.expected };
+            })
+        };
+
+        state.isRunning = true;
+        var $btn = $('#btn-build-run');
+        var originalBtnHtml = $btn.html();
+        $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> {{ _("Đang biên dịch & chạy...") }}');
+        $('#run-overall-status').text('{{ _("Đang thực thi...") }}');
+        $('#live-compile-error').addClass('hidden');
+
+        $.ajax({
+            url: liveRunUrl,
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(payload),
+            headers: { 'X-CSRFToken': getCsrfToken() },
+            success: function(resp) {
+                if (resp.status === 'CE') {
+                    $('#live-compile-error').removeClass('hidden');
+                    $('#live-compile-error-msg').text(resp.compile_error || '{{ _("Lỗi biên dịch không xác định") }}');
+                    $('#run-overall-status').html('<span style="color: #dc2626; font-weight: 700;">{{ _("Compile Error") }}</span>');
+                    if (state.isDrawerCollapsed) toggleDrawer();
+                } else if (resp.status === 'OK') {
+                    var acCount = 0;
+                    (resp.results || []).forEach(function(res, i) {
+                        if (state.testcases[i]) {
+                            state.testcases[i].status = res.status;
+                            state.testcases[i].actual = res.output;
+                            state.testcases[i].feedback = res.feedback;
+                            state.testcases[i].time = res.execution_time;
+                            state.testcases[i].memory = res.memory;
+                            if (res.status === 'AC') acCount++;
+                        }
+                    });
+                    renderTabs();
+                    $('#run-overall-status').html('<span style="color: #16a34a; font-weight: 700;">{{ _("Hoàn thành:") }} ' + acCount + '/' + state.testcases.length + ' AC</span>');
+                    if (state.isDrawerCollapsed) toggleDrawer();
+                } else {
+                    alert(resp.compile_error || '{{ _("Lỗi khi chạy test") }}');
+                }
+            },
+            error: function(xhr) {
+                var err = xhr.responseJSON ? xhr.responseJSON.message : '{{ _("Yêu cầu thất bại") }}';
+                alert('Lỗi: ' + err);
+            },
+            complete: function() {
+                state.isRunning = false;
+                $btn.prop('disabled', false).html(originalBtnHtml);
+            }
+        });
+    }
+
+    /* Submit solution */
+    function submitSolution() {
+        var code = window.ace_source ? window.ace_source.getSession().getValue() : $('#id_source').val();
+        $('#id_source').val(code);
+        $('#id_language').val($('#live-lang-select').val()).trigger('change');
+        saveDraftImmediate();
+        $('#problem_submit').submit();
+    }
+
+    /* Draft save & restore */
+    function scheduleSaveDraft() {
+        $('#live-draft-status').addClass('saving').html('<i class="fa fa-pencil"></i> {{ _("Đang lưu...") }}');
+        clearTimeout(state.saveTimeout);
+        state.saveTimeout = setTimeout(saveDraftImmediate, 2000);
+    }
+
+    function saveDraftImmediate() {
+        clearTimeout(state.saveTimeout);
+        var code = window.ace_source ? window.ace_source.getSession().getValue() : $('#id_source').val();
+        var payload = {
+            language: $('#live-lang-select').val(),
+            source: code || '',
+            testcases: state.testcases.map(function(tc) {
+                return { id: tc.id, input: tc.input, expected: tc.expected };
+            })
+        };
+
+        $.ajax({
+            url: draftUrl,
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(payload),
+            headers: { 'X-CSRFToken': getCsrfToken() },
+            success: function() {
+                $('#live-draft-status').removeClass('saving').html('<i class="fa fa-check-circle" style="color: #16a34a;"></i> {{ _("Đã lưu nháp") }}');
+            }
+        });
+    }
+
+    function loadDraft() {
+        $.get(draftUrl, function(data) {
+            if (data && data.status === 'OK') {
+                if (data.source && window.ace_source) {
+                    window.ace_source.getSession().setValue(data.source);
+                }
+                if (data.language) {
+                    $('#live-lang-select').val(data.language).trigger('change');
+                }
+                if (data.testcases && data.testcases.length) {
+                    state.testcases = data.testcases.map(function(tc, i) {
+                        return {
+                            id: tc.id || (i + 1),
+                            input: tc.input || '',
+                            expected: tc.expected || '',
+                            actual: '',
+                            status: '',
+                            time: 0,
+                            memory: 0
+                        };
+                    });
+                    state.activeTab = 0;
+                    renderTabs();
+                }
+            }
+        });
+    }
+
+    function toggleDrawer() {
+        var $drawer = $('#live-testcase-drawer');
+        state.isDrawerCollapsed = !state.isDrawerCollapsed;
+        $drawer.toggleClass('collapsed', state.isDrawerCollapsed);
+        var $icon = $('#btn-toggle-drawer i');
+        $icon.toggleClass('fa-chevron-up', state.isDrawerCollapsed).toggleClass('fa-chevron-down', !state.isDrawerCollapsed);
+        if (window.ace_source) setTimeout(function() { window.ace_source.resize(); }, 210);
+    }
+
+    /* Initialize everything on page load */
+    $(function() {
+        initResizer();
+        renderTabs();
+
+        $('#btn-add-testcase').on('click', addTestcase);
+        $('#btn-toggle-drawer').on('click', toggleDrawer);
+        $('#btn-build-run').on('click', runTests);
+        $('#btn-live-submit').on('click', submitSolution);
+
+        $('#live-lang-select').on('change', function() {
+            var selectedAce = $(this).find('option:selected').data('ace');
+            var selectedId = $(this).val();
+            $('#id_language').val(selectedId).trigger('change');
+            if (window.ace_source && selectedAce) {
+                window.ace_source.getSession().setMode('ace/mode/' + selectedAce);
+            }
+            scheduleSaveDraft();
+        });
+
+        // Keyboard shortcuts
+        $(document).on('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                runTests();
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                saveDraftImmediate();
+            }
+        });
+
+        // Bind Ace change listener once initialized
+        var checkAceInterval = setInterval(function() {
+            if (window.ace_source) {
+                clearInterval(checkAceInterval);
+                window.ace_source.on('change', function() {
+                    scheduleSaveDraft();
+                });
+                loadDraft();
+                window.ace_source.resize();
+            }
+        }, 150);
+        setTimeout(function() { clearInterval(checkAceInterval); }, 5000);
+    });
+})(jQuery);
+</script>

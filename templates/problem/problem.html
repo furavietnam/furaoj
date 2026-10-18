@@ -5,6 +5,7 @@
     {% endif %}
     {% if request.user.is_authenticated and form %}
         {{ form.media.css }}
+        {% include "problem/live-ide-css.html" %}
     {% endif %}
     <style>
         .title-state {
@@ -61,6 +62,7 @@
     {% include "comments/lazy-load-js.html" %}
     {% if request.user.is_authenticated and form %}
         {% include "problem/submit-js.html" %}
+        {% include "problem/live-ide-js.html" %}
     {% endif %}
     <script type="text/javascript">
         $(function() {
@@ -447,5 +449,13 @@
                 </div>
             </div>
         </div>
+    {% endif %}
+{% endblock %}
+
+{% block body %}
+    {% if request.user.is_authenticated and form %}
+        {% include "problem/live-ide.html" %}
+    {% else %}
+        {{ super() }}
     {% endif %}
 {% endblock %}

@@ -1,0 +1,33 @@
+<div id="live-testcase-drawer" class="testcase-drawer" aria-label="{{ _('Custom Testcases Workspace') }}">
+    <div class="drawer-header">
+        <div class="testcase-tabs-bar" role="tablist" aria-label="{{ _('Testcase Tabs') }}">
+            <!-- Tabs (Test 1, Test 2, ...) are dynamically rendered by live-ide.js -->
+            <div id="testcase-tabs-list" class="tabs-list" role="presentation"></div>
+            <button type="button" id="btn-add-testcase" class="tab-btn-add" aria-label="{{ _('Add custom testcase') }}" title="{{ _('Add testcase (max 5)') }}">
+                <i class="fa fa-plus" aria-hidden="true"></i> <span class="sr-only">{{ _('Add') }}</span>
+            </button>
+        </div>
+        <div class="drawer-header-actions">
+            <span id="run-overall-status" class="run-overall-status" aria-live="polite"></span>
+            <button type="button" id="btn-toggle-drawer" class="btn-drawer-toggle" aria-expanded="true" aria-controls="drawer-content-area" aria-label="{{ _('Toggle testcase drawer height') }}" title="{{ _('Toggle drawer') }}">
+                <i class="fa fa-chevron-down" aria-hidden="true"></i>
+            </button>
+        </div>
+    </div>
+
+    <div id="drawer-content-area" class="drawer-body">
+        <!-- Compilation Error Banner -->
+        <div id="live-compile-error" class="compile-error-panel hidden" role="alert" aria-live="assertive">
+            <div class="error-title">
+                <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+                <strong>{{ _('Compilation Error') }}</strong>
+            </div>
+            <pre id="live-compile-error-msg" class="error-content"></pre>
+        </div>
+
+        <!-- Panels Container -->
+        <div id="testcase-panels" class="panels-container">
+            <!-- Rendered by live-ide.js -->
+        </div>
+    </div>
+</div>
