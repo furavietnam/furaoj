@@ -31,84 +31,53 @@ def get_docker_prefix():
     return [] if can_direct else ['sudo', '-n', '-u', 'furaoj']
 
 
-def resolve_judge_container(force_refresh=False):
+def get_admin_judge_candidates(language_key=None):
     """
-    Dynamically discovers the running judge container without hardcoding:
-    1. settings.DMOJ_JUDGE_CONTAINER or environment variable DMOJ_JUDGE_CONTAINER
-    2. Matches active/configured Judge models from database against docker ps
-    3. Searches docker ps for running containers matching 'judge', 'vnoj', or 'dmoj'
-    4. If only 1 container is running on docker, uses it
-    5. Fallback to Judge model name from database, or 'judge'
+    Dynamically resolves judge servers strictly through the Judge model declared in /admin/.
+    Does NOT scan arbitrary containers with docker ps.
+    Returns: (target_judge, candidate_container_names)
     """
-    global _cached_judge_container
-    import os
-    if not force_refresh and _cached_judge_container:
-        return _cached_judge_container
-
-    configured = getattr(settings, 'DMOJ_JUDGE_CONTAINER', None) or os.environ.get('DMOJ_JUDGE_CONTAINER')
-    if configured:
-        _cached_judge_container = configured
-        return configured
-
-    prefix = get_docker_prefix()
+    from judge.models import Judge
     try:
-        res = subprocess.run(
-            prefix + ['docker', 'ps', '--format', '{{.Names}}\t{{.Image}}'],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            timeout=5,
-        )
-        if res.returncode == 0 and res.stdout.strip():
-            lines = [line.strip().split('\t') for line in res.stdout.strip().splitlines() if line.strip()]
-            containers = [(parts[0], parts[1] if len(parts) > 1 else '') for parts in lines if parts]
+        judges_qs = Judge.objects.filter(is_blocked=False, is_disabled=False)
+        if not judges_qs.exists():
+            return None, []
 
-            # A. Match active or configured Judge names in Django database
-            try:
-                from judge.models import Judge
-                db_names = list(Judge.objects.filter(online=True).values_list('name', flat=True)) + \
-                           list(Judge.objects.all().values_list('name', flat=True))
-                db_names_lower = [d.lower() for d in db_names]
-                for name, img in containers:
-                    if name in db_names or name.lower() in db_names_lower:
-                        _cached_judge_container = name
-                        return name
-            except Exception:
-                pass
+        online_qs = judges_qs.filter(online=True)
+        target = None
+        if language_key and online_qs.filter(runtimes__key=language_key).exists():
+            target = online_qs.filter(runtimes__key=language_key).first()
+        elif online_qs.exists():
+            target = online_qs.first()
+        elif language_key and judges_qs.filter(runtimes__key=language_key).exists():
+            target = judges_qs.filter(runtimes__key=language_key).first()
+        else:
+            target = judges_qs.first()
 
-            # B. Match container name containing 'judge' (case-insensitive)
-            for name, img in containers:
-                if 'judge' in name.lower():
-                    _cached_judge_container = name
-                    return name
+        candidates = []
+        configured = getattr(settings, 'DMOJ_JUDGE_CONTAINER', None)
+        if configured:
+            candidates.append(configured)
 
-            # C. Match container image containing 'judge', 'vnoj', or 'dmoj'
-            for name, img in containers:
-                if any(k in img.lower() for k in ['judge', 'vnoj', 'dmoj']):
-                    _cached_judge_container = name
-                    return name
+        if target and target.name not in candidates:
+            candidates.append(target.name)
+            if target.name.lower() not in candidates:
+                candidates.append(target.name.lower())
 
-            # D. If exactly 1 container is running on the host, use it
-            if len(containers) == 1:
-                _cached_judge_container = containers[0][0]
-                return containers[0][0]
+        for j in judges_qs.exclude(id=target.id if target else -1):
+            if j.name not in candidates:
+                candidates.append(j.name)
+            if j.name.lower() not in candidates:
+                candidates.append(j.name.lower())
 
-            logger.info('Discovered running docker containers: %s', [c[0] for c in containers])
+        # Include 'judge' as fallback for setups where container is named 'judge'
+        if 'judge' not in candidates:
+            candidates.append('judge')
+
+        return target, candidates
     except Exception as e:
-        logger.warning('Failed to query docker containers: %s', e)
-
-    # 3. Fallback to Judge model name from database
-    try:
-        from judge.models import Judge
-        active = Judge.objects.filter(online=True).first() or Judge.objects.first()
-        if active:
-            _cached_judge_container = active.name
-            return active.name
-    except Exception:
-        pass
-
-    _cached_judge_container = 'judge'
-    return 'judge'
+        logger.warning('Failed to query Judge model from database: %s', e)
+        return None, ['judge']
 
 
 def resolve_problem_file_io(problem):
@@ -204,8 +173,13 @@ def execute_live_run(problem, language_key, source, testcases):
     import os
     global _cached_judge_container
 
-    container_name = resolve_judge_container()
-    ensure_runner_script(container_name)
+    target_judge, candidates = get_admin_judge_candidates(language_key)
+    if not candidates:
+        return {
+            'status': 'ERROR',
+            'compile_error': 'Không tìm thấy Judge Server nào được khai báo trong trang /admin/ (Judge). Vui lòng thêm và kích hoạt một Judge Server trong trang quản trị.',
+            'results': [],
+        }
 
     if len(source.encode('utf-8')) > 1048576:
         return {'status': 'ERROR', 'compile_error': 'Source code exceeds maximum limit of 1MB.', 'results': []}
@@ -257,53 +231,74 @@ def execute_live_run(problem, language_key, source, testcases):
             timeout=master_timeout,
         )
 
+    # Prioritize previously verified working container if in candidates
+    ordered_candidates = list(candidates)
+    if _cached_judge_container and _cached_judge_container in ordered_candidates:
+        ordered_candidates.remove(_cached_judge_container)
+        ordered_candidates.insert(0, _cached_judge_container)
+
+    proc = None
+    successful_container = None
+    stderr_decoded = ''
+
     try:
-        try:
-            proc = run_in_container(container_name)
-        except Exception as e:
-            if prefix:
-                # If sudo failed, try running without sudo directly
-                cmd_direct = [
-                    'docker', 'exec', '-i',
-                    '-e', 'DMOJ_IN_DOCKER=1',
-                    '-u', 'judge',
-                    container_name,
-                    '/env/bin/python3', '/problems/run_custom_test.py',
-                ]
-                proc = subprocess.run(
-                    cmd_direct,
-                    input=json.dumps(payload).encode('utf-8'),
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    timeout=master_timeout,
-                )
-            else:
-                raise e
+        for c_name in ordered_candidates:
+            ensure_runner_script(c_name)
+            try:
+                proc = run_in_container(c_name)
+            except Exception as e:
+                if prefix:
+                    try:
+                        cmd_direct = [
+                            'docker', 'exec', '-i',
+                            '-e', 'DMOJ_IN_DOCKER=1',
+                            '-u', 'judge',
+                            c_name,
+                            '/env/bin/python3', '/problems/run_custom_test.py',
+                        ]
+                        proc = subprocess.run(
+                            cmd_direct,
+                            input=json.dumps(payload).encode('utf-8'),
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            timeout=master_timeout,
+                        )
+                    except Exception:
+                        continue
+                else:
+                    continue
 
-        # Check if container name failed (e.g. No such container)
-        stderr_decoded = proc.stderr.decode('utf-8', 'replace').strip()
-        if proc.returncode != 0 and 'No such container' in stderr_decoded:
-            logger.warning('Container %s not found. Re-probing docker containers...', container_name)
-            new_container = resolve_judge_container(force_refresh=True)
-            if new_container and new_container != container_name:
-                container_name = new_container
-                proc = run_in_container(container_name)
-                stderr_decoded = proc.stderr.decode('utf-8', 'replace').strip()
+            stderr_decoded = proc.stderr.decode('utf-8', 'replace').strip()
+            if proc.returncode != 0 and 'No such container' in stderr_decoded:
+                logger.warning('Judge container %s not found. Checking next candidate from /admin/...', c_name)
+                continue
 
-        # Check if run_custom_test.py was missing inside the container
-        if proc.returncode != 0 and ("No such file or directory" in stderr_decoded or "can't open file" in stderr_decoded):
-            source_script = os.path.join(os.path.dirname(__file__), 'run_custom_test.py')
-            if not os.path.exists(source_script):
-                source_script = os.path.join(os.path.dirname(__file__), '..', 'scripts', 'run_custom_test.py')
-            if os.path.exists(source_script):
-                cp_cmd = prefix + ['docker', 'cp', source_script, f'{container_name}:/problems/run_custom_test.py']
-                subprocess.run(cp_cmd, timeout=10)
-                # Retry execution once
-                proc = run_in_container(container_name)
+            # Check if run_custom_test.py was missing inside the container
+            if proc.returncode != 0 and ("No such file or directory" in stderr_decoded or "can't open file" in stderr_decoded):
+                source_script = os.path.join(os.path.dirname(__file__), 'run_custom_test.py')
+                if not os.path.exists(source_script):
+                    source_script = os.path.join(os.path.dirname(__file__), '..', 'scripts', 'run_custom_test.py')
+                if os.path.exists(source_script):
+                    cp_cmd = prefix + ['docker', 'cp', source_script, f'{c_name}:/problems/run_custom_test.py']
+                    subprocess.run(cp_cmd, timeout=10)
+                    proc = run_in_container(c_name)
+                    stderr_decoded = proc.stderr.decode('utf-8', 'replace').strip()
+
+            successful_container = c_name
+            _cached_judge_container = c_name
+            break
+
+        if not successful_container or proc is None:
+            judge_display = target_judge.name if target_judge else "được khai báo trong /admin/"
+            return {
+                'status': 'ERROR',
+                'compile_error': f'Không tìm thấy container docker tương ứng với Judge Server "{judge_display}". Vui lòng kiểm tra container docker tương ứng với Judge trong trang quản trị /admin/.',
+                'results': [],
+            }
 
         if proc.returncode != 0:
-            err_msg = strip_ansi(proc.stderr.decode('utf-8', 'replace').strip())
-            logger.error('Live runner failed with code %d on container %s: %s', proc.returncode, container_name, err_msg)
+            err_msg = strip_ansi(stderr_decoded)
+            logger.error('Live runner failed with code %d on container %s: %s', proc.returncode, successful_container, err_msg)
             return {'status': 'ERROR', 'compile_error': f'Judge execution failed: {err_msg}', 'results': []}
 
         stdout_text = proc.stdout.decode('utf-8', 'replace').strip()

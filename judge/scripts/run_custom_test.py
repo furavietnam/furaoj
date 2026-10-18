@@ -13,8 +13,40 @@ def strip_ansi(text):
         return ''
     return ANSI_ESCAPE_RE.sub('', str(text))
 
+os.environ['DMOJ_IN_DOCKER'] = '1'
+
+# Prepare runtime config to prevent "no problems available to grade" SystemExit
+live_cfg_path = '/tmp/live_judge.yml'
+config_file = '/problems/judge.yml'
+try:
+    cfg = {}
+    if os.path.exists('/problems/judge.yml'):
+        try:
+            import yaml
+            with open('/problems/judge.yml', 'r', encoding='utf-8') as f:
+                cfg = yaml.safe_load(f) or {}
+        except Exception:
+            cfg = {}
+    if not isinstance(cfg, dict):
+        cfg = {}
+    if not cfg.get('problem_storage_globs'):
+        cfg['problem_storage_globs'] = ['/problems/*', '/tmp/*']
+    if 'id' not in cfg:
+        cfg['id'] = 'live'
+    if 'key' not in cfg:
+        cfg['key'] = 'live'
+    try:
+        import yaml
+        with open(live_cfg_path, 'w', encoding='utf-8') as f:
+            yaml.safe_dump(cfg, f)
+        config_file = live_cfg_path
+    except Exception:
+        pass
+except Exception:
+    pass
+
 # Suppress stderr noise during initialization
-sys.argv = ['dmoj', '-c', '/problems/judge.yml', '--skip-self-test', 'localhost']
+sys.argv = ['dmoj', '-c', config_file, '--skip-self-test', 'localhost']
 
 try:
     # Redirect stdout during dmoj init to keep stdout clean for JSON output
@@ -27,10 +59,26 @@ try:
         from dmoj.error import CompileError, OutputLimitExceeded
         from dmoj.utils.unicode import utf8bytes
 
-        judgeenv.load_env()
+        try:
+            judgeenv.load_env()
+        except SystemExit as se:
+            if 'no problems available to grade' in str(se):
+                judgeenv.env.problem_storage_globs = ['/problems/*', '/tmp/*']
+                judgeenv.storage_namespaces[None] = ['/problems/*', '/tmp/*']
+            else:
+                raise se
+        except Exception:
+            pass
+
+        # Ensure problem storage namespaces are valid even if empty
+        if not getattr(judgeenv.env, 'problem_storage_globs', None):
+            judgeenv.env.problem_storage_globs = ['/problems/*', '/tmp/*']
+        if not getattr(judgeenv, 'storage_namespaces', None) or not judgeenv.storage_namespaces.get(None):
+            judgeenv.storage_namespaces[None] = ['/problems/*', '/tmp/*']
+
         executors.load_executors()
     sys.stdout = real_stdout
-except Exception as e:
+except BaseException as e:
     sys.stdout = real_stdout
     sys.stdout.write(json.dumps({
         'status': 'ERROR',

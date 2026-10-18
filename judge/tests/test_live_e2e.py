@@ -2,8 +2,8 @@ import json
 from django.contrib.auth.models import User
 from django.test import TestCase, Client
 from django.urls import reverse
-from judge.models import Language, Problem, ProblemDraft, ProblemGroup, Profile, Submission, Solution
-from judge.utils.live_runner import execute_live_run
+from judge.models import Judge, Language, Problem, ProblemDraft, ProblemGroup, Profile, Submission, Solution
+from judge.utils.live_runner import execute_live_run, get_admin_judge_candidates
 
 
 class LiveIdeEndToEndTestCase(TestCase):
@@ -24,6 +24,9 @@ class LiveIdeEndToEndTestCase(TestCase):
         self.lang_cpp, _ = Language.objects.get_or_create(key='CPP20', defaults={'name': 'C++20'})
         self.lang_py, _ = Language.objects.get_or_create(key='PY3', defaults={'name': 'Python 3'})
         self.problem.allowed_languages.add(self.lang_cpp, self.lang_py)
+        # Create an active judge server declared in admin
+        self.judge = Judge.objects.create(name='furaoj', online=True, auth_key='furaoj')
+        self.judge.runtimes.add(self.lang_cpp, self.lang_py)
 
     def test_e2e_page_render_and_draft_sync(self):
         self.client.login(username='e2euser', password='password123')
@@ -277,4 +280,17 @@ int main() {
         self.assertIn('body[data-theme="dark"]', scss_content)
         self.assertIn('body[data-theme="auto"]', scss_content)
         self.assertIn('prefers-color-scheme: dark', scss_content)
+
+    def test_admin_judge_candidates_resolution(self):
+        target, candidates = get_admin_judge_candidates('CPP20')
+        self.assertIsNotNone(target)
+        self.assertEqual(target.name, 'furaoj')
+        self.assertIn('furaoj', candidates)
+
+    def test_no_admin_judge_error(self):
+        Judge.objects.all().delete()
+        res = execute_live_run(self.problem, 'CPP20', 'int main() { return 0; }', [{'id': 1, 'input': '', 'expected': ''}])
+        self.assertEqual(res['status'], 'ERROR')
+        self.assertIn('Không tìm thấy Judge Server nào được khai báo trong trang /admin/', res['compile_error'])
+
 
