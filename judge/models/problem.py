@@ -26,7 +26,7 @@ from judge.utils.url import get_absolute_pdf_url
 
 __all__ = ['ProblemGroup', 'ProblemType', 'OrganizationProblemTag', 'Problem', 'ProblemTranslation',
            'ProblemClarification', 'License', 'Solution', 'SolutionTranslation', 'SubmissionSourceAccess',
-           'TranslatedProblemQuerySet', 'EasterEgg', 'ProblemEasterEgg']
+           'TranslatedProblemQuerySet', 'EasterEgg', 'ProblemEasterEgg', 'ProblemDraft']
 
 
 def disallowed_characters_validator(text):
@@ -831,3 +831,28 @@ class ProblemEasterEgg(models.Model):
         verbose_name = _('Problem Easter Egg')
         verbose_name_plural = _('Problem Easter Eggs')
         ordering = ['tag']
+
+
+class ProblemDraft(models.Model):
+    user = models.ForeignKey(Profile, verbose_name=_('user'), related_name='problem_drafts', on_delete=CASCADE)
+    problem = models.ForeignKey(Problem, verbose_name=_('problem'), related_name='drafts', on_delete=CASCADE)
+    language = models.ForeignKey(Language, verbose_name=_('language'), on_delete=SET_NULL, null=True, blank=True)
+    source = models.TextField(verbose_name=_('source code'), blank=True, default='')
+    testcases = models.JSONField(verbose_name=_('testcases'), default=list, blank=True)
+    updated_at = models.DateTimeField(verbose_name=_('last updated'), auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'problem')
+        verbose_name = _('problem draft')
+        verbose_name_plural = _('problem drafts')
+
+    def clean(self):
+        super().clean()
+        if self.source and len(self.source.encode('utf-8')) > 1048576:
+            raise ValidationError({'source': _('Source code exceeds maximum limit of 1MB.')})
+        if self.testcases and len(self.testcases) > 5:
+            raise ValidationError({'testcases': _('Maximum of 5 custom testcases allowed.')})
+
+    def __str__(self):
+        return f'{self.user.user.username} - {self.problem.code}'
+

@@ -8,7 +8,7 @@ from judge.models.exam import Exam, ExamCategory, ExamProblem, ExamProvince
 from judge.models.interface import BlogPost, BlogPostTag, BlogVote, MiscConfig, NavigationBar, validate_regex
 from judge.models.notification import Notification, make_notification
 from judge.models.problem import EasterEgg, LanguageLimit, License, OrganizationProblemTag, Problem, \
-    ProblemClarification, ProblemEasterEgg, ProblemGroup, ProblemTranslation, ProblemType, Solution, \
+    ProblemClarification, ProblemDraft, ProblemEasterEgg, ProblemGroup, ProblemTranslation, ProblemType, Solution, \
     SolutionTranslation, SubmissionSourceAccess, TranslatedProblemQuerySet
 from judge.models.problem_data import CHECKERS, ProblemData, ProblemTestCase, problem_data_storage, \
     problem_directory_file
