@@ -162,54 +162,20 @@
     }
 
     /* ========================================================
-       Submissions Quick-View Modal
+       Submissions Navigation (Direct New-Tab Opening)
        ======================================================== */
     function initSubmissionsModal() {
-        var $modal = $('#live-submissions-modal');
-        var $iframe = $('#live-submissions-iframe');
-        var $spinner = $('#live-submissions-spinner');
-        if (!$modal.length) return;
-
-        window.openSubmissionsModal = function(url, title) {
-            if (!url) return;
-            $('#live-submissions-modal-title .modal-title-text').text(title || '{{ _("Submissions") }}');
-            $('#live-submissions-modal-newtab').attr('href', url);
-            $spinner.show();
-            $iframe.attr('src', url);
-            $modal.addClass('active').attr('aria-hidden', 'false');
-            $('body').addClass('live-modal-open');
+        window.openSubmissionsModal = function(url) {
+            if (url) {
+                window.open(url, '_blank');
+            }
         };
-
-        window.closeSubmissionsModal = function() {
-            $modal.removeClass('active').attr('aria-hidden', 'true');
-            $iframe.attr('src', 'about:blank');
-            $('body').removeClass('live-modal-open');
-        };
-
-        $iframe.on('load', function() {
-            $spinner.hide();
-            try {
-                var iframeUrl = $iframe[0].contentWindow.location.href;
-                if (iframeUrl && iframeUrl !== 'about:blank') {
-                    $('#live-submissions-modal-newtab').attr('href', iframeUrl);
-                }
-            } catch (e) {}
-        });
 
         $(document).on('click', '.btn-open-sub-modal', function(e) {
             e.preventDefault();
-            var url = $(this).data('url');
-            var title = $(this).data('title');
-            window.openSubmissionsModal(url, title);
-        });
-
-        $('#live-submissions-modal-overlay, #btn-close-submissions-modal').on('click', function() {
-            window.closeSubmissionsModal();
-        });
-
-        $(document).on('keydown', function(e) {
-            if (e.key === 'Escape' && $modal.hasClass('active')) {
-                window.closeSubmissionsModal();
+            var url = $(this).data('url') || $(this).attr('href');
+            if (url) {
+                window.open(url, '_blank');
             }
         });
     }

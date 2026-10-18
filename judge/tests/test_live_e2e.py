@@ -2,7 +2,7 @@ import json
 from django.contrib.auth.models import User
 from django.test import TestCase, Client
 from django.urls import reverse
-from judge.models import Language, Problem, ProblemDraft, ProblemGroup, Profile, Submission
+from judge.models import Language, Problem, ProblemDraft, ProblemGroup, Profile, Submission, Solution
 from judge.utils.live_runner import execute_live_run
 
 
@@ -51,6 +51,23 @@ class LiveIdeEndToEndTestCase(TestCase):
         self.assertEqual(draft.source, draft_data['source'])
         self.assertEqual(draft.language_id, self.lang_cpp.id)
         self.assertEqual(len(draft.testcases), 1)
+
+    def test_e2e_editorial_and_submission_links(self):
+        self.client.login(username='e2euser', password='password123')
+        page_url = reverse('problem_detail', args=[self.problem.code])
+
+        # Without editorial: no editorial link
+        res = self.client.get(page_url)
+        self.assertNotContains(res, 'sidebar-editorial-link')
+        self.assertContains(res, 'sidebar-menu-link')
+        self.assertContains(res, 'target="_blank"')
+
+        # With accessible editorial: editorial link and badge are rendered with target="_blank"
+        Solution.objects.create(problem=self.problem, is_public=True, content='Editorial text')
+        res_with_ed = self.client.get(page_url)
+        self.assertContains(res_with_ed, 'sidebar-editorial-link')
+        self.assertContains(res_with_ed, 'meta-badge-editorial')
+        self.assertContains(res_with_ed, reverse('problem_editorial', args=[self.problem.code]))
 
     def test_e2e_live_run_verdicts(self):
         # 1. AC run
@@ -130,9 +147,9 @@ int main() {
         self.assertContains(res, reverse('user_submissions', args=[self.problem.code, self.user.username]))
         self.assertContains(res, reverse('ranked_submissions', args=[self.problem.code]))
 
-        # 3. Quick-view Submissions modal
-        self.assertContains(res, 'live-submissions-modal')
-        self.assertContains(res, 'live-submissions-iframe')
+        # 3. Direct new-tab navigation
+        self.assertContains(res, 'sidebar-menu-link')
+        self.assertContains(res, 'target="_blank"')
 
         # 4. Donut chart canvas and context data
         self.assertContains(res, 'live-submission-donut')
@@ -232,7 +249,8 @@ int main() {
 
         # Panes wrapper ensures exact split calculations
         self.assertContains(res, 'id="live-workspace-panes"')
-        self.assertContains(res, 'class="problem-status-link btn-open-sub-modal"')
+        self.assertContains(res, 'class="problem-status-link"')
+        self.assertContains(res, 'target="_blank"')
 
         # Theme styles compiled into stylesheet
         import os

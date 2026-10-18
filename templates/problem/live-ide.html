@@ -23,89 +23,65 @@
                         {% set contest = contest_problem.contest %}
                         <!-- My Submissions -->
                         {% set my_sub_url = url('contest_user_submissions', contest.key, request.user.username, problem.code) %}
-                        <div class="sidebar-menu-row">
-                            <button type="button" class="sidebar-menu-btn btn-open-sub-modal"
-                                    data-url="{{ my_sub_url }}"
-                                    data-title="{{ _('My submissions') }} - {{ problem.code }}">
-                                <i class="fa fa-user fa-fw" aria-hidden="true"></i>
-                                <span>{{ _('My submissions') }}</span>
-                            </button>
-                            <a href="{{ my_sub_url }}" target="_blank" class="sidebar-icon-btn" title="{{ _('Open in new tab') }}">
-                                <i class="fa fa-external-link" aria-hidden="true"></i>
-                            </a>
-                        </div>
+                        <a href="{{ my_sub_url }}" target="_blank" rel="noopener noreferrer" class="sidebar-menu-link" title="{{ _('My submissions') }} - {{ problem.code }}">
+                            <i class="fa fa-user fa-fw" aria-hidden="true"></i>
+                            <span>{{ _('My submissions') }}</span>
+                            <i class="fa fa-external-link sidebar-link-ext" aria-hidden="true"></i>
+                        </a>
 
                         {% if contest.can_see_full_submission_list(request.user) %}
                             <!-- All Submissions -->
                             {% set all_sub_url = url('chronological_submissions', problem.code) %}
-                            <div class="sidebar-menu-row">
-                                <button type="button" class="sidebar-menu-btn btn-open-sub-modal"
-                                        data-url="{{ all_sub_url }}"
-                                        data-title="{{ _('All submissions') }} - {{ problem.code }}">
-                                    <i class="fa fa-globe fa-fw" aria-hidden="true"></i>
-                                    <span>{{ _('All submissions') }}</span>
-                                </button>
-                                <a href="{{ all_sub_url }}" target="_blank" class="sidebar-icon-btn" title="{{ _('Open in new tab') }}">
-                                    <i class="fa fa-external-link" aria-hidden="true"></i>
-                                </a>
-                            </div>
+                            <a href="{{ all_sub_url }}" target="_blank" rel="noopener noreferrer" class="sidebar-menu-link" title="{{ _('All submissions') }} - {{ problem.code }}">
+                                <i class="fa fa-globe fa-fw" aria-hidden="true"></i>
+                                <span>{{ _('All submissions') }}</span>
+                                <i class="fa fa-external-link sidebar-link-ext" aria-hidden="true"></i>
+                            </a>
 
                             <!-- Best Submissions -->
                             {% set best_sub_url = url('contest_ranked_submissions', contest.key, problem.code) %}
-                            <div class="sidebar-menu-row">
-                                <button type="button" class="sidebar-menu-btn btn-open-sub-modal"
-                                        data-url="{{ best_sub_url }}"
-                                        data-title="{{ _('Best submissions') }} - {{ problem.code }}">
-                                    <i class="fa fa-trophy fa-fw" aria-hidden="true"></i>
-                                    <span>{{ _('Best submissions') }}</span>
-                                </button>
-                                <a href="{{ best_sub_url }}" target="_blank" class="sidebar-icon-btn" title="{{ _('Open in new tab') }}">
-                                    <i class="fa fa-external-link" aria-hidden="true"></i>
-                                </a>
-                            </div>
+                            <a href="{{ best_sub_url }}" target="_blank" rel="noopener noreferrer" class="sidebar-menu-link" title="{{ _('Best submissions') }} - {{ problem.code }}">
+                                <i class="fa fa-trophy fa-fw" aria-hidden="true"></i>
+                                <span>{{ _('Best submissions') }}</span>
+                                <i class="fa fa-external-link sidebar-link-ext" aria-hidden="true"></i>
+                            </a>
                         {% endif %}
                     {% else %}
                         <!-- All Submissions -->
                         {% set all_sub_url = url('chronological_submissions', problem.code) %}
-                        <div class="sidebar-menu-row">
-                            <button type="button" class="sidebar-menu-btn btn-open-sub-modal"
-                                    data-url="{{ all_sub_url }}"
-                                    data-title="{{ _('All submissions') }} - {{ problem.code }}">
-                                <i class="fa fa-globe fa-fw" aria-hidden="true"></i>
-                                <span>{{ _('All submissions') }}</span>
-                            </button>
-                            <a href="{{ all_sub_url }}" target="_blank" class="sidebar-icon-btn" title="{{ _('Open in new tab') }}">
-                                <i class="fa fa-external-link" aria-hidden="true"></i>
-                            </a>
-                        </div>
+                        <a href="{{ all_sub_url }}" target="_blank" rel="noopener noreferrer" class="sidebar-menu-link" title="{{ _('All submissions') }} - {{ problem.code }}">
+                            <i class="fa fa-globe fa-fw" aria-hidden="true"></i>
+                            <span>{{ _('All submissions') }}</span>
+                            <i class="fa fa-external-link sidebar-link-ext" aria-hidden="true"></i>
+                        </a>
 
                         <!-- My Submissions -->
-                        {% set my_sub_url = url('user_submissions', problem.code, request.user.username) %}
-                        <div class="sidebar-menu-row">
-                            <button type="button" class="sidebar-menu-btn btn-open-sub-modal"
-                                    data-url="{{ my_sub_url }}"
-                                    data-title="{{ _('My submissions') }} - {{ problem.code }}">
+                        {% if request.user.is_authenticated %}
+                            {% set my_sub_url = url('user_submissions', problem.code, request.user.username) %}
+                            <a href="{{ my_sub_url }}" target="_blank" rel="noopener noreferrer" class="sidebar-menu-link" title="{{ _('My submissions') }} - {{ problem.code }}">
                                 <i class="fa fa-user fa-fw" aria-hidden="true"></i>
                                 <span>{{ _('My submissions') }}</span>
-                            </button>
-                            <a href="{{ my_sub_url }}" target="_blank" class="sidebar-icon-btn" title="{{ _('Open in new tab') }}">
-                                <i class="fa fa-external-link" aria-hidden="true"></i>
+                                <i class="fa fa-external-link sidebar-link-ext" aria-hidden="true"></i>
                             </a>
-                        </div>
+                        {% endif %}
 
                         <!-- Best Submissions -->
                         {% set best_sub_url = url('ranked_submissions', problem.code) %}
-                        <div class="sidebar-menu-row">
-                            <button type="button" class="sidebar-menu-btn btn-open-sub-modal"
-                                    data-url="{{ best_sub_url }}"
-                                    data-title="{{ _('Best submissions') }} - {{ problem.code }}">
-                                <i class="fa fa-trophy fa-fw" aria-hidden="true"></i>
-                                <span>{{ _('Best submissions') }}</span>
-                            </button>
-                            <a href="{{ best_sub_url }}" target="_blank" class="sidebar-icon-btn" title="{{ _('Open in new tab') }}">
-                                <i class="fa fa-external-link" aria-hidden="true"></i>
-                            </a>
-                        </div>
+                        <a href="{{ best_sub_url }}" target="_blank" rel="noopener noreferrer" class="sidebar-menu-link" title="{{ _('Best submissions') }} - {{ problem.code }}">
+                            <i class="fa fa-trophy fa-fw" aria-hidden="true"></i>
+                            <span>{{ _('Best submissions') }}</span>
+                            <i class="fa fa-external-link sidebar-link-ext" aria-hidden="true"></i>
+                        </a>
+                    {% endif %}
+
+                    <!-- Read Editorial (Solution) Link -->
+                    {% if editorial and (can_edit_problem or (editorial.is_accessible_by(request.user) and not request.in_contest)) %}
+                        {% set editorial_url = url('problem_editorial', problem.code) ~ ('?lang=' ~ language if language else '') %}
+                        <a href="{{ editorial_url }}" target="_blank" rel="noopener noreferrer" class="sidebar-menu-link sidebar-editorial-link" title="{{ _('Read editorial') }}">
+                            <i class="fa fa-book fa-fw" aria-hidden="true"></i>
+                            <span>{{ _('Read editorial') }}</span>
+                            <i class="fa fa-external-link sidebar-link-ext" aria-hidden="true"></i>
+                        </a>
                     {% endif %}
                 </div>
             </div>
@@ -188,7 +164,7 @@
                     <div class="problem-title-display" title="[{{ problem.code }}] {{ title }}">
                         {% if request.user.is_authenticated %}
                             {% set my_sub_link = url('contest_user_submissions', contest_problem.contest.key, request.user.username, problem.code) if (request.in_contest and contest_problem) else url('user_submissions', problem.code, request.user.username) %}
-                            <a href="{{ my_sub_link }}" class="problem-status-link btn-open-sub-modal" data-url="{{ my_sub_link }}" data-title="{{ _('My submissions') }} - {{ problem.code }}" title="{% if problem.id in completed_problem_ids %}{{ _('Solved') }}{% elif problem.id in attempted_problems %}{{ _('Attempted') }}{% else %}{{ _('Unattempted') }}{% endif %}">
+                            <a href="{{ my_sub_link }}" target="_blank" rel="noopener noreferrer" class="problem-status-link" title="{% if problem.id in completed_problem_ids %}{{ _('Solved') }}{% elif problem.id in attempted_problems %}{{ _('Attempted') }}{% else %}{{ _('Unattempted') }}{% endif %}">
                                 {% if problem.id in completed_problem_ids %}
                                     <i class="solved-problem-color fa fa-check-circle problem-status-icon" aria-label="{{ _('Solved') }}"></i>
                                 {% elif problem.id in attempted_problems %}
@@ -240,6 +216,12 @@
                 {% else %}
                     <a id="pdf_button" href="#" class="meta-badge meta-badge-pdf" title="{{ _('View as PDF') }}">
                         <i class="fa fa-file-pdf-o text-danger" aria-hidden="true"></i> {{ _('PDF') }}
+                    </a>
+                {% endif %}
+                {% if editorial and (can_edit_problem or (editorial.is_accessible_by(request.user) and not request.in_contest)) %}
+                    {% set editorial_url = url('problem_editorial', problem.code) ~ ('?lang=' ~ language if language else '') %}
+                    <a href="{{ editorial_url }}" class="meta-badge meta-badge-editorial" target="_blank" rel="noopener noreferrer" title="{{ _('Read editorial') }}">
+                        <i class="fa fa-book text-success" aria-hidden="true"></i> {{ _('Editorial') }}
                     </a>
                 {% endif %}
             </div>
@@ -318,32 +300,4 @@
 
     <!-- Hidden iframe for PDF generation / printing -->
     <iframe name="raw_problem" id="raw_problem" style="display:none;visibility:hidden;width:0;height:0;position:absolute;left:-999em;"></iframe>
-
-    <!-- Quick-view Submissions Modal -->
-    <div id="live-submissions-modal" class="live-submissions-modal" role="dialog" aria-modal="true" aria-hidden="true">
-        <div id="live-submissions-modal-overlay" class="live-modal-overlay"></div>
-        <div class="live-modal-dialog">
-            <div class="live-modal-header">
-                <h3 id="live-submissions-modal-title">
-                    <i class="fa fa-list-alt" aria-hidden="true"></i>
-                    <span class="modal-title-text">{{ _('Submissions') }}</span>
-                </h3>
-                <div class="live-modal-actions">
-                    <a id="live-submissions-modal-newtab" href="#" target="_blank" class="btn-modal-action" title="{{ _('Open in new tab') }}">
-                        <i class="fa fa-external-link" aria-hidden="true"></i>
-                    </a>
-                    <button type="button" id="btn-close-submissions-modal" class="btn-modal-close" title="{{ _('Close') }}">
-                        <i class="fa fa-times" aria-hidden="true"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="live-modal-body">
-                <div id="live-submissions-spinner" class="live-modal-loading">
-                    <i class="fa fa-circle-o-notch fa-spin fa-2x"></i>
-                    <span>{{ _('Loading submissions...') }}</span>
-                </div>
-                <iframe id="live-submissions-iframe" src="about:blank" frameborder="0"></iframe>
-            </div>
-        </div>
-    </div>
 </div>

@@ -287,6 +287,68 @@ body:has(#live-ide-container) {
     gap: 4px;
 }
 
+.sidebar-menu-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--live-text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-decoration: none;
+    box-sizing: border-box;
+    width: 100%;
+    transition: all 0.15s ease;
+
+    i {
+        color: var(--live-text-muted);
+        font-size: 0.95rem;
+        flex-shrink: 0;
+        transition: color 0.15s ease;
+    }
+
+    span {
+        color: var(--live-text-secondary);
+        transition: color 0.15s ease;
+        flex: 1 1 auto;
+    }
+
+    .sidebar-link-ext {
+        font-size: 0.75rem;
+        color: var(--live-text-muted);
+        opacity: 0.6;
+        transition: all 0.15s ease;
+        margin-left: auto;
+    }
+
+    &:hover {
+        background: var(--live-hover-bg);
+        color: var(--live-text-primary);
+
+        i, span {
+            color: var(--live-text-primary);
+        }
+
+        .sidebar-link-ext {
+            opacity: 1;
+            color: var(--live-text-primary);
+        }
+    }
+}
+
+.sidebar-editorial-link {
+    i {
+        color: #10b981;
+    }
+
+    &:hover i {
+        color: #059669;
+    }
+}
+
 .sidebar-menu-row {
     display: flex;
     align-items: center;
@@ -690,6 +752,28 @@ body:has(#live-ide-container) {
         background: #fef2f2;
         border-color: #f87171;
         color: #b91c1c;
+    }
+}
+
+.meta-badge-editorial {
+    color: #059669;
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+
+    i {
+        color: #059669;
+    }
+
+    &:hover {
+        background: #ecfdf5;
+        border-color: #34d399;
+        color: #047857;
+
+        i {
+            color: #047857;
+        }
     }
 }
 
@@ -1612,6 +1696,16 @@ body[data-theme="auto"] {
             color: #fee2e2;
         }
 
+        .meta-badge-editorial:hover {
+            background-color: #064e3b;
+            border-color: #10b981;
+            color: #a7f3d0;
+
+            i {
+                color: #6ee7b7;
+            }
+        }
+
         .sidebar-admin-danger:hover {
             background-color: #450a0a;
             color: #fca5a5;
@@ -1691,6 +1785,16 @@ body[data-theme="dark"] {
         background-color: #7f1d1d;
         border-color: #ef4444;
         color: #fee2e2;
+    }
+
+    .meta-badge-editorial:hover {
+        background-color: #064e3b;
+        border-color: #10b981;
+        color: #a7f3d0;
+
+        i {
+            color: #6ee7b7;
+        }
     }
 
     .sidebar-admin-danger:hover {
