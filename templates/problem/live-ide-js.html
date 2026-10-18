@@ -84,16 +84,13 @@
         $tabs.empty();
 
         state.testcases.forEach(function(tc, idx) {
+            var dotColor = tc.status === 'AC' ? '#16a34a' : (tc.status === 'WA' || tc.status === 'TLE' || tc.status === 'RTE' ? '#dc2626' : '#0284c7');
+            var dotHtml = tc.status ? '<span class="tc-tab-status-dot" style="background:' + dotColor + '"></span> ' : '';
             var $btn = $('<button type="button" class="tc-tab-btn" role="tab"></button>')
                 .attr('id', 'tc-tab-' + idx)
                 .attr('aria-selected', idx === state.activeTab ? 'true' : 'false')
                 .toggleClass('active', idx === state.activeTab)
-                .text('Test ' + (idx + 1));
-
-            if (tc.status) {
-                var dotColor = tc.status === 'AC' ? '#16a34a' : (tc.status === 'WA' || tc.status === 'TLE' || tc.status === 'RTE' ? '#dc2626' : '#0284c7');
-                $btn.prepend($('<span class="tc-tab-status-dot"></span>').css('background', dotColor));
-            }
+                .html(dotHtml + '<span class="tc-tab-label">Test ' + (idx + 1) + '</span>');
 
             $btn.on('click', function() {
                 selectTab(idx);
@@ -340,8 +337,15 @@
 
     /* Initialize everything on page load */
     $(function() {
+        $('body').addClass('body-live-ide-wide');
+        $('#content').addClass('content-live-ide-wide');
+
         initResizer();
         renderTabs();
+
+        $(window).on('resize', function() {
+            if (window.ace_source) window.ace_source.resize();
+        });
 
         $('#btn-add-testcase').on('click', addTestcase);
         $('#btn-toggle-drawer').on('click', toggleDrawer);

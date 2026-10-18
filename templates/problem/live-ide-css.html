@@ -1,16 +1,34 @@
 <style>
-/* Live IDE Split View & Responsive Layout */
+/* Full Wide Layout for Problem Detail with Live IDE */
+#content,
+body.body-live-ide-wide #content,
+#content.content-live-ide-wide,
+#content:has(#live-ide-container) {
+    width: 98% !important;
+    max-width: calc(100vw - 24px) !important;
+    margin: 60px auto 8px auto !important;
+    padding: 0 4px !important;
+}
+
+.problem-title {
+    margin-bottom: 2px !important;
+}
+
+#content > hr {
+    margin: 4px 0 6px 0 !important;
+}
+
 #live-ide-container {
     display: flex;
     flex-direction: row;
-    height: calc(100vh - 110px);
-    min-height: 650px;
+    height: calc(100vh - 128px);
+    min-height: 580px;
     width: 100%;
     border-radius: 6px;
     overflow: hidden;
     background: #fff;
     border: 1px solid #dcdcdc;
-    margin: 8px 0 20px 0;
+    margin: 0;
     box-sizing: border-box;
 }
 
@@ -22,16 +40,16 @@
 }
 
 #live-pane-left {
-    flex: 0 0 50%;
+    flex: 0 0 42%;
     min-width: 320px;
-    max-width: 80%;
+    max-width: 75%;
     border-right: 1px solid #e0e0e0;
     background: #fafafa;
 }
 
 #live-pane-right {
     flex: 1 1 0;
-    min-width: 340px;
+    min-width: 450px;
     background: #fff;
 }
 
@@ -191,25 +209,25 @@
     flex: 1 1 auto;
     position: relative;
     overflow: hidden;
-    min-height: 250px;
-}
-
-.live-editor-container #problem_submit {
+    min-height: 200px;
     height: 100%;
     display: flex;
     flex-direction: column;
 }
 
-.live-editor-container #submit-wrapper {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-.live-editor-container #editor {
+.live-editor-container #problem_submit,
+.live-editor-container #submit-wrapper,
+.live-editor-container #editor,
+.live-editor-container .django-ace-editor {
     height: 100% !important;
+    max-height: 100% !important;
     display: flex !important;
-    flex-direction: column;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
 }
 
 .live-editor-container #editor > div:first-child,
@@ -222,13 +240,27 @@
 .live-editor-container .django-ace-widget {
     flex: 1 1 auto !important;
     height: 100% !important;
+    max-height: 100% !important;
     width: 100% !important;
+    position: relative !important;
+    display: block !important;
 }
 
 .live-editor-container #ace_source {
     height: 100% !important;
     width: 100% !important;
     font-size: 14px;
+    position: relative !important;
+}
+
+.live-editor-container #ace_source > div {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    height: 100% !important;
+    width: 100% !important;
 }
 
 /* CP Editor style Testcase Drawer */
@@ -238,12 +270,14 @@
     flex-direction: column;
     border-top: 1px solid #cbd5e1;
     background: #f8fafc;
-    transition: flex-basis 0.2s ease;
+    transition: flex-basis 0.15s ease;
     overflow: hidden;
 }
 
 .testcase-drawer.collapsed {
     flex: 0 0 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
 }
 
 .drawer-header {
@@ -267,33 +301,36 @@
 .tabs-list {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 4px;
 }
 
 .tc-tab-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: #475569;
-    background: transparent;
-    border: none;
-    border-bottom: 2px solid transparent;
-    cursor: pointer;
-    white-space: nowrap;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 6px 14px !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    color: #475569 !important;
+    background: #e2e8f0 !important;
+    border: 1px solid #cbd5e1 !important;
+    border-bottom: none !important;
+    border-radius: 4px 4px 0 0 !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    line-height: 1.2 !important;
 }
 
 .tc-tab-btn:hover {
-    color: #0f172a;
-    background: #e2e8f0;
+    color: #0f172a !important;
+    background: #cbd5e1 !important;
 }
 
 .tc-tab-btn.active {
-    color: #0284c7;
-    border-bottom-color: #0284c7;
-    background: #fff;
+    color: #0284c7 !important;
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    border-bottom: 2px solid #0284c7 !important;
 }
 
 .tc-tab-status-dot {
@@ -301,21 +338,23 @@
     height: 8px;
     border-radius: 50%;
     display: inline-block;
+    flex-shrink: 0;
 }
 
 .tab-btn-add {
-    padding: 4px 8px;
-    border: 1px dashed #94a3b8;
-    background: #fff;
-    border-radius: 4px;
-    color: #475569;
-    cursor: pointer;
-    font-size: 0.8rem;
-    margin-left: 4px;
+    padding: 4px 10px !important;
+    border: 1px dashed #94a3b8 !important;
+    background: #fff !important;
+    border-radius: 4px !important;
+    color: #475569 !important;
+    cursor: pointer !important;
+    font-size: 0.85rem !important;
+    margin-left: 6px !important;
 }
 .tab-btn-add:hover {
-    border-color: #0284c7;
-    color: #0284c7;
+    border-color: #0284c7 !important;
+    color: #0284c7 !important;
+    background: #f0f9ff !important;
 }
 
 .drawer-header-actions {
@@ -335,10 +374,10 @@
 .drawer-body {
     flex: 1 1 auto;
     overflow-y: auto;
-    padding: 10px 14px;
+    padding: 8px 12px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
 /* Testcase Panel Inputs / Outputs */
@@ -368,7 +407,6 @@
 
 .tc-textarea {
     width: 100%;
-    height: 70px;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     font-size: 0.85rem;
     padding: 6px 8px;
@@ -377,6 +415,14 @@
     background: #fff;
     resize: vertical;
     box-sizing: border-box;
+}
+
+#tc-input, #tc-expected {
+    height: 55px;
+}
+
+#tc-actual {
+    height: 130px;
 }
 
 .tc-textarea:focus {
@@ -419,6 +465,12 @@
 }
 
 /* Compilation Error Box */
+.compile-error-panel.hidden,
+#live-compile-error.hidden,
+.hidden {
+    display: none !important;
+}
+
 .compile-error-panel {
     background: #fef2f2;
     border: 1px solid #fecaca;
