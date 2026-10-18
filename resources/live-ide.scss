@@ -1573,29 +1573,36 @@ body:has(#live-ide-container) {
     position: fixed;
     top: 0;
     left: 0;
+    right: 0;
+    bottom: 0;
     width: 100vw;
     height: 100vh;
     z-index: 99999;
+    align-items: center;
+    justify-content: center;
 
     &.active {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
 }
 
 .live-modal-overlay {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
     background: rgba(15, 23, 42, 0.6);
     backdrop-filter: blur(2px);
 }
 
 .live-modal-dialog {
     position: relative;
+    margin: auto;
     width: 86vw;
     max-width: 1200px;
     height: 84vh;
