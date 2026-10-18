@@ -1,5 +1,5 @@
 import functools
-from datetime import timezone
+from datetime import datetime as datetime_type, timezone
 
 from django.template.defaultfilters import date, time
 from django.templatetags.tz import localtime
@@ -12,10 +12,10 @@ from . import registry
 
 def localtime_wrapper(func):
     @functools.wraps(func)
-    def wrapper(datetime, *args, **kwargs):
-        if getattr(datetime, 'convert_to_local_time', True):
-            datetime = localtime(datetime)
-        return func(datetime, *args, **kwargs)
+    def wrapper(value, *args, **kwargs):
+        if isinstance(value, datetime_type) and getattr(value, 'convert_to_local_time', True):
+            value = localtime(value)
+        return func(value, *args, **kwargs)
 
     return wrapper
 
