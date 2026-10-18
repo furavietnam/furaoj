@@ -855,27 +855,56 @@ body:has(#live-ide-container) {
     flex: 1 1 auto;
     position: relative;
     overflow: hidden;
-    min-height: 200px;
+    min-height: 250px;
     height: 100%;
 
-    #problem_submit,
-    .form-area,
-    #source-tab,
-    #id_source_ace {
+    #problem_submit {
         height: 100%;
-        width: 100%;
+        display: flex;
+        flex-direction: column;
         margin: 0;
         padding: 0;
         border: none;
+        background: transparent;
     }
 
-    .form-area,
-    #problem_submit > hr,
-    #problem_submit > .submit-btn-row,
-    #problem_submit > table,
-    #problem_submit > div:not(#source-tab),
-    #problem_submit > input[type=submit] {
+    #submit-wrapper {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        padding: 0;
+    }
+
+    #editor {
+        height: 100% !important;
+        display: flex !important;
+        flex-direction: column;
+        margin: 0;
+        padding: 0;
+    }
+
+    #editor > div:first-child,
+    hr,
+    #language,
+    .submit-bar {
         display: none !important;
+    }
+
+    .django-ace-widget {
+        flex: 1 1 auto !important;
+        height: 100% !important;
+        width: 100% !important;
+        margin: 0;
+        padding: 0;
+    }
+
+    #ace_source {
+        height: 100% !important;
+        width: 100% !important;
+        font-size: 14px;
+        margin: 0;
+        padding: 0;
     }
 }
 
