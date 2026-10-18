@@ -1018,6 +1018,38 @@ body:has(#live-ide-container) {
 }
 
 // 10. Testcase Drawer (CP Editor Drawer)
+#live-drawer-resizer {
+    height: 7px;
+    width: 100%;
+    background: var(--live-resizer-bg);
+    cursor: row-resize;
+    user-select: none;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+    z-index: 5;
+    position: relative;
+
+    &:hover, &:focus, &.dragging {
+        background: var(--live-resizer-hover);
+        outline: none;
+
+        .drawer-resizer-handle {
+            background: #ffffff;
+        }
+    }
+
+    .drawer-resizer-handle {
+        width: 36px;
+        height: 2px;
+        background: #94a3b8;
+        border-radius: 1px;
+        transition: background 0.2s ease;
+    }
+}
+
 .testcase-drawer {
     display: flex;
     flex-direction: column;
@@ -1029,6 +1061,10 @@ body:has(#live-ide-container) {
     transition: height 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     z-index: 4;
+
+    &.is-resizing {
+        transition: none !important;
+    }
 
     &.collapsed {
         height: 42px !important;

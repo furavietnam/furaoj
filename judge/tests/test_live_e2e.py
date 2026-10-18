@@ -31,6 +31,7 @@ class LiveIdeEndToEndTestCase(TestCase):
         res = self.client.get(page_url)
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, 'live-ide-container')
+        self.assertContains(res, 'live-drawer-resizer')
         self.assertContains(res, 'live-testcase-drawer')
         self.assertContains(res, 'btn-tab-console')
         self.assertContains(res, 'console-panel')

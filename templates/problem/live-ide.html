@@ -308,6 +308,12 @@
             {% include "problem/submit-form.html" %}
         </div>
 
+        <!-- Drawer Vertical Resizer Bar -->
+        <div id="live-drawer-resizer" class="live-drawer-resizer" role="separator" aria-orientation="horizontal" tabindex="0"
+             aria-label="{{ _('Resize testcase drawer height') }}" title="{{ _('Drag to resize drawer height (or use Up/Down arrows)') }}">
+            <div class="drawer-resizer-handle"></div>
+        </div>
+
         <!-- Testcases Drawer -->
         {% include "problem/live-testcases.html" %}
     </section>

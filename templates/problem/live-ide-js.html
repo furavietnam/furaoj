@@ -476,6 +476,148 @@
     }
 
     /* ========================================================
+       Drawer Resizer (Vertical resize for bottom testcase drawer)
+       ======================================================== */
+    function initDrawerResizer() {
+        var $resizer = $('#live-drawer-resizer');
+        var $drawer = $('#live-testcase-drawer');
+        var $paneRight = $('#live-pane-right');
+        var $editorContainer = $('#live-editor-container');
+        var $drawerContent = $('#drawer-content-area');
+        if (!$resizer.length || !$drawer.length || !$paneRight.length) return;
+
+        // Restore saved drawer height if available
+        var savedH = localStorage.getItem('live_ide_drawer_height_' + problemCode) || localStorage.getItem('live_ide_drawer_height');
+        if (savedH) {
+            var val = parseInt(savedH, 10);
+            if (!isNaN(val) && val >= 70 && val <= 1500) {
+                $drawer.css('height', val + 'px');
+            }
+        }
+
+        var isDragging = false;
+        var startY = 0;
+        var startHeight = 0;
+
+        function onDragStart(clientY) {
+            isDragging = true;
+            startY = clientY;
+            startHeight = $drawer.outerHeight();
+            $drawer.addClass('is-resizing');
+            $resizer.addClass('dragging');
+            $editorContainer.css('pointer-events', 'none');
+            $drawerContent.css('pointer-events', 'none');
+            $('body').css({ cursor: 'row-resize', userSelect: 'none' });
+        }
+
+        function onDragMove(clientY) {
+            if (!isDragging) return;
+            var deltaY = startY - clientY; // Dragging UP increases drawer height
+            var paneHeight = $paneRight.height();
+            var minH = 42; // Collapsed header height
+            var maxH = Math.max(120, paneHeight - 80); // Keep at least 80px for code editor
+            var newHeight = Math.round(Math.max(minH, Math.min(maxH, startHeight + deltaY)));
+
+            if (newHeight > 55 && state.isDrawerCollapsed) {
+                state.isDrawerCollapsed = false;
+                $drawer.removeClass('collapsed');
+                $('#btn-toggle-drawer i').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+            } else if (newHeight <= 55 && !state.isDrawerCollapsed) {
+                state.isDrawerCollapsed = true;
+                $drawer.addClass('collapsed');
+                $('#btn-toggle-drawer i').removeClass('fa-chevron-down').addClass('fa-chevron-up');
+            }
+
+            $drawer.css('height', newHeight + 'px');
+            resizeAceEditor();
+        }
+
+        function onDragEnd() {
+            if (!isDragging) return;
+            isDragging = false;
+            $drawer.removeClass('is-resizing');
+            $resizer.removeClass('dragging');
+            $editorContainer.css('pointer-events', '');
+            $drawerContent.css('pointer-events', '');
+            $('body').css({ cursor: '', userSelect: '' });
+
+            var finalHeight = $drawer.outerHeight();
+            if (finalHeight > 55) {
+                localStorage.setItem('live_ide_drawer_height_' + problemCode, finalHeight);
+                localStorage.setItem('live_ide_drawer_height', finalHeight);
+            }
+            resizeAceEditor();
+        }
+
+        $resizer.on('mousedown', function(e) {
+            e.preventDefault();
+            onDragStart(e.pageY);
+        });
+
+        $resizer.on('touchstart', function(e) {
+            if (e.originalEvent.touches && e.originalEvent.touches.length === 1) {
+                onDragStart(e.originalEvent.touches[0].pageY);
+            }
+        });
+
+        $(document).on('mousemove', function(e) {
+            if (isDragging) {
+                onDragMove(e.pageY);
+            }
+        });
+
+        $(document).on('touchmove', function(e) {
+            if (isDragging && e.originalEvent.touches && e.originalEvent.touches.length === 1) {
+                onDragMove(e.originalEvent.touches[0].pageY);
+            }
+        });
+
+        $(document).on('mouseup', function() {
+            if (isDragging) {
+                onDragEnd();
+            }
+        });
+
+        $(document).on('touchend touchcancel', function() {
+            if (isDragging) {
+                onDragEnd();
+            }
+        });
+
+        $resizer.on('dblclick', function() {
+            toggleDrawer();
+        });
+
+        $resizer.on('keydown', function(e) {
+            var curHeight = $drawer.outerHeight();
+            var paneHeight = $paneRight.height();
+            var maxH = Math.max(120, paneHeight - 80);
+            var step = e.shiftKey ? 50 : 20;
+
+            if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                var newH = Math.min(maxH, curHeight + step);
+                if (state.isDrawerCollapsed) {
+                    state.isDrawerCollapsed = false;
+                    $drawer.removeClass('collapsed');
+                    $('#btn-toggle-drawer i').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+                }
+                $drawer.css('height', newH + 'px');
+                resizeAceEditor();
+                localStorage.setItem('live_ide_drawer_height_' + problemCode, newH);
+                localStorage.setItem('live_ide_drawer_height', newH);
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                var newH = Math.max(70, curHeight - step);
+                $drawer.css('height', newH + 'px');
+                resizeAceEditor();
+                localStorage.setItem('live_ide_drawer_height_' + problemCode, newH);
+                localStorage.setItem('live_ide_drawer_height', newH);
+            }
+        });
+    }
+
+    /* ========================================================
        Testcase Tabs & Runner
        ======================================================== */
     function renderTabs() {
@@ -972,6 +1114,15 @@
         var $drawer = $('#live-testcase-drawer');
         state.isDrawerCollapsed = !state.isDrawerCollapsed;
         $drawer.toggleClass('collapsed', state.isDrawerCollapsed);
+        if (!state.isDrawerCollapsed) {
+            var curH = parseInt($drawer.css('height'), 10);
+            if (isNaN(curH) || curH <= 55) {
+                var savedH = localStorage.getItem('live_ide_drawer_height_' + problemCode) || localStorage.getItem('live_ide_drawer_height');
+                var restoreH = parseInt(savedH, 10);
+                if (isNaN(restoreH) || restoreH <= 55) restoreH = 240;
+                $drawer.css('height', restoreH + 'px');
+            }
+        }
         var $icon = $('#btn-toggle-drawer i');
         $icon.toggleClass('fa-chevron-up', state.isDrawerCollapsed).toggleClass('fa-chevron-down', !state.isDrawerCollapsed);
         setTimeout(resizeAceEditor, 210);
@@ -987,6 +1138,7 @@
         initCommentsModal();
         initDonutChart();
         initResizer();
+        initDrawerResizer();
         renderTabs();
         initThemeWatchers();
 
