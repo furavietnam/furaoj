@@ -1,35 +1,106 @@
 <style>
-/* Full Wide Layout for Problem Detail with Live IDE */
+/* Full Wide and Compact Viewport Layout for Problem Detail with Live IDE */
+#page-container > br:first-of-type {
+    display: none !important;
+}
+
+body.body-live-ide-wide,
+body:has(#live-ide-container) {
+    overflow: hidden !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+}
+
+body.body-live-ide-wide #page-container,
+body:has(#live-ide-container) #page-container {
+    height: 100vh !important;
+    max-height: 100vh !important;
+    min-height: 100vh !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding-bottom: 0 !important;
+}
+
 #content,
 body.body-live-ide-wide #content,
 #content.content-live-ide-wide,
 #content:has(#live-ide-container) {
-    width: 98% !important;
-    max-width: calc(100vw - 24px) !important;
-    margin: 60px auto 8px auto !important;
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    width: 99% !important;
+    max-width: calc(100vw - 16px) !important;
+    margin: 48px auto 0 auto !important;
     padding: 0 4px !important;
+    overflow: hidden !important;
+    min-height: 0 !important;
 }
 
 .problem-title {
-    margin-bottom: 2px !important;
+    margin: 2px 0 4px 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+}
+
+.problem-title h2 {
+    margin: 0 !important;
+    font-size: 1.25rem !important;
+    line-height: 1.2 !important;
+}
+
+.problem-title .title-state {
+    font-size: 1.4em !important;
+    margin-top: 0 !important;
 }
 
 #content > hr {
-    margin: 4px 0 6px 0 !important;
+    display: none !important;
+}
+
+#content-body {
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    min-height: 0 !important;
+    height: 100% !important;
 }
 
 #live-ide-container {
     display: flex;
     flex-direction: row;
-    height: calc(100vh - 128px);
-    min-height: 580px;
+    flex: 1 1 auto !important;
+    height: 100% !important;
+    min-height: 0 !important;
     width: 100%;
     border-radius: 6px;
     overflow: hidden;
     background: #fff;
     border: 1px solid #dcdcdc;
-    margin: 0;
+    margin: 0 !important;
     box-sizing: border-box;
+}
+
+/* Compact Bottom Footer right below Live IDE container */
+body.body-live-ide-wide footer,
+body:has(#live-ide-container) footer {
+    position: relative !important;
+    height: 22px !important;
+    line-height: 22px !important;
+    font-size: 0.72rem !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+}
+
+body.body-live-ide-wide footer br,
+body:has(#live-ide-container) footer br {
+    display: none !important;
 }
 
 .live-pane {
@@ -108,6 +179,20 @@ body.body-live-ide-wide #content,
     font-size: 0.85rem;
     color: #334155;
     font-weight: 500;
+}
+
+.meta-badge-pdf {
+    color: #dc2626 !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease-in-out;
+}
+.meta-badge-pdf:hover {
+    background: #fef2f2 !important;
+    border-color: #f87171 !important;
+    color: #b91c1c !important;
+    text-decoration: none !important;
 }
 
 .problem-statement-scroll {
@@ -499,9 +584,20 @@ body.body-live-ide-wide #content,
 
 /* Responsive Breakpoints */
 @media (max-width: 1024px) {
+    body.body-live-ide-wide,
+    body:has(#live-ide-container),
+    body.body-live-ide-wide #page-container,
+    body:has(#live-ide-container) #page-container,
+    #content,
+    #content-body {
+        overflow: visible !important;
+        height: auto !important;
+        max-height: none !important;
+    }
     #live-ide-container {
         flex-direction: column;
-        height: auto;
+        height: auto !important;
+        min-height: auto !important;
     }
     #live-pane-left, #live-pane-right {
         flex: 1 1 auto;

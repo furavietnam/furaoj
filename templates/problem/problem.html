@@ -149,19 +149,27 @@
                 </span>
             </span>
         {% endif %}
-        <span class="spacer"></span>
-        {% if has_pdf_render %}
-            <a href="{{ url('problem_pdf', problem.code) }}" class="view-pdf">
-        {% else %}
-        <a id="pdf_button" class="view-pdf" href='#'>
+        {% if not (request.user.is_authenticated and form) %}
+            <span class="spacer"></span>
+            {% if has_pdf_render %}
+                <a href="{{ url('problem_pdf', problem.code) }}" class="view-pdf">
+            {% else %}
+            <a id="pdf_button" class="view-pdf" href='#'>
+            {% endif %}
+                <span class="pdf-icon">
+                    <span class="fa fa-file-pdf-o pdf-icon-logo"></span>
+                    <span class="pdf-icon-bar"></span>
+                </span>
+                {{ _('View as PDF') }}
+            </a>
         {% endif %}
-            <span class="pdf-icon">
-                <span class="fa fa-file-pdf-o pdf-icon-logo"></span>
-                <span class="pdf-icon-bar"></span>
-            </span>
-            {{ _('View as PDF') }}
-        </a>
     </div>
+{% endblock %}
+
+{% block title_ruler %}
+    {% if not (request.user.is_authenticated and form) %}
+        <hr>
+    {% endif %}
 {% endblock %}
 
 {% block info_float %}

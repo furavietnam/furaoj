@@ -25,6 +25,15 @@
                         <i class="fa fa-terminal" aria-hidden="true"></i> stdin / stdout
                     </span>
                 {% endif %}
+                {% if has_pdf_render %}
+                    <a href="{{ url('problem_pdf', problem.code) }}" class="meta-badge meta-badge-pdf" target="_blank" title="{{ _('View as PDF') }}">
+                        <i class="fa fa-file-pdf-o text-danger" aria-hidden="true"></i> {{ _('PDF') }}
+                    </a>
+                {% else %}
+                    <a id="pdf_button" href="#" class="meta-badge meta-badge-pdf" title="{{ _('View as PDF') }}">
+                        <i class="fa fa-file-pdf-o text-danger" aria-hidden="true"></i> {{ _('PDF') }}
+                    </a>
+                {% endif %}
             </div>
             {% if contest_problem and contest_problem.contest and submission_limit %}
                 <div class="submissions-remaining-pill">
