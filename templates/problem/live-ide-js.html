@@ -25,6 +25,20 @@
         return token;
     }
 
+    function getAceEditor() {
+        if (window.ace_source && typeof window.ace_source.getSession === 'function') {
+            return window.ace_source;
+        }
+        return null;
+    }
+
+    function resizeAceEditor() {
+        var editor = getAceEditor();
+        if (editor && typeof editor.resize === 'function') {
+            editor.resize();
+        }
+    }
+
     /* Resizer logic */
     function initResizer() {
         var $resizer = $('#live-pane-resizer');
@@ -51,7 +65,7 @@
             var pointerX = e.pageX - containerOffset;
             var pct = Math.max(20, Math.min(80, (pointerX / containerWidth) * 100));
             $left.css('flex', '0 0 ' + pct + '%');
-            if (window.ace_source) window.ace_source.resize();
+            resizeAceEditor();
         });
 
         $(document).on('mouseup', function() {
@@ -69,11 +83,11 @@
             if (e.key === 'ArrowLeft') {
                 curPct = Math.max(20, curPct - 5);
                 $left.css('flex', '0 0 ' + curPct + '%');
-                if (window.ace_source) window.ace_source.resize();
+                resizeAceEditor();
             } else if (e.key === 'ArrowRight') {
                 curPct = Math.min(80, curPct + 5);
                 $left.css('flex', '0 0 ' + curPct + '%');
-                if (window.ace_source) window.ace_source.resize();
+                resizeAceEditor();
             }
         });
     }
@@ -192,7 +206,8 @@
     /* Build & Run execution */
     function runTests() {
         if (state.isRunning) return;
-        var code = window.ace_source ? window.ace_source.getSession().getValue() : $('#id_source').val();
+        var editor = getAceEditor();
+        var code = editor ? editor.getSession().getValue() : $('#id_source').val();
         if (!code || !code.trim()) {
             alert('{{ _("Vui lòng nhập mã nguồn trước khi chạy.") }}');
             return;
@@ -261,7 +276,8 @@
 
     /* Submit solution */
     function submitSolution() {
-        var code = window.ace_source ? window.ace_source.getSession().getValue() : $('#id_source').val();
+        var editor = getAceEditor();
+        var code = editor ? editor.getSession().getValue() : $('#id_source').val();
         $('#id_source').val(code);
         $('#id_language').val($('#live-lang-select').val()).trigger('change');
         saveDraftImmediate();
@@ -277,7 +293,8 @@
 
     function saveDraftImmediate() {
         clearTimeout(state.saveTimeout);
-        var code = window.ace_source ? window.ace_source.getSession().getValue() : $('#id_source').val();
+        var editor = getAceEditor();
+        var code = editor ? editor.getSession().getValue() : $('#id_source').val();
         var payload = {
             language: $('#live-lang-select').val(),
             source: code || '',
@@ -301,8 +318,13 @@
     function loadDraft() {
         $.get(draftUrl, function(data) {
             if (data && data.status === 'OK') {
-                if (data.source && window.ace_source) {
-                    window.ace_source.getSession().setValue(data.source);
+                var editor = getAceEditor();
+                if (data.source) {
+                    if (editor) {
+                        editor.getSession().setValue(data.source);
+                    } else {
+                        $('#id_source').val(data.source);
+                    }
                 }
                 if (data.language) {
                     $('#live-lang-select').val(data.language).trigger('change');
@@ -332,7 +354,7 @@
         $drawer.toggleClass('collapsed', state.isDrawerCollapsed);
         var $icon = $('#btn-toggle-drawer i');
         $icon.toggleClass('fa-chevron-up', state.isDrawerCollapsed).toggleClass('fa-chevron-down', !state.isDrawerCollapsed);
-        if (window.ace_source) setTimeout(function() { window.ace_source.resize(); }, 210);
+        setTimeout(resizeAceEditor, 210);
     }
 
     /* Initialize everything on page load */
@@ -344,7 +366,7 @@
         renderTabs();
 
         $(window).on('resize', function() {
-            if (window.ace_source) window.ace_source.resize();
+            resizeAceEditor();
         });
 
         $('#btn-add-testcase').on('click', addTestcase);
@@ -356,8 +378,9 @@
             var selectedAce = $(this).find('option:selected').data('ace');
             var selectedId = $(this).val();
             $('#id_language').val(selectedId).trigger('change');
-            if (window.ace_source && selectedAce) {
-                window.ace_source.getSession().setMode('ace/mode/' + selectedAce);
+            var editor = getAceEditor();
+            if (editor && selectedAce) {
+                editor.getSession().setMode('ace/mode/' + selectedAce);
             }
             scheduleSaveDraft();
         });
@@ -373,18 +396,31 @@
             }
         });
 
-        // Bind Ace change listener once initialized
+        function setupAceEditor(editor) {
+            if (!editor || editor._live_ide_initialized) return;
+            editor._live_ide_initialized = true;
+
+            editor.getSession().on('change', function() {
+                scheduleSaveDraft();
+            });
+            loadDraft();
+            editor.resize();
+        }
+
+        // 1. Listen for Django Ace's custom event
+        $('#ace_source').on('ace_load', function(e, editor) {
+            setupAceEditor(editor);
+        });
+
+        // 2. Poll fallback for getAceEditor()
         var checkAceInterval = setInterval(function() {
-            if (window.ace_source) {
+            var editor = getAceEditor();
+            if (editor) {
                 clearInterval(checkAceInterval);
-                window.ace_source.on('change', function() {
-                    scheduleSaveDraft();
-                });
-                loadDraft();
-                window.ace_source.resize();
+                setupAceEditor(editor);
             }
-        }, 150);
-        setTimeout(function() { clearInterval(checkAceInterval); }, 5000);
+        }, 100);
+        setTimeout(function() { clearInterval(checkAceInterval); }, 8000);
     });
 })(jQuery);
 </script>

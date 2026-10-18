@@ -66,15 +66,38 @@
     {% endif %}
     <script type="text/javascript">
         $(function() {
-            $('#pdf_button').click(async function(e) {
+            $(document).on('click', '#pdf_button', async function(e) {
                 e.preventDefault();
-                if (!$('#raw_problem').attr("src"))
-                    $('#raw_problem').attr("src", "{{problem.code}}/raw");
+                var $iframe = $('#raw_problem');
+                if (!$iframe.length) {
+                    window.open("{{ problem.code }}/raw", "_blank");
+                    return;
+                }
+                if (!$iframe.attr("src")) {
+                    $iframe.attr("src", "{{ problem.code }}/raw");
+                }
+                var rawFrame = window.frames['raw_problem'] || $iframe[0].contentWindow;
+                if (!rawFrame) {
+                    window.open("{{ problem.code }}/raw", "_blank");
+                    return;
+                }
 
-                while(!$('.math-loaded', frames['raw_problem'].document).length) {
+                var maxWait = 40;
+                while (maxWait-- > 0) {
+                    try {
+                        if (rawFrame.document && $('.math-loaded', rawFrame.document).length) {
+                            break;
+                        }
+                    } catch (err) {
+                        break;
+                    }
                     await new Promise(r => setTimeout(r, 200));
                 }
-                frames['raw_problem'].print();
+                try {
+                    rawFrame.print();
+                } catch (err) {
+                    window.open("{{ problem.code }}/raw", "_blank");
+                }
             });
 
             // Submit modal open/close
