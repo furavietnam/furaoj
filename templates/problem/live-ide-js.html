@@ -197,6 +197,96 @@
     }
 
     /* ========================================================
+       Comments Popup Modal
+       ======================================================== */
+    function initCommentsModal() {
+        window.openCommentsModal = function() {
+            var $modal = $('#live-comments-modal');
+            $modal.fadeIn(150).addClass('active');
+            $('body').addClass('live-modal-open');
+            var loader = $('#comments').data('load-comments');
+            if (typeof loader === 'function') {
+                loader();
+            }
+        };
+
+        window.closeCommentsModal = function() {
+            var $modal = $('#live-comments-modal');
+            $modal.fadeOut(150).removeClass('active');
+            $('body').removeClass('live-modal-open');
+        };
+
+        $(document).on('click', '#btn-open-comments-modal', function(e) {
+            e.preventDefault();
+            window.openCommentsModal();
+        });
+
+        $(document).on('click', '#btn-close-comments-modal, #live-comments-modal-overlay', function(e) {
+            e.preventDefault();
+            window.closeCommentsModal();
+        });
+
+        $(document).on('keydown', function(e) {
+            if (e.key === 'Escape' && $('#live-comments-modal').hasClass('active')) {
+                window.closeCommentsModal();
+            }
+        });
+
+        // Auto-open if URL has #comments or #comment-<id>, or if there are comment form errors
+        var hash = window.location.hash;
+        if (hash === '#comments' || /^#comment-\d+$/.test(hash) || $('#comments').data('comments-preloaded')) {
+            setTimeout(window.openCommentsModal, 200);
+        }
+
+        // Handle AJAX comment submission inside modal
+        $(document).on('submit', '#comments form.comment-submit-form', function(e) {
+            e.preventDefault();
+            var $form = $(this);
+            var $btn = $form.find('button[type="submit"], input[type="submit"]');
+            var originalBtnHtml = $btn.html() || $btn.val();
+            $btn.prop('disabled', true);
+            if ($btn.is('button')) {
+                $btn.html('<i class="fa fa-spinner fa-spin"></i> {{ _("Posting...") }}');
+            }
+
+            saveDraftImmediate();
+
+            $.ajax({
+                url: window.location.pathname,
+                method: 'POST',
+                data: $form.serialize(),
+                headers: {
+                    'X-CSRFToken': getCsrfToken()
+                },
+                success: function(data) {
+                    var $resp = $(data);
+                    var $newComments = $resp.find('#comments');
+                    if ($newComments.length && $newComments.find('#form-errors').length) {
+                        $('#comments').html($newComments.html());
+                    } else {
+                        var fetchUrl = $('#comments').data('comments-url');
+                        if (fetchUrl) {
+                            $('#comments').html('<div class="comments-loading">{{ _("Loading...") }}</div>');
+                            $('#comments').load(fetchUrl, function() {
+                                if (window.MathJax && MathJax.typesetPromise) {
+                                    MathJax.typesetPromise([$('#comments')[0]]);
+                                }
+                            });
+                        }
+                    }
+                },
+                error: function() {
+                    $btn.prop('disabled', false);
+                    if ($btn.is('button')) {
+                        $btn.html(originalBtnHtml);
+                    }
+                    alert('{{ _("Error posting comment.") }}');
+                }
+            });
+        });
+    }
+
+    /* ========================================================
        Interactive Submission Stats Donut Chart
        ======================================================== */
     function getVerdictColors() {
@@ -894,6 +984,7 @@
 
         initSidebar();
         initSubmissionsModal();
+        initCommentsModal();
         initDonutChart();
         initResizer();
         renderTabs();

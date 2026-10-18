@@ -104,6 +104,21 @@
                 </div>
             </div>
 
+            <!-- Comments Section -->
+            <div class="sidebar-section sidebar-comments-section">
+                <div class="sidebar-section-title">
+                    <i class="fa fa-comments" aria-hidden="true"></i>
+                    <span>{{ _('Comments') }}</span>
+                </div>
+                <div class="sidebar-menu-list">
+                    <button type="button" id="btn-open-comments-modal" class="sidebar-menu-link sidebar-comments-btn" title="{{ _('Comments') }} - {{ problem.code }}">
+                        <i class="fa fa-commenting-o fa-fw" aria-hidden="true"></i>
+                        <span>{{ _('Comments') }}</span>
+                        <i class="fa fa-external-link sidebar-link-ext" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+
             <!-- Admin Panel Section (Only visible to can_edit_problem or staff) -->
             {% if can_edit_problem or (request.user.is_staff and (perms.judge.change_problem or request.user.is_superuser or has_tickets)) %}
                 <div id="live-sidebar-admin-section" class="sidebar-section sidebar-admin-section">
@@ -300,4 +315,36 @@
 
     <!-- Hidden iframe for PDF generation / printing -->
     <iframe name="raw_problem" id="raw_problem" style="display:none;visibility:hidden;width:0;height:0;position:absolute;left:-999em;"></iframe>
+
+    <!-- Comments Modal Popup -->
+    <div id="live-comments-modal" class="live-modal live-comments-modal" role="dialog" aria-modal="true" aria-labelledby="live-comments-modal-title" style="display: none;">
+        <div class="live-modal-overlay" id="live-comments-modal-overlay"></div>
+        <div class="live-modal-dialog live-comments-dialog">
+            <header class="live-modal-header">
+                <h3 id="live-comments-modal-title">
+                    <i class="fa fa-comments" aria-hidden="true"></i>
+                    <span>{{ _('Comments') }} - {{ problem.name }} ({{ problem.code }})</span>
+                </h3>
+                <div class="live-modal-actions">
+                    <button type="button" class="btn-modal-close" id="btn-close-comments-modal" aria-label="{{ _('Close') }}" title="{{ _('Close (Esc)') }}">
+                        <i class="fa fa-times" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </header>
+            <div class="live-modal-body live-comments-modal-body">
+                <div id="comments"
+                     data-comments-url="{{ url('problem_comments', problem.code) }}"
+                     data-comments-trigger="auto"
+                     data-comments-preloaded="{{ 'true' if comment_form and comment_form.errors else 'false' }}">
+                    {% if comment_form and comment_form.errors %}
+                        {% with comment_warn_code=true %}
+                            {% include "comments/list.html" %}
+                        {% endwith %}
+                    {% else %}
+                        <div class="comments-loading">{{ _('Loading...') }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

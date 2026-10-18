@@ -35,6 +35,10 @@ class LiveIdeEndToEndTestCase(TestCase):
         self.assertContains(res, 'btn-tab-console')
         self.assertContains(res, 'console-panel')
         self.assertContains(res, 'console-log-content')
+        self.assertContains(res, 'btn-open-comments-modal')
+        self.assertContains(res, 'live-comments-modal')
+        self.assertContains(res, 'id="comments"')
+        self.assertContains(res, reverse('problem_comments', args=[self.problem.code]))
 
         # Save draft via draft endpoint
         draft_url = reverse('problem_draft', args=[self.problem.code])
