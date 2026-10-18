@@ -17,7 +17,7 @@
         var $elem = jQuery(this);
 
         // Merge the defaults and any user defined settings.
-        settings = jQuery.extend({}, defaults, event.data);
+        var settings = jQuery.extend({}, defaults, event.data);
 
         // If object also has click handler, store it and unbind. Taphold will trigger the
         // click itself, rather than normal propagation.

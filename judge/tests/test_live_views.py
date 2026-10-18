@@ -29,6 +29,13 @@ class LiveViewsTestCase(TestCase):
         # Expect redirect to login (302) or 403
         self.assertIn(response.status_code, [302, 403])
 
+    def test_live_run_get_request_handling(self):
+        self.client.login(username='viewuser', password='password123')
+        url = reverse('problem_live_run', args=[self.problem.code])
+        response = self.client.get(url)
+        # Should redirect to problem detail (302) or return 405, NOT crash with 500 AttributeError
+        self.assertIn(response.status_code, [302, 405])
+
     def test_live_run_oversized_payload(self):
         self.client.login(username='viewuser', password='password123')
         url = reverse('problem_live_run', args=[self.problem.code])

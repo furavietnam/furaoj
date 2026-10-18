@@ -1315,6 +1315,12 @@ class ProblemDelete(ProblemMixin, TitleMixin, DetailView):
 
 
 class ProblemLiveRunView(LoginRequiredMixin, ProblemMixin, SingleObjectMixin, View):
+    http_method_names = ['post']
+
+    def get(self, request, *args, **kwargs):
+        problem = self.get_object()
+        return HttpResponseRedirect(reverse('problem_detail', args=[problem.code]))
+
     def post(self, request, *args, **kwargs):
         if len(request.body) > 1048576:
             return JsonResponse({'status': 'ERROR', 'error': 'payload_too_large', 'message': _('Payload exceeds 1MB.')}, status=400)

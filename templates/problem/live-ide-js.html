@@ -900,6 +900,7 @@
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(payload),
+            timeout: 45000,
             headers: {
                 'X-CSRFToken': getCsrfToken()
             },
@@ -978,25 +979,48 @@
                     }
                     appendConsoleLog(tsDone + ' {{ _("Done in") }} ' + duration + 's. {{ _("Passed:") }} ' + passed + '/' + total);
                     renderTabs();
-                } else if (resp.error) {
-                    var errText = stripAnsi(resp.error);
+                } else if (resp.status === 'ERROR' || resp.error || resp.compile_error) {
+                    var errText = stripAnsi(resp.compile_error || resp.error || resp.message || '{{ _("Execution error occurred.") }}');
                     setConsoleBadge('{{ _("Error") }}', 'error');
                     setConsoleStatusDot('error');
                     appendConsoleLog(tsDone + ' [ERROR] ' + errText);
-                    alert('{{ _("Error:") }} ' + errText);
+                    $('#live-compile-error').removeClass('hidden');
+                    $('#live-compile-error-msg').text(errText);
+                    state.testcases.forEach(function(tc) {
+                        tc.status = 'ERROR';
+                    });
+                    selectTab('console');
+                    renderTabs();
+                } else {
+                    setConsoleBadge('{{ _("Error") }}', 'error');
+                    setConsoleStatusDot('error');
+                    appendConsoleLog(tsDone + ' [ERROR] {{ _("Unknown or invalid response from server.") }}');
                     renderTabs();
                 }
             },
-            error: function(xhr) {
+            error: function(xhr, textStatus, errorThrown) {
                 state.isRunning = false;
                 $('#btn-build-run').prop('disabled', false).html('<i class="fa fa-play"></i> <span>{{ _("Build & Run") }}</span>');
                 var tsErr = getTimestamp();
-                var err = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error : '{{ _("Error sending execution request.") }}';
+                var err;
+                if (textStatus === 'timeout') {
+                    err = '{{ _("Execution timed out (45s). The server or sandbox took too long to respond.") }}';
+                } else if (xhr.status === 403) {
+                    err = '{{ _("Permission denied or session expired. Please refresh the page.") }}';
+                } else if (xhr.status === 404) {
+                    err = '{{ _("Problem or live runner endpoint not found.") }}';
+                } else if (xhr.responseJSON && (xhr.responseJSON.error || xhr.responseJSON.message || xhr.responseJSON.compile_error)) {
+                    err = xhr.responseJSON.error || xhr.responseJSON.message || xhr.responseJSON.compile_error;
+                } else {
+                    err = errorThrown || '{{ _("Error sending execution request.") }}';
+                }
                 var cleanErr = stripAnsi(err);
                 setConsoleBadge('{{ _("Error") }}', 'error');
                 setConsoleStatusDot('error');
-                appendConsoleLog(tsErr + ' [SERVER ERROR] ' + cleanErr);
-                alert(cleanErr);
+                appendConsoleLog(tsErr + ' [SERVER ERROR] ' + (xhr.status ? ('HTTP ' + xhr.status + ': ') : '') + cleanErr);
+                $('#live-compile-error').removeClass('hidden');
+                $('#live-compile-error-msg').text(cleanErr);
+                selectTab('console');
                 renderTabs();
             }
         });
