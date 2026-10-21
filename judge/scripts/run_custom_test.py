@@ -57,6 +57,7 @@ try:
         from dmoj.config import ConfigNode
         from dmoj.cptbox.utils import MemoryIO
         from dmoj.error import CompileError, OutputLimitExceeded
+        from dmoj.result import Result
         from dmoj.utils.unicode import utf8bytes
 
         try:
@@ -175,14 +176,18 @@ def main():
                             proc.wait()
                         except Exception:
                             pass
+                        ole_time = round(proc.execution_time or 0.0, 3)
                         results.append({
                             'id': tc_id,
                             'status': 'OLE',
-                            'execution_time': round(proc.execution_time or 0.0, 3),
+                            'time': ole_time,
+                            'execution_time': ole_time,
                             'memory': int(proc.max_memory or 0),
                             'output': '[Output Limit Exceeded - Output truncated]',
+                            'actual': '[Output Limit Exceeded - Output truncated]',
                             'expected': exp if exp is not None else '',
                             'feedback': 'Output limit exceeded (max 64KB)',
+                            'stderr': '',
                         })
                         continue
 
@@ -207,14 +212,48 @@ def main():
                                 except Exception:
                                     pass
 
+                    feedback = ''
+                    is_rte_or_ir = proc.is_rte or proc.is_ir or (proc.returncode is not None and proc.returncode != 0)
+
                     if proc.is_tle:
                         status = 'TLE'
+                        feedback = 'Time Limit Exceeded'
                     elif proc.is_mle:
                         status = 'MLE'
+                        feedback = 'Memory Limit Exceeded'
                     elif proc.is_ole:
                         status = 'OLE'
-                    elif proc.is_rte:
+                        feedback = 'Output Limit Exceeded'
+                    elif is_rte_or_ir:
                         status = 'RTE'
+                        try:
+                            feedback = Result.get_feedback_str(err, proc, executor)
+                        except Exception:
+                            feedback = ''
+
+                        if not feedback:
+                            try:
+                                feedback = executor.parse_feedback_from_stderr(err, proc)
+                            except Exception:
+                                feedback = ''
+
+                        if not feedback:
+                            if getattr(proc, 'protection_fault', None):
+                                try:
+                                    syscall, callname, args, update_errno = proc.protection_fault
+                                    callname = callname.replace('sys_', '', 1)
+                                    feedback = f'{callname} syscall disallowed'
+                                except Exception:
+                                    feedback = 'Disallowed syscall'
+                            elif getattr(proc, 'signal', None):
+                                try:
+                                    import signal
+                                    sig_desc = signal.strsignal(proc.signal)
+                                    feedback = sig_desc if sig_desc else f'Signal {proc.signal}'
+                                except Exception:
+                                    feedback = f'Signal {proc.signal}'
+                            elif proc.returncode is not None and proc.returncode != 0:
+                                feedback = f'Exit code {proc.returncode}'
                     else:
                         if exp is not None and str(exp).strip() != '':
                             norm_out = out_str.strip().split()
@@ -223,24 +262,35 @@ def main():
                         else:
                             status = 'EXECUTED'
 
+                    clean_out = strip_ansi(out_str)
+                    clean_feedback = strip_ansi(feedback)
+                    clean_stderr = strip_ansi(err_str)
+                    exec_time = round(proc.execution_time or 0.0, 3)
+
                     results.append({
                         'id': tc_id,
                         'status': status,
-                        'execution_time': round(proc.execution_time or 0.0, 3),
+                        'time': exec_time,
+                        'execution_time': exec_time,
                         'memory': int(proc.max_memory or 0),
-                        'output': out_str,
+                        'output': clean_out,
+                        'actual': clean_out,
                         'expected': exp if exp is not None else '',
-                        'feedback': strip_ansi(err_str) if proc.is_rte else '',
+                        'feedback': clean_feedback,
+                        'stderr': clean_stderr,
                     })
             except Exception as ex:
                 results.append({
                     'id': tc_id,
                     'status': 'RTE',
+                    'time': 0.0,
                     'execution_time': 0.0,
                     'memory': 0,
                     'output': '',
+                    'actual': '',
                     'expected': exp if exp is not None else '',
                     'feedback': strip_ansi(f'Execution failed: {ex}'),
+                    'stderr': strip_ansi(str(ex)),
                 })
     finally:
         try:
@@ -248,9 +298,17 @@ def main():
         except Exception:
             pass
 
+    compile_msg = None
+    if hasattr(executor, 'warning') and executor.warning:
+        try:
+            compile_msg = strip_ansi(executor.warning.decode('utf-8', 'replace'))
+        except Exception:
+            pass
+
     sys.stdout.write(json.dumps({
         'status': 'OK',
         'compile_error': None,
+        'compile_message': compile_msg,
         'results': results,
     }))
 

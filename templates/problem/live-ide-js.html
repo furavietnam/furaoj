@@ -33,7 +33,8 @@
         isDrawerCollapsed: false,
         isSidebarCollapsed: false,
         saveTimeout: null,
-        isRunning: false
+        isRunning: false,
+        isSubmitting: false
     };
 
     function getCsrfToken() {
@@ -679,6 +680,19 @@
 
         var deleteBtnHtml = state.testcases.length > 1 ? '<button type="button" class="btn btn-xs btn-outline-danger btn-del-tc" style="font-size: 0.72rem; padding: 1px 6px;"><i class="fa fa-trash"></i> {{ _("Delete test") }}</button>' : '';
 
+        var displayOutput = (tc.actual !== undefined && tc.actual !== null) ? tc.actual : '';
+        if (!displayOutput && (tc.status === 'RTE' || tc.status === 'ERROR')) {
+            displayOutput = tc.stderr || tc.feedback || '';
+        }
+
+        var actualPlaceholder = tc.status ? '{{ _("(Program produced no output)") }}' : '{{ _("Execution output will appear here...") }}';
+
+        var errorCalloutHtml = '';
+        if (tc.status === 'RTE' && (tc.feedback || tc.stderr)) {
+            var errMsg = tc.feedback || (tc.stderr ? tc.stderr.trim().split('\n').pop() : 'Runtime Error');
+            errorCalloutHtml = '    <div class="tc-runtime-error-msg" style="color: #ef4444; font-size: 0.8rem; margin-top: 4px; font-family: monospace;"><i class="fa fa-exclamation-circle"></i> ' + escapeHtml(errMsg) + '</div>';
+        }
+
         var html = [
             '<div class="tc-panel-content" role="tabpanel" aria-labelledby="tc-tab-' + state.activeTab + '">',
             '  <div class="tc-field-group">',
@@ -689,7 +703,8 @@
             '  </div>',
             '  <div class="tc-field-group">',
             '    <label><span>{{ _("Actual Output") }}</span> <div>' + statusBadgeHtml + ' ' + metaHtml + '</div></label>',
-            '    <textarea class="tc-textarea" id="tc-actual" readonly style="height: 160px;" placeholder="{{ _("Execution output will appear here...") }}">' + escapeHtml(tc.actual || tc.feedback || '') + '</textarea>',
+            '    <textarea class="tc-textarea" id="tc-actual" readonly style="height: 160px;" placeholder="' + actualPlaceholder + '">' + escapeHtml(displayOutput) + '</textarea>',
+            errorCalloutHtml,
             '  </div>',
             '</div>'
         ].join('');
@@ -866,7 +881,17 @@
 
         state.isRunning = true;
         $('#btn-build-run').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> <span>{{ _("Running...") }}</span>');
+        $('#run-overall-status').html('<i class="fa fa-spinner fa-spin text-primary"></i> <span style="font-size:0.8rem; color:#6b7280;">{{ _("Running...") }}</span>');
         $('#live-compile-error').addClass('hidden');
+
+        // Clear stale outputs from testcases
+        state.testcases.forEach(function(tc) {
+            tc.status = '';
+            tc.actual = '';
+            tc.feedback = '';
+            tc.stderr = '';
+        });
+        renderTabs();
 
         // Expand drawer if collapsed
         if (state.isDrawerCollapsed) {
@@ -914,6 +939,7 @@
                     var cleanErr = stripAnsi(resp.compile_error || '{{ _("Compilation error occurred.") }}');
                     $('#live-compile-error').removeClass('hidden');
                     $('#live-compile-error-msg').text(cleanErr);
+                    $('#run-overall-status').html('<span class="badge badge-warning" style="font-size:0.75rem;">{{ _("Compilation Error") }}</span>');
 
                     setConsoleBadge('{{ _("Compilation Error") }}', 'ce');
                     setConsoleStatusDot('ce');
@@ -931,41 +957,63 @@
                 } else if (resp.status === 'OK' && resp.results) {
                     $('#live-compile-error').addClass('hidden');
                     appendConsoleLog(tsDone + ' [OK] {{ _("Compilation succeeded.") }}');
+                    if (resp.compile_message) {
+                        appendConsoleLog(tsDone + ' [WARNING] ' + resp.compile_message);
+                    }
 
                     var passed = 0;
                     var total = resp.results.length;
 
                     resp.results.forEach(function(res, idx) {
-                        if (state.testcases[idx]) {
-                            state.testcases[idx].status = res.status;
-                            state.testcases[idx].actual = res.actual || '';
-                            state.testcases[idx].feedback = res.feedback || '';
-                            state.testcases[idx].time = res.time || 0;
-                            state.testcases[idx].memory = res.memory || 0;
-                        }
-
-                        var timeStr = res.time !== undefined ? res.time + 's' : '';
+                        var actualOut = (res.actual !== undefined ? res.actual : res.output) || '';
+                        var timeVal = res.time !== undefined ? res.time : res.execution_time;
+                        var timeStr = timeVal !== undefined ? timeVal + 's' : '';
                         var memStr = res.memory ? ((res.memory / 1024).toFixed(1) + 'MB') : '';
                         var meta = [timeStr, memStr].filter(Boolean).join(', ');
                         if (meta) meta = ' (' + meta + ')';
+
+                        if (state.testcases[idx]) {
+                            state.testcases[idx].status = res.status;
+                            state.testcases[idx].actual = actualOut;
+                            state.testcases[idx].feedback = res.feedback || '';
+                            state.testcases[idx].stderr = res.stderr || '';
+                            state.testcases[idx].time = timeVal || 0;
+                            state.testcases[idx].memory = res.memory || 0;
+                        }
 
                         if (res.status === 'AC') {
                             passed++;
                             appendConsoleLog(tsDone + ' Test #' + (idx + 1) + ': AC - {{ _("Accepted") }}' + meta);
                         } else if (res.status === 'WA') {
                             appendConsoleLog(tsDone + ' Test #' + (idx + 1) + ': WA - {{ _("Wrong Answer") }}' + meta);
-                            if (res.feedback) {
-                                appendConsoleLog('    ' + stripAnsi(res.feedback));
-                            }
                         } else if (res.status === 'TLE') {
                             appendConsoleLog(tsDone + ' Test #' + (idx + 1) + ': TLE - {{ _("Time Limit Exceeded") }}' + meta);
+                        } else if (res.status === 'MLE') {
+                            appendConsoleLog(tsDone + ' Test #' + (idx + 1) + ': MLE - {{ _("Memory Limit Exceeded") }}' + meta);
+                        } else if (res.status === 'OLE') {
+                            appendConsoleLog(tsDone + ' Test #' + (idx + 1) + ': OLE - {{ _("Output Limit Exceeded") }}' + meta);
                         } else if (res.status === 'RTE') {
                             appendConsoleLog(tsDone + ' Test #' + (idx + 1) + ': RTE - {{ _("Runtime Error") }}' + meta);
-                            if (res.feedback) {
-                                appendConsoleLog('    ' + stripAnsi(res.feedback));
-                            }
                         } else {
                             appendConsoleLog(tsDone + ' Test #' + (idx + 1) + ': ' + (res.status || 'DONE') + meta);
+                        }
+
+                        if (res.feedback) {
+                            appendConsoleLog('    [Feedback] ' + stripAnsi(res.feedback));
+                        }
+                        if (actualOut && actualOut.trim()) {
+                            appendConsoleLog('    [Output]');
+                            actualOut.trim().split('\n').forEach(function(line) {
+                                appendConsoleLog('        ' + line);
+                            });
+                        } else if (!res.stderr || !res.stderr.trim()) {
+                            appendConsoleLog('    [Output] (no output)');
+                        }
+                        if (res.stderr && res.stderr.trim()) {
+                            appendConsoleLog('    [Stderr / Traceback]');
+                            res.stderr.trim().split('\n').forEach(function(line) {
+                                appendConsoleLog('        ' + line);
+                            });
                         }
                     });
 
@@ -973,9 +1021,11 @@
                     if (allPassed) {
                         setConsoleBadge('{{ _("Passed") }} (' + passed + '/' + total + ')', 'success');
                         setConsoleStatusDot('success');
+                        $('#run-overall-status').html('<span class="badge badge-success" style="font-size:0.75rem;"><i class="fa fa-check"></i> {{ _("Passed") }} ' + passed + '/' + total + '</span>');
                     } else {
                         setConsoleBadge('{{ _("Failed") }} (' + passed + '/' + total + ')', 'error');
                         setConsoleStatusDot('error');
+                        $('#run-overall-status').html('<span class="badge badge-danger" style="font-size:0.75rem;"><i class="fa fa-times"></i> {{ _("Passed") }} ' + passed + '/' + total + '</span>');
                     }
                     appendConsoleLog(tsDone + ' {{ _("Done in") }} ' + duration + 's. {{ _("Passed:") }} ' + passed + '/' + total);
                     renderTabs();
@@ -983,6 +1033,7 @@
                     var errText = stripAnsi(resp.compile_error || resp.error || resp.message || '{{ _("Execution error occurred.") }}');
                     setConsoleBadge('{{ _("Error") }}', 'error');
                     setConsoleStatusDot('error');
+                    $('#run-overall-status').html('<span class="badge badge-danger" style="font-size:0.75rem;"><i class="fa fa-exclamation-triangle"></i> {{ _("Error") }}</span>');
                     appendConsoleLog(tsDone + ' [ERROR] ' + errText);
                     $('#live-compile-error').removeClass('hidden');
                     $('#live-compile-error-msg').text(errText);
@@ -994,6 +1045,7 @@
                 } else {
                     setConsoleBadge('{{ _("Error") }}', 'error');
                     setConsoleStatusDot('error');
+                    $('#run-overall-status').html('<span class="badge badge-danger" style="font-size:0.75rem;"><i class="fa fa-exclamation-triangle"></i> {{ _("Error") }}</span>');
                     appendConsoleLog(tsDone + ' [ERROR] {{ _("Unknown or invalid response from server.") }}');
                     renderTabs();
                 }
@@ -1027,7 +1079,29 @@
     }
 
     /* Submit Solution directly */
+    function resetLiveSubmitButton() {
+        state.isSubmitting = false;
+        var $btn = $('#btn-live-submit');
+        $btn.prop('disabled', false).removeClass('submitting');
+        var originalBtnHtml = $btn.data('original-html');
+        if (originalBtnHtml) {
+            $btn.html(originalBtnHtml);
+        }
+    }
+
+    $(document).on('submission:reset', resetLiveSubmitButton);
+
     function submitSolution() {
+        if (state.isSubmitting) return;
+        state.isSubmitting = true;
+
+        var $btn = $('#btn-live-submit');
+        if (!$btn.data('original-html')) {
+            $btn.data('original-html', $btn.html());
+        }
+        $btn.prop('disabled', true).addClass('submitting');
+        $btn.html('<i class="fa fa-spinner fa-spin"></i> <span>{{ _("Submitting...") }}</span>');
+
         var editor = getAceEditor();
         if (editor) {
             var val = editor.getValue();
@@ -1036,6 +1110,8 @@
         var selectedId = $('#live-lang-select').val();
         $('#id_language').val(selectedId);
         $('#problem_submit').trigger('submit');
+
+        setTimeout(resetLiveSubmitButton, 5000);
     }
 
     /* Draft Autosave */

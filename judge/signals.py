@@ -141,6 +141,12 @@ def submission_delete(sender, instance, **kwargs):
     instance.problem.update_stats()
 
 
+@receiver(post_save, sender=Submission)
+def submission_save(sender, instance, created, **kwargs):
+    if created or instance.status == 'D':
+        finished_submission(instance)
+
+
 @receiver(post_delete, sender=ContestSubmission)
 def contest_submission_delete(sender, instance, **kwargs):
     participation = instance.participation

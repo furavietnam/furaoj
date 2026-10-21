@@ -2,7 +2,7 @@ import json
 from django.contrib.auth.models import User
 from django.test import TestCase, Client
 from django.urls import reverse
-from judge.models import Language, Problem, ProblemData, ProblemDraft, ProblemGroup, Profile
+from judge.models import Judge, Language, Problem, ProblemData, ProblemDraft, ProblemGroup, Profile
 from judge.utils.live_runner import execute_live_run
 
 
@@ -24,6 +24,8 @@ class LiveIdeStressTestCase(TestCase):
         self.lang_cpp, _ = Language.objects.get_or_create(key='CPP20', defaults={'name': 'C++20'})
         self.lang_py, _ = Language.objects.get_or_create(key='PY3', defaults={'name': 'Python 3'})
         self.problem.allowed_languages.add(self.lang_cpp, self.lang_py)
+        self.judge = Judge.objects.create(name='furaoj', online=True, auth_key='stressjudge')
+        self.judge.runtimes.add(self.lang_cpp, self.lang_py)
         self.client.login(username='stressuser', password='password123')
 
     def test_payload_too_large_rejected(self):

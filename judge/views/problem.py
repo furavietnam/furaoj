@@ -1,13 +1,16 @@
+import hashlib
 import json
 import logging
 import os
 import re
+import time
 from datetime import timedelta
 from operator import itemgetter
 from random import randrange
 
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.db import transaction
 from django.db.models import BooleanField, Case, Prefetch, Q, When
@@ -464,39 +467,82 @@ class ProblemSubmitMixin:
                         % org_name,
                     ), None
 
+        # Double submission prevention:
+        # 1. Deduplication key based on user + problem + content hash (catches duplicate submissions of identical code)
+        source_text = form.cleaned_data.get('source', '')
+        sub_file = form.files.get('submission_file', None)
+        file_sig = f'{sub_file.name}:{sub_file.size}' if sub_file else ''
+        lang_id = form.cleaned_data['language'].id if form.cleaned_data.get('language') else ''
+        content_sig = f'{lang_id}:{file_sig}:{source_text}'
+        content_hash = hashlib.sha256(content_sig.encode('utf-8')).hexdigest()[:16]
+
+        dup_cache_key = f'user_sub_dup_{request.profile.id}_{self.object.id}_{content_hash}'
+        inflight_lock_key = f'user_sub_inflight_{request.profile.id}_{self.object.id}'
+
+        existing_sub_id = cache.get(dup_cache_key)
+        if existing_sub_id:
+            logger.info('Duplicate submission prevented for user %s on problem %s (sub_id=%s)',
+                        request.user.username, self.object.code, existing_sub_id)
+            return HttpResponseRedirect(reverse('submission_status', args=(existing_sub_id,))), None
+
+        # 2. Concurrency lock: prevent simultaneous concurrent writes for same user & problem
+        if not cache.add(inflight_lock_key, '1', timeout=10):
+            for _ in range(10):
+                time.sleep(0.1)
+                sub_id = cache.get(dup_cache_key)
+                if sub_id:
+                    return HttpResponseRedirect(reverse('submission_status', args=(sub_id,))), None
+                if not cache.get(inflight_lock_key):
+                    break
+
+            recent_sub = Submission.objects.filter(
+                user=request.profile,
+                problem=self.object,
+                date__gte=timezone.now() - timedelta(seconds=10),
+            ).order_by('-id').first()
+            if recent_sub:
+                return HttpResponseRedirect(reverse('submission_status', args=(recent_sub.id,))), None
+            return HttpResponse(format_html('<h1>{0}</h1>', _('Submission in progress, please wait.')), status=429), None
+
         # Create submission
-        with transaction.atomic():
-            new_submission = form.save(commit=False)
+        try:
+            with transaction.atomic():
+                new_submission = form.save(commit=False)
 
-            contest_problem = self.contest_problem
-            if contest_problem is not None:
-                # Use the contest object from current_contest.contest because we already use it
-                # in profile.update_contest().
-                new_submission.contest_object = request.profile.current_contest.contest
-                if request.profile.current_contest.live:
-                    new_submission.locked_after = new_submission.contest_object.locked_after
-                new_submission.save()
-                ContestSubmission(
-                    submission=new_submission,
-                    problem=contest_problem,
-                    participation=request.profile.current_contest,
-                ).save()
-            else:
-                new_submission.save()
+                contest_problem = self.contest_problem
+                if contest_problem is not None:
+                    # Use the contest object from current_contest.contest because we already use it
+                    # in profile.update_contest().
+                    new_submission.contest_object = request.profile.current_contest.contest
+                    if request.profile.current_contest.live:
+                        new_submission.locked_after = new_submission.contest_object.locked_after
+                    new_submission.save()
+                    ContestSubmission(
+                        submission=new_submission,
+                        problem=contest_problem,
+                        participation=request.profile.current_contest,
+                    ).save()
+                else:
+                    new_submission.save()
 
-            submission_file = form.files.get('submission_file', None)
-            source_url = submission_uploader(
-                submission_file=submission_file,
-                problem_code=new_submission.problem.code,
-                user_id=new_submission.user.user.id,
-            ) if submission_file else ''
+                submission_file = form.files.get('submission_file', None)
+                source_url = submission_uploader(
+                    submission_file=submission_file,
+                    problem_code=new_submission.problem.code,
+                    user_id=new_submission.user.user.id,
+                ) if submission_file else ''
 
-            source = SubmissionSource(submission=new_submission, source=form.cleaned_data['source'] + source_url)
-            source.save()
+                source = SubmissionSource(submission=new_submission, source=form.cleaned_data['source'] + source_url)
+                source.save()
 
-        # Save a query.
-        new_submission.source = source
-        new_submission.judge(force_judge=True, judge_id=form.cleaned_data['judge'])
+            # Save a query.
+            new_submission.source = source
+            new_submission.judge(force_judge=True, judge_id=form.cleaned_data['judge'])
+
+            # Store the submission ID in the duplicate cache key for 10 seconds
+            cache.set(dup_cache_key, new_submission.id, timeout=10)
+        finally:
+            cache.delete(inflight_lock_key)
 
         # In contest mode, we should log the ip
         if settings.FURAOJ_OFFICIAL_CONTEST_MODE:

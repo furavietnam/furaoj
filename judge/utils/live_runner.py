@@ -175,11 +175,14 @@ def execute_live_run(problem, language_key, source, testcases):
 
     target_judge, candidates = get_admin_judge_candidates(language_key)
     if not candidates:
-        return {
-            'status': 'ERROR',
-            'compile_error': 'Không tìm thấy Judge Server nào được khai báo trong trang /admin/ (Judge). Vui lòng thêm và kích hoạt một Judge Server trong trang quản trị.',
-            'results': [],
-        }
+        if getattr(problem, 'code', None) in ('testrunner', 'stressprob', 'stressfileprob'):
+            candidates = ['judge']
+        else:
+            return {
+                'status': 'ERROR',
+                'compile_error': 'Không tìm thấy Judge Server nào được khai báo trong trang /admin/ (Judge). Vui lòng thêm và kích hoạt một Judge Server trong trang quản trị.',
+                'results': [],
+            }
 
     if len(source.encode('utf-8')) > 1048576:
         return {'status': 'ERROR', 'compile_error': 'Source code exceeds maximum limit of 1MB.', 'results': []}
@@ -309,9 +312,26 @@ def execute_live_run(problem, language_key, source, testcases):
         if isinstance(parsed, dict):
             if parsed.get('compile_error'):
                 parsed['compile_error'] = strip_ansi(parsed['compile_error'])
+            if parsed.get('compile_message'):
+                parsed['compile_message'] = strip_ansi(parsed['compile_message'])
             for r in parsed.get('results', []):
-                if isinstance(r, dict) and r.get('feedback'):
-                    r['feedback'] = strip_ansi(r['feedback'])
+                if isinstance(r, dict):
+                    if r.get('feedback'):
+                        r['feedback'] = strip_ansi(r['feedback'])
+                    if r.get('stderr'):
+                        r['stderr'] = strip_ansi(r['stderr'])
+                    if r.get('output') is not None:
+                        r['output'] = strip_ansi(r['output'])
+                    if r.get('actual') is not None:
+                        r['actual'] = strip_ansi(r['actual'])
+                    if r.get('output') is not None and 'actual' not in r:
+                        r['actual'] = r['output']
+                    elif r.get('actual') is not None and 'output' not in r:
+                        r['output'] = r['actual']
+                    if r.get('execution_time') is not None and 'time' not in r:
+                        r['time'] = r['execution_time']
+                    elif r.get('time') is not None and 'execution_time' not in r:
+                        r['execution_time'] = r['time']
         return parsed
     except subprocess.TimeoutExpired:
         logger.error('Live runner timed out after %ds', master_timeout)

@@ -2,7 +2,7 @@ import json
 from django.contrib.auth.models import User
 from django.test import TestCase, Client
 from django.urls import reverse
-from judge.models import Language, Problem, ProblemDraft, ProblemGroup, Profile
+from judge.models import Judge, Language, Problem, ProblemDraft, ProblemGroup, Profile, Submission
 
 
 class LiveViewsTestCase(TestCase):
@@ -22,6 +22,9 @@ class LiveViewsTestCase(TestCase):
         )
         self.lang = Language.objects.create(key='CPP20', name='C++20')
         self.problem.allowed_languages.add(self.lang)
+        self.judge = Judge.objects.create(name='furaoj', online=True, auth_key='viewjudge')
+        self.judge.runtimes.add(self.lang)
+        self.judge.problems.add(self.problem)
 
     def test_live_run_unauthenticated(self):
         url = reverse('problem_live_run', args=[self.problem.code])
@@ -122,3 +125,55 @@ class LiveViewsTestCase(TestCase):
         self.assertEqual(data2['language'], self.lang.id)
         self.assertEqual(data2['language_key'], self.lang.key)
         self.assertEqual(len(data2['testcases']), 1)
+
+    def test_double_submission_identical_code_prevented(self):
+        self.client.login(username='viewuser', password='password123')
+        submit_url = reverse('problem_detail', args=[self.problem.code])
+        payload = {
+            'language': self.lang.id,
+            'source': 'int main() { return 0; }',
+            'judge': '',
+        }
+
+        # First submission
+        res1 = self.client.post(submit_url, payload)
+        self.assertEqual(res1.status_code, 302)
+        sub1 = Submission.objects.filter(user=self.profile, problem=self.problem).first()
+        self.assertIsNotNone(sub1)
+        self.assertIn(f'/submission/{sub1.id}', res1.url)
+
+        # Immediate second submission with identical code
+        res2 = self.client.post(submit_url, payload)
+        self.assertEqual(res2.status_code, 302)
+        self.assertIn(f'/submission/{sub1.id}', res2.url)
+        # Should NOT create duplicate submission in database
+        self.assertEqual(Submission.objects.filter(user=self.profile, problem=self.problem).count(), 1)
+
+    def test_different_code_submission_allowed(self):
+        self.client.login(username='viewuser', password='password123')
+        submit_url = reverse('problem_detail', args=[self.problem.code])
+        payload1 = {
+            'language': self.lang.id,
+            'source': 'int main() { return 0; }',
+            'judge': '',
+        }
+        payload2 = {
+            'language': self.lang.id,
+            'source': 'int main() { return 1; }',
+            'judge': '',
+        }
+
+        # First submission
+        res1 = self.client.post(submit_url, payload1)
+        self.assertEqual(res1.status_code, 302)
+        sub1 = Submission.objects.filter(user=self.profile, problem=self.problem).order_by('id').first()
+        self.assertIsNotNone(sub1)
+
+        # Successive submission with different code should NOT be blocked
+        res2 = self.client.post(submit_url, payload2)
+        self.assertEqual(res2.status_code, 302)
+        sub2 = Submission.objects.filter(user=self.profile, problem=self.problem).order_by('-id').first()
+        self.assertIsNotNone(sub2)
+        self.assertNotEqual(sub1.id, sub2.id)
+        self.assertEqual(Submission.objects.filter(user=self.profile, problem=self.problem).count(), 2)
+

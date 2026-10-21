@@ -144,15 +144,29 @@
             }).resize();
 
             $('#problem_submit').submit(function (event) {
+                var $form = $(this);
+                if ($form.data('submitting')) {
+                    event.preventDefault();
+                    return false;
+                }
+
+                function resetSubmitState() {
+                    $form.data('submitting', false);
+                    $form.find(':submit, button[type="submit"], input[type="submit"]').prop('disabled', false);
+                    $('#btn-live-submit').prop('disabled', false);
+                    $(document).trigger('submission:reset');
+                }
+
                 if ($('#id_source').val().length > 65536) {
                     alert({{ _('Your source code must contain at most 65536 characters.')|htmltojs }});
                     event.preventDefault();
-                    $('#problem_submit').find(':submit').attr('disabled', false);
+                    resetSubmitState();
+                    return false;
                 }
                 
                 obj = document.getElementById('id_language');
                 if (!obj || !obj.options) {
-                    $('#problem_submit').find(':submit').attr('disabled', false);
+                    resetSubmitState();
                     return;
                 }
                 fileonly = obj.options[obj.selectedIndex].getAttribute('data-fileonly');
@@ -165,10 +179,16 @@
                         if (file.size > limitBytes) {
                             alert({{ _('`Maximum file size is ${file_size_limit}MB.`') }});
                             event.preventDefault();
-                            $('#problem_submit').find(':submit').attr('disabled', false);
+                            resetSubmitState();
+                            return false;
                         }
                     }
                 }
+
+                $form.data('submitting', true);
+                $form.find(':submit, button[type="submit"], input[type="submit"]').prop('disabled', true);
+                $('#btn-live-submit').prop('disabled', true);
+                setTimeout(resetSubmitState, 6000);
             });
 
             function on_language_change() {
