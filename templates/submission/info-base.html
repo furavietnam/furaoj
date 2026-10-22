@@ -18,7 +18,9 @@
                 </div>
                 <div class="submission-meta-strip">
                     <span class="meta-item user-meta">
-                        <i class="fa fa-user"></i>
+                        <span class="sub-user-avatar">
+                            <img src="{{ avatar(submission.user, 36) }}" alt="{{ submission.user.user.username }}" class="sub-avatar-img" onerror="this.style.display='none';">
+                        </span>
                         <a href="{{ url('user_page', submission.user.user.username) }}" class="{{ submission.user.css_class }}">
                             {{ submission.user.display_name }}
                         </a>

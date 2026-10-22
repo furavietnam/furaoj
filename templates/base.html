@@ -339,12 +339,30 @@
                     <li>
                         <a href="{{ url('user_page') }}" class="user-profile-pill">
                             <span class="user-avatar-circle">
-                                {{ (request.user.first_name or request.profile.display_name or request.user.username)[0]|upper }}
+                                <img src="{{ avatar(request.user, 64) }}" class="user-nav-avatar" alt="{{ request.user.username }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+                                <span class="user-nav-avatar-fallback" style="display: none;">
+                                    {{ (request.user.first_name or request.profile.display_name or request.user.username)[0]|upper }}
+                                </span>
                             </span>
                             <span class="user-display-name">{{ request.user.first_name or request.profile.display_name or request.user.username }}</span>
                             <i class="fa fa-angle-down user-chevron"></i>
                         </a>
-                        <ul class="user-dropdown-menu" style="min-width: 210px; right: 0; left: auto;">
+                        <ul class="user-dropdown-menu" style="min-width: 220px; right: 0; left: auto;">
+                            <li class="user-dropdown-header">
+                                <a href="{{ url('user_page') }}" class="user-dropdown-header-link">
+                                    <span class="user-dropdown-header-avatar">
+                                        <img src="{{ avatar(request.user, 80) }}" class="user-nav-avatar" alt="{{ request.user.username }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+                                        <span class="user-nav-avatar-fallback" style="display: none;">
+                                            {{ (request.user.first_name or request.profile.display_name or request.user.username)[0]|upper }}
+                                        </span>
+                                    </span>
+                                    <div class="user-dropdown-header-meta">
+                                        <span class="user-dropdown-header-name">{{ request.user.first_name or request.profile.display_name or request.user.username }}</span>
+                                        <span class="user-dropdown-header-handle">@{{ request.user.username }}</span>
+                                    </div>
+                                </a>
+                            </li>
+                            <li class="nav-dropdown-divider" style="height: 1px; background: #f1f5f9; margin: 6px 0;"></li>
                             <li><a href="{{ url('user_page') }}"><i class="fa fa-user"></i> {{ _('user profile')|title }}</a></li>
                             {% if request.user.is_staff or request.user.is_superuser %}
                                 <li><a href="{{ url('admin:index') }}"><i class="fa fa-cogs"></i> {{ _('Admin') }}</a></li>
