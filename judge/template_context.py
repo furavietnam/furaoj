@@ -107,12 +107,4 @@ def site_theme(request):
 
 def math_setting(request):
     caniuse = CanIUse(request.headers.get('user-agent', ''))
-
-    # Middleware populating `profile` may not have loaded at this point if we're called from an error context.
-    if hasattr(request.user, 'profile'):
-        engine = request.profile.math_engine
-    else:
-        engine = settings.MATHOID_DEFAULT_TYPE
-    if engine == 'auto':
-        engine = 'mml' if bool(settings.MATHOID_URL) and caniuse.mathml == SUPPORT else 'jax'
-    return {'MATH_ENGINE': engine, 'REQUIRE_JAX': engine == 'jax', 'caniuse': caniuse}
+    return {'MATH_ENGINE': 'jax', 'REQUIRE_JAX': True, 'caniuse': caniuse}

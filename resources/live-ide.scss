@@ -827,12 +827,28 @@ body:has(#live-ide-container) {
         -webkit-overflow-scrolling: touch;
     }
 
-    .katex-display {
-        max-width: 100%;
+    // MathJax (Self-hosted) display & inline formulas
+    mjx-container,
+    .MathJax,
+    .MathJax_Display {
+        max-width: 100% !important;
         overflow-x: auto;
         overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
-        padding: 4px 0;
+
+        &[display="true"],
+        &.MathJax_Display {
+            display: block !important;
+            margin: 0.8em 0 !important;
+            padding: 4px 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        svg, mjx-math {
+            max-width: 100%;
+        }
     }
 
     table {
