@@ -15,6 +15,7 @@ from judge.views import TitledTemplateView, api, blog, comment, contests, langua
     organization, preview, problem, problem_download, problem_manage, ranked_submission, register, stats, status, \
     submission, tag, tasks, ticket, two_factor, user, widgets
 from judge.views.exam import ExamCreate, ExamDetail, ExamEdit, ExamList
+from judge.views.topic import TopicAddProblem, TopicDetail, TopicList, TopicRemoveProblem
 from judge.views.magazine import MagazinePage
 from judge.views.misc_config import MiscConfigEdit
 from judge.views.problem_data import ProblemDataView, ProblemSubmissionDiff, \
@@ -295,6 +296,14 @@ urlpatterns = [
     path('exam/create/', ExamCreate.as_view(), name='exam_create'),
     path('exam/<slug:slug>/', ExamDetail.as_view(), name='exam_detail'),
     path('exam/<slug:slug>/edit/', ExamEdit.as_view(), name='exam_edit'),
+
+    path('topics/', include([
+        path('', TopicList.as_view(), name='topic_list'),
+        path('<int:page>', TopicList.as_view(), name='topic_list'),
+    ])),
+    path('topic/<str:identifier>/', TopicDetail.as_view(), name='topic_detail'),
+    path('topic/<str:identifier>/add-problem/', TopicAddProblem.as_view(), name='topic_add_problem'),
+    path('topic/<str:identifier>/remove-problem/<int:problem_id>/', TopicRemoveProblem.as_view(), name='topic_remove_problem'),
 
     path('contributors/', include([
         path('', user.ContribList.as_view(), name='contributors_list'),

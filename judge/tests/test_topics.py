@@ -49,3 +49,70 @@ class TopicModelTestCase(TestCase):
         topic = Topic.objects.create(name='Math', slug='math')
         self.assertFalse(topic.is_editable_by(self.user))
         self.assertTrue(topic.is_editable_by(self.staff_user))
+
+
+class TopicViewsTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='normal_user', password='password123')
+        self.profile = Profile.objects.create(user=self.user)
+        self.staff_user = User.objects.create_user(username='admin_user', password='password123', is_staff=True)
+        self.staff_profile = Profile.objects.create(user=self.staff_user)
+
+        self.group = ProblemGroup.objects.create(name='default-group', full_name='Default Group')
+        self.p1 = Problem.objects.create(code='p1', name='Problem 1', points=10, time_limit=1.0, memory_limit=65536, group=self.group)
+        self.p2 = Problem.objects.create(code='p2', name='Problem 2', points=20, time_limit=1.0, memory_limit=65536, group=self.group)
+        self.p3 = Problem.objects.create(code='p3', name='Problem 3', points=30, time_limit=1.0, memory_limit=65536, group=self.group)
+
+        self.topic = Topic.objects.create(
+            name='Graph Algorithms',
+            slug='graph-algorithms',
+            description='Shortest paths and MST',
+            is_public=True,
+        )
+        TopicProblem.objects.create(topic=self.topic, problem=self.p1, order=1)
+        TopicProblem.objects.create(topic=self.topic, problem=self.p2, order=2)
+        self.topic.update_stats()
+
+    def test_topic_list_view(self):
+        response = self.client.get('/topics/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Graph Algorithms')
+
+    def test_topic_detail_view_by_id_and_slug(self):
+        # By ID
+        res_id = self.client.get(f'/topic/{self.topic.id}/')
+        self.assertEqual(res_id.status_code, 200)
+        self.assertContains(res_id, 'Graph Algorithms')
+
+        # By Slug
+        res_slug = self.client.get(f'/topic/{self.topic.slug}/')
+        self.assertEqual(res_slug.status_code, 200)
+        self.assertContains(res_slug, 'Graph Algorithms')
+
+    def test_topic_add_problem_permission(self):
+        # Anonymous
+        res_anon = self.client.post(f'/topic/{self.topic.id}/add-problem/', {'problem_code': 'p3'})
+        self.assertIn(res_anon.status_code, [302, 403])
+
+        # Regular user
+        self.client.login(username='normal_user', password='password123')
+        res_reg = self.client.post(f'/topic/{self.topic.id}/add-problem/', {'problem_code': 'p3'})
+        self.assertEqual(res_reg.status_code, 403)
+
+        # Staff user
+        self.client.login(username='admin_user', password='password123')
+        res_staff = self.client.post(f'/topic/{self.topic.id}/add-problem/', {'problem_code': 'p3'})
+        self.assertIn(res_staff.status_code, [200, 302])
+        self.assertEqual(self.topic.topic_problems.filter(problem=self.p3).count(), 1)
+        self.topic.refresh_from_db()
+        self.assertEqual(self.topic.problem_count, 3)
+        self.assertEqual(self.topic.total_points, 60)
+
+    def test_topic_remove_problem(self):
+        self.client.login(username='admin_user', password='password123')
+        res = self.client.post(f'/topic/{self.topic.id}/remove-problem/{self.p1.id}/')
+        self.assertIn(res.status_code, [200, 302])
+        self.assertEqual(self.topic.topic_problems.filter(problem=self.p1).count(), 0)
+        self.topic.refresh_from_db()
+        self.assertEqual(self.topic.problem_count, 1)
+        self.assertEqual(self.topic.total_points, 20)
