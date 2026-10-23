@@ -1,0 +1,175 @@
+{% extends "common-content.html" %}
+
+{% block title %}
+    {{ topic.name }} - {{ _('Topics') }} - {{ site.name }}
+{% endblock %}
+
+{% block title_ruler %}{% endblock %}
+
+{% block title_row %}
+    {% set tab = 'detail' %}
+    {% include "topic/topic-tabs.html" %}
+{% endblock %}
+
+{% block body %}
+    <div id="common-content">
+        <div id="content-right" class="topics">
+            <div class="info-float">
+                <div class="sidebox topic-info-box">
+                    <h3>{{ _('Topic Overview') }} <i class="fa fa-info-circle"></i></h3>
+                    <div class="sidebox-content topic-info-list">
+                        <div class="info-item">
+                            <span class="info-label">{{ _('Total Problems') }}</span>
+                            <span class="info-value"><strong>{{ topic.problem_count }}</strong></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">{{ _('Total Points') }}</span>
+                            <span class="info-value"><strong>{{ topic.display_total|floatformat(0) }}</strong></span>
+                        </div>
+                        {% if request.user.is_authenticated and topic.display_total > 0 %}
+                            <div class="info-item">
+                                <span class="info-label">{{ _('Your Score') }}</span>
+                                <span class="info-value score-highlight">
+                                    {{ user_total_score|floatformat(0) }} / {{ topic.display_total|floatformat(0) }}
+                                    <span class="topic-detail-percent">({{ progress_percent }}%)</span>
+                                </span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">{{ _('Solved') }}</span>
+                                <span class="info-value">
+                                    <strong>{{ solved_count }}</strong> / {{ topic.problem_count }}
+                                </span>
+                            </div>
+                            <div class="topic-detail-progress-wrap">
+                                <div class="topic-progress-track">
+                                    <div class="topic-progress-bar" style="width: {{ progress_percent }}%"></div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if can_edit %}
+                    <div class="sidebox topic-admin-box">
+                        <h3>{{ _('Admin Actions') }} <i class="fa fa-cog"></i></h3>
+                        <div class="sidebox-content">
+                            <form method="post" action="{{ url('topic_add_problem', topic.slug or topic.id) }}" class="topic-quick-add-form">
+                                {% csrf_token %}
+                                <label for="topic-prob-code"><strong>{{ _('Add Problem to Topic') }}</strong></label>
+                                <div class="topic-add-input-group">
+                                    <input type="text" id="topic-prob-code" name="problem_code" placeholder="{{ _('Code or name...') }}" required class="topic-add-input">
+                                    <button type="submit" class="button primary-btn topic-add-btn">
+                                        <i class="fa fa-plus"></i> {{ _('Add') }}
+                                    </button>
+                                </div>
+                            </form>
+                            <div class="topic-admin-links">
+                                <a href="{{ url('admin:judge_topic_change', topic.id) }}" class="button topic-admin-link-btn" target="_blank">
+                                    <i class="fa fa-external-link"></i> {{ _('Manage in Django Admin') }}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div id="content-left" class="topics">
+            {% if topic.description %}
+                <div class="content-description topic-description-card math-engine">
+                    {{ topic.description|markdown('default', MATH_ENGINE)|reference|str|safe }}
+                </div>
+            {% endif %}
+
+            <div class="h-scrollable-table">
+                <table id="topic-detail-table" class="table striped topic-problems-table">
+                    <thead>
+                        <tr>
+                            <th class="order" style="width: 50px; text-align: center;">#</th>
+                            <th class="problem-code" style="width: 140px;">{{ _('Code') }}</th>
+                            <th class="problem-name">{{ _('Problem') }}</th>
+                            <th class="max-points" style="width: 90px; text-align: center;">{{ _('Points') }}</th>
+                            {% if request.user.is_authenticated %}
+                                <th class="user-score" style="width: 90px; text-align: center;">{{ _('Score') }}</th>
+                                <th class="status" style="width: 80px; text-align: center;">{{ _('Status') }}</th>
+                            {% endif %}
+                            {% if can_edit %}
+                                <th class="actions" style="width: 70px; text-align: center;">{{ _('Action') }}</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tp in topic_problems %}
+                            <tr>
+                                <td class="order" style="text-align: center;">{{ loop.index }}</td>
+                                <td class="problem-code">
+                                    <a href="{{ url('problem_detail', tp.problem.code) }}" class="code-link">
+                                        <strong>{{ tp.problem.code }}</strong>
+                                    </a>
+                                </td>
+                                <td class="problem-name">
+                                    <a href="{{ url('problem_detail', tp.problem.code) }}" class="problem-title-link">
+                                        {{ tp.problem.name }}
+                                    </a>
+                                    {% if tp.problem.types.exists() %}
+                                        <div class="problem-type-tags">
+                                            {% for t in tp.problem.types.all() %}
+                                                <span class="topic-tag-pill">{{ t.name }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td class="max-points" style="text-align: center;">
+                                    <span class="points-badge">{{ tp.problem.points|floatformat(0) }}</span>
+                                </td>
+                                {% if request.user.is_authenticated %}
+                                    <td class="user-score" style="text-align: center;">
+                                        <span class="user-pts{% if tp.status == 'AC' %} score-ac{% elif tp.status == 'PAC' %} score-pac{% endif %}">
+                                            {{ tp.user_score|floatformat(0) }}
+                                        </span>
+                                    </td>
+                                    <td class="status" style="text-align: center;">
+                                        {% if tp.status == 'AC' %}
+                                            <span class="verdict-icon ac" title="{{ _('Solved') }}">
+                                                <i class="fa fa-check-circle"></i>
+                                            </span>
+                                        {% elif tp.status == 'PAC' %}
+                                            <span class="verdict-icon pac" title="{{ _('Partially Solved') }}">
+                                                <i class="fa fa-adjust"></i>
+                                            </span>
+                                        {% elif tp.status == 'WA' %}
+                                            <span class="verdict-icon wa" title="{{ _('Attempted') }}">
+                                                <i class="fa fa-times-circle"></i>
+                                            </span>
+                                        {% else %}
+                                            <span class="verdict-icon unattempted" title="{{ _('Not Attempted') }}">
+                                                <i class="fa fa-circle-thin"></i>
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                {% endif %}
+                                {% if can_edit %}
+                                    <td class="actions" style="text-align: center;">
+                                        <form method="post" action="{{ url('topic_remove_problem', topic.slug or topic.id, tp.problem.id) }}" style="display:inline;" onsubmit="return confirm('{{ _('Remove problem from topic?') }}');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="button danger-btn btn-sm topic-remove-btn" title="{{ _('Remove problem') }}">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                {% endif %}
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="{% if can_edit %}{% if request.user.is_authenticated %}7{% else %}5{% endif %}{% else %}{% if request.user.is_authenticated %}6{% else %}4{% endif %}{% endif %}" class="empty-table-msg" style="text-align: center; padding: 30px;">
+                                    <i class="fa fa-inbox" style="font-size: 24px; color: #888; display: block; margin-bottom: 8px;"></i>
+                                    {{ _('No problems have been added to this topic yet.') }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

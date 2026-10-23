@@ -1,0 +1,18 @@
+{% extends "tabs-base.html" %}
+
+{% block header_icon %}{{ topic.icon or 'fa-bookmark' }}{% endblock %}
+
+{% block header_title %}{{ topic.name }}{% endblock %}
+
+{% block header_subtitle %}
+    <span class="problem-header-subtitle">
+        {{ topic.problem_count }} {{ _('problems') }} &bull; {{ topic.total_points|floatformat(0) }} {{ _('pts') }}
+    </span>
+{% endblock %}
+
+{% block tabs %}
+    {{ make_tab('detail', 'fa-book', url('topic_detail', topic.slug or topic.id), _('Problems')) }}
+    {% if request.user.is_authenticated and topic.is_editable_by(request.user) %}
+        {{ make_tab('admin', 'fa-cog', url('admin:judge_topic_change', topic.id), _('Admin')) }}
+    {% endif %}
+{% endblock %}

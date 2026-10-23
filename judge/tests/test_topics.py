@@ -77,17 +77,23 @@ class TopicViewsTestCase(TestCase):
         response = self.client.get('/topics/')
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Graph Algorithms')
+        self.assertContains(response, 'topic-grid')
+        self.assertContains(response, 'topic-card')
 
     def test_topic_detail_view_by_id_and_slug(self):
-        # By ID
+        # By ID (Anonymous)
         res_id = self.client.get(f'/topic/{self.topic.id}/')
         self.assertEqual(res_id.status_code, 200)
         self.assertContains(res_id, 'Graph Algorithms')
+        self.assertContains(res_id, 'p1')
+        self.assertContains(res_id, 'p2')
+        self.assertNotContains(res_id, 'topic-quick-add-form')
 
-        # By Slug
-        res_slug = self.client.get(f'/topic/{self.topic.slug}/')
-        self.assertEqual(res_slug.status_code, 200)
-        self.assertContains(res_slug, 'Graph Algorithms')
+        # Staff user should see the add form
+        self.client.login(username='admin_user', password='password123')
+        res_staff = self.client.get(f'/topic/{self.topic.slug}/')
+        self.assertEqual(res_staff.status_code, 200)
+        self.assertContains(res_staff, 'topic-quick-add-form')
 
     def test_topic_add_problem_permission(self):
         # Anonymous

@@ -1,0 +1,24 @@
+{% extends "tabs-base.html" %}
+
+{% block header_icon %}fa-bookmark{% endblock %}
+
+{% block header_title %}{{ _('Topics') }}{% endblock %}
+
+{% block header_subtitle %}
+    <span class="problem-header-subtitle">{{ _('Curated problem sets and learning roadmaps') }}</span>
+{% endblock %}
+
+{% block extra_header_actions %}
+    {% if request.user.is_authenticated and (request.user.is_staff or request.user.has_perm('judge.add_topic')) %}
+        <a href="{{ url('admin:judge_topic_add') }}" class="button primary-btn topic-create-action-btn">
+            <i class="fa fa-plus"></i> <span>{{ _('Create new topic') }}</span>
+        </a>
+    {% endif %}
+{% endblock %}
+
+{% block tabs %}
+    {{ make_tab('list', 'fa-th-large', url('topic_list'), _('Topics')) }}
+    {% if request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser) %}
+        {{ make_tab('admin', 'fa-cog', url('admin:judge_topic_changelist'), _('Admin')) }}
+    {% endif %}
+{% endblock %}

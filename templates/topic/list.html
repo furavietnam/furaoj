@@ -1,0 +1,111 @@
+{% extends "common-content.html" %}
+
+{% block title %}
+    {{ _('Topics') }} - {{ site.name }}
+{% endblock %}
+
+{% block title_ruler %}{% endblock %}
+
+{% block title_row %}
+    {% set tab = 'list' %}
+    {% include "topic/topic-list-tabs.html" %}
+{% endblock %}
+
+{% block body %}
+    {% if page_obj.has_other_pages() %}
+        <div class="top-pagination-bar">{% include "list-pages.html" %}</div>
+    {% endif %}
+
+    <div id="common-content">
+        <div class="topics-container">
+            <div class="topic-filter-bar">
+                <form method="get" action="{{ url('topic_list') }}" class="topic-search-form">
+                    <div class="topic-search-input-wrap">
+                        <i class="fa fa-search search-icon"></i>
+                        <input type="text" name="q" value="{{ search_query }}" placeholder="{{ _('Search topics by name or keyword...') }}" class="topic-search-input">
+                        {% if search_query %}
+                            <a href="{{ url('topic_list') }}" class="topic-search-clear" title="{{ _('Clear') }}"><i class="fa fa-times"></i></a>
+                        {% endif %}
+                    </div>
+                    <button type="submit" class="button topic-search-btn">{{ _('Search') }}</button>
+                </form>
+            </div>
+
+            {% if topics %}
+                <div class="topic-grid">
+                    {% for topic in topics %}
+                        <div class="topic-card">
+                            <div class="topic-card-header">
+                                <div class="topic-card-icon">
+                                    <i class="fa {{ topic.icon or 'fa-bookmark' }}"></i>
+                                </div>
+                                <div class="topic-card-meta">
+                                    <a href="{{ url('topic_detail', topic.slug or topic.id) }}" class="topic-card-title">{{ topic.name }}</a>
+                                    <div class="topic-card-counts">
+                                        <span class="topic-pill"><i class="fa fa-code"></i> {{ topic.problem_count }} {{ _('problems') }}</span>
+                                        <span class="topic-pill"><i class="fa fa-star"></i> {{ topic.total_points|floatformat(0) }} {{ _('pts') }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if topic.description %}
+                                <div class="topic-card-desc">
+                                    {{ topic.description|striptags|truncate(120) }}
+                                </div>
+                            {% endif %}
+
+                            <div class="topic-card-progress">
+                                {% if request.user.is_authenticated and topic.display_total > 0 %}
+                                    <div class="topic-progress-card{% if topic.progress_percent == 100 %} completed{% elif topic.progress_percent > 0 %} in-progress{% else %} not-started{% endif %}">
+                                        <div class="topic-progress-header">
+                                            <span class="topic-progress-score">
+                                                <strong>{{ topic.user_earned|floatformat(0) }}</strong> / {{ topic.display_total|floatformat(0) }} {{ _('pts') }}
+                                            </span>
+                                            <span class="topic-progress-percent">
+                                                {% if topic.progress_percent == 100 %}
+                                                    <i class="fa fa-check"></i>
+                                                {% endif %}
+                                                {{ topic.progress_percent }}%
+                                            </span>
+                                        </div>
+                                        <div class="topic-progress-track">
+                                            <div class="topic-progress-bar" style="width: {{ topic.progress_percent }}%"></div>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="topic-progress-card not-started">
+                                        <div class="topic-progress-header">
+                                            <span class="topic-progress-score">
+                                                {{ topic.problem_count }} {{ _('problems available') }}
+                                            </span>
+                                            <span class="topic-progress-percent">{{ topic.total_points|floatformat(0) }} {{ _('pts') }}</span>
+                                        </div>
+                                        <div class="topic-progress-track">
+                                            <div class="topic-progress-bar" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="topic-card-footer">
+                                <a href="{{ url('topic_detail', topic.slug or topic.id) }}" class="button primary-btn topic-enter-btn">
+                                    <span>{{ _('Explore Topic') }}</span> <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-topic-box">
+                    <i class="fa fa-folder-open-o empty-icon"></i>
+                    <h3>{{ _('No topics found') }}</h3>
+                    <p>{{ _('Try searching with different keywords or check back later.') }}</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if page_obj.has_other_pages() %}
+        <div class="bottom-pagination-bar">{% include "list-pages.html" %}</div>
+    {% endif %}
+{% endblock %}
