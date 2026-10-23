@@ -53,7 +53,7 @@
                     <div class="sidebox topic-admin-box">
                         <h3>{{ _('Admin Actions') }} <i class="fa fa-cog"></i></h3>
                         <div class="sidebox-content">
-                            <form method="post" action="{{ url('topic_add_problem', topic.slug or topic.id) }}" class="topic-quick-add-form">
+                            <form method="post" action="{{ url('topic_add_problem', topic.slug) }}" class="topic-quick-add-form">
                                 {% csrf_token %}
                                 <label for="topic-prob-code"><strong>{{ _('Add Problem to Topic') }}</strong></label>
                                 <div class="topic-add-input-group">
@@ -150,7 +150,7 @@
                                 {% endif %}
                                 {% if can_edit %}
                                     <td class="actions" style="text-align: center;">
-                                        <form method="post" action="{{ url('topic_remove_problem', topic.slug or topic.id, tp.problem.id) }}" style="display:inline;" onsubmit="return confirm('{{ _('Remove problem from topic?') }}');">
+                                        <form method="post" action="{{ url('topic_remove_problem', topic.slug, tp.problem.id) }}" style="display:inline;" onsubmit="return confirm('{{ _('Remove problem from topic?') }}');">
                                             {% csrf_token %}
                                             <button type="submit" class="button danger-btn btn-sm topic-remove-btn" title="{{ _('Remove problem') }}">
                                                 <i class="fa fa-trash"></i>

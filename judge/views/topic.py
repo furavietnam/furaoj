@@ -97,8 +97,8 @@ class TopicDetail(TitleMixin, DetailView):
     template_name = 'topic/detail.html'
 
     def get_object(self, queryset=None):
-        identifier = self.kwargs.get('identifier')
-        if not identifier:
+        slug = self.kwargs.get('slug')
+        if not slug:
             raise Http404(_('Topic not found.'))
 
         if self.request.user.is_authenticated and (self.request.user.is_staff or self.request.user.is_superuser):
@@ -106,11 +106,7 @@ class TopicDetail(TitleMixin, DetailView):
         else:
             qs = Topic.objects.filter(is_public=True)
 
-        if identifier.isdigit():
-            obj = qs.filter(Q(id=int(identifier)) | Q(slug=identifier)).first()
-        else:
-            obj = qs.filter(slug=identifier).first()
-
+        obj = qs.filter(slug=slug).first()
         if not obj:
             raise Http404(_('Topic not found.'))
         return obj
@@ -189,18 +185,14 @@ class TopicDetail(TitleMixin, DetailView):
 
 
 class TopicAddProblem(View):
-    def post(self, request, identifier, *args, **kwargs):
+    def post(self, request, slug, *args, **kwargs):
         if not request.user.is_authenticated:
             return HttpResponseRedirect(reverse('auth_login'))
 
         if not (request.user.is_staff or request.user.is_superuser or request.user.has_perm('judge.change_topic')):
             raise PermissionDenied(_('You are not allowed to manage topic problems.'))
 
-        if identifier.isdigit():
-            topic = Topic.objects.filter(Q(id=int(identifier)) | Q(slug=identifier)).first()
-        else:
-            topic = Topic.objects.filter(slug=identifier).first()
-
+        topic = Topic.objects.filter(slug=slug).first()
         if not topic:
             raise Http404(_('Topic not found.'))
 
@@ -239,18 +231,14 @@ class TopicAddProblem(View):
 
 
 class TopicRemoveProblem(View):
-    def post(self, request, identifier, problem_id, *args, **kwargs):
+    def post(self, request, slug, problem_id, *args, **kwargs):
         if not request.user.is_authenticated:
             return HttpResponseRedirect(reverse('auth_login'))
 
         if not (request.user.is_staff or request.user.is_superuser or request.user.has_perm('judge.change_topic')):
             raise PermissionDenied(_('You are not allowed to manage topic problems.'))
 
-        if identifier.isdigit():
-            topic = Topic.objects.filter(Q(id=int(identifier)) | Q(slug=identifier)).first()
-        else:
-            topic = Topic.objects.filter(slug=identifier).first()
-
+        topic = Topic.objects.filter(slug=slug).first()
         if not topic:
             raise Http404(_('Topic not found.'))
 

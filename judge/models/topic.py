@@ -38,7 +38,7 @@ class Topic(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        return reverse('topic_detail', args=(self.slug or self.id,))
+        return reverse('topic_detail', args=(self.slug,))
 
     def is_editable_by(self, user):
         return bool(user.is_authenticated and (user.is_superuser or user.is_staff or user.has_perm('judge.change_topic')))

@@ -301,9 +301,9 @@ urlpatterns = [
         path('', TopicList.as_view(), name='topic_list'),
         path('<int:page>', TopicList.as_view(), name='topic_list'),
     ])),
-    path('topic/<str:identifier>/', TopicDetail.as_view(), name='topic_detail'),
-    path('topic/<str:identifier>/add-problem/', TopicAddProblem.as_view(), name='topic_add_problem'),
-    path('topic/<str:identifier>/remove-problem/<int:problem_id>/', TopicRemoveProblem.as_view(), name='topic_remove_problem'),
+    path('topic/<slug:slug>/', TopicDetail.as_view(), name='topic_detail'),
+    path('topic/<slug:slug>/add-problem/', TopicAddProblem.as_view(), name='topic_add_problem'),
+    path('topic/<slug:slug>/remove-problem/<int:problem_id>/', TopicRemoveProblem.as_view(), name='topic_remove_problem'),
 
     path('contributors/', include([
         path('', user.ContribList.as_view(), name='contributors_list'),

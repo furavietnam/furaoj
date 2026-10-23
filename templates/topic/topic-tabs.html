@@ -11,7 +11,7 @@
 {% endblock %}
 
 {% block tabs %}
-    {{ make_tab('detail', 'fa-book', url('topic_detail', topic.slug or topic.id), _('Problems')) }}
+    {{ make_tab('detail', 'fa-book', url('topic_detail', topic.slug), _('Problems')) }}
     {% if request.user.is_authenticated and topic.is_editable_by(request.user) %}
         {{ make_tab('admin', 'fa-cog', url('admin:judge_topic_change', topic.id), _('Admin')) }}
     {% endif %}

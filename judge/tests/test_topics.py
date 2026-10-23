@@ -80,14 +80,18 @@ class TopicViewsTestCase(TestCase):
         self.assertContains(response, 'topic-grid')
         self.assertContains(response, 'topic-card')
 
-    def test_topic_detail_view_by_id_and_slug(self):
-        # By ID (Anonymous)
+    def test_topic_detail_view_by_slug_and_reject_numeric_id(self):
+        # Access by numeric ID should return 404 (only slug is allowed)
         res_id = self.client.get(f'/topic/{self.topic.id}/')
-        self.assertEqual(res_id.status_code, 200)
-        self.assertContains(res_id, 'Graph Algorithms')
-        self.assertContains(res_id, 'p1')
-        self.assertContains(res_id, 'p2')
-        self.assertNotContains(res_id, 'topic-quick-add-form')
+        self.assertEqual(res_id.status_code, 404)
+
+        # Access by Slug should return 200
+        res_slug = self.client.get(f'/topic/{self.topic.slug}/')
+        self.assertEqual(res_slug.status_code, 200)
+        self.assertContains(res_slug, 'Graph Algorithms')
+        self.assertContains(res_slug, 'p1')
+        self.assertContains(res_slug, 'p2')
+        self.assertNotContains(res_slug, 'topic-quick-add-form')
 
         # Staff user should see the add form
         self.client.login(username='admin_user', password='password123')
@@ -97,17 +101,17 @@ class TopicViewsTestCase(TestCase):
 
     def test_topic_add_problem_permission(self):
         # Anonymous
-        res_anon = self.client.post(f'/topic/{self.topic.id}/add-problem/', {'problem_code': 'p3'})
+        res_anon = self.client.post(f'/topic/{self.topic.slug}/add-problem/', {'problem_code': 'p3'})
         self.assertIn(res_anon.status_code, [302, 403])
 
         # Regular user
         self.client.login(username='normal_user', password='password123')
-        res_reg = self.client.post(f'/topic/{self.topic.id}/add-problem/', {'problem_code': 'p3'})
+        res_reg = self.client.post(f'/topic/{self.topic.slug}/add-problem/', {'problem_code': 'p3'})
         self.assertEqual(res_reg.status_code, 403)
 
         # Staff user
         self.client.login(username='admin_user', password='password123')
-        res_staff = self.client.post(f'/topic/{self.topic.id}/add-problem/', {'problem_code': 'p3'})
+        res_staff = self.client.post(f'/topic/{self.topic.slug}/add-problem/', {'problem_code': 'p3'})
         self.assertIn(res_staff.status_code, [200, 302])
         self.assertEqual(self.topic.topic_problems.filter(problem=self.p3).count(), 1)
         self.topic.refresh_from_db()
@@ -116,7 +120,7 @@ class TopicViewsTestCase(TestCase):
 
     def test_topic_remove_problem(self):
         self.client.login(username='admin_user', password='password123')
-        res = self.client.post(f'/topic/{self.topic.id}/remove-problem/{self.p1.id}/')
+        res = self.client.post(f'/topic/{self.topic.slug}/remove-problem/{self.p1.id}/')
         self.assertIn(res.status_code, [200, 302])
         self.assertEqual(self.topic.topic_problems.filter(problem=self.p1).count(), 0)
         self.topic.refresh_from_db()

@@ -40,7 +40,7 @@
                                     <i class="fa {{ topic.icon or 'fa-bookmark' }}"></i>
                                 </div>
                                 <div class="topic-card-meta">
-                                    <a href="{{ url('topic_detail', topic.slug or topic.id) }}" class="topic-card-title">{{ topic.name }}</a>
+                                    <a href="{{ url('topic_detail', topic.slug) }}" class="topic-card-title">{{ topic.name }}</a>
                                     <div class="topic-card-counts">
                                         <span class="topic-pill"><i class="fa fa-code"></i> {{ topic.problem_count }} {{ _('problems') }}</span>
                                         <span class="topic-pill"><i class="fa fa-star"></i> {{ topic.total_points|floatformat(0) }} {{ _('pts') }}</span>
@@ -88,7 +88,7 @@
                             </div>
 
                             <div class="topic-card-footer">
-                                <a href="{{ url('topic_detail', topic.slug or topic.id) }}" class="button primary-btn topic-enter-btn">
+                                <a href="{{ url('topic_detail', topic.slug) }}" class="button primary-btn topic-enter-btn">
                                     <span>{{ _('Explore Topic') }}</span> <i class="fa fa-arrow-right"></i>
                                 </a>
                             </div>
