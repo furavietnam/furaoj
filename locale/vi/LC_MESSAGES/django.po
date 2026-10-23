@@ -11054,3 +11054,40 @@ msgstr "URL rút gọn này không hoạt động."
 
 #~ msgid "Current Day"
 #~ msgstr "Hôm nay"
+
+
+msgid "Topics"
+msgstr "Chủ đề"
+
+msgid "Topic Overview"
+msgstr "Tổng quan chủ đề"
+
+msgid "Total Problems"
+msgstr "Số lượng bài"
+
+msgid "Total Points"
+msgstr "Tổng điểm"
+
+msgid "Your Score"
+msgstr "Điểm của bạn"
+
+msgid "Admin Actions"
+msgstr "Quản trị chủ đề"
+
+msgid "Add Problem to Topic"
+msgstr "Thêm bài vào chủ đề"
+
+msgid "Add Problem"
+msgstr "Thêm bài"
+
+msgid "Manage in Django Admin"
+msgstr "Quản lý trong Django Admin"
+
+msgid "Edit Topic"
+msgstr "Chỉnh sửa chủ đề"
+
+msgid "Delete Topic"
+msgstr "Xóa chủ đề"
+
+msgid "No problems have been added to this topic yet."
+msgstr "Chưa có bài tập nào trong chủ đề này."

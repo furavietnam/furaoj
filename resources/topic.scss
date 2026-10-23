@@ -522,85 +522,354 @@
     }
 }
 
-.topic-admin-box {
+.topic-admin-card {
     margin-top: 18px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
 
-    .topic-quick-add-form {
-        margin-bottom: 14px;
+    @if not $is_light_theme {
+        background: #1e293b;
+        border-color: #334155;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    }
 
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-size: 13px;
-            color: #1e293b;
+    .topic-admin-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        border-bottom: 1px solid #e2e8f0;
+
+        @if not $is_light_theme {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-bottom-color: #334155;
+        }
+
+        .admin-header-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #0f172a;
+
+            i {
+                color: #2563eb;
+                font-size: 15px;
+
+                @if not $is_light_theme {
+                    color: #60a5fa;
+                }
+            }
 
             @if not $is_light_theme {
                 color: #f8fafc;
             }
         }
+
+        .admin-role-badge {
+            background: #dbeafe;
+            color: #1d4ed8;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+
+            @if not $is_light_theme {
+                background: #1e3a8a;
+                color: #93c5fd;
+            }
+        }
     }
 
-    .topic-add-input-group {
+    .topic-admin-card-body {
+        padding: 16px;
+    }
+
+    .admin-section-block {
         display: flex;
+        flex-direction: column;
+    }
+
+    .admin-section-heading {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #64748b;
+        margin-bottom: 8px;
+
+        i {
+            color: #2563eb;
+            font-size: 12px;
+
+            @if not $is_light_theme {
+                color: #60a5fa;
+            }
+        }
+
+        @if not $is_light_theme {
+            color: #94a3b8;
+        }
+    }
+
+    .admin-input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .admin-input-wrapper {
+        position: relative;
+        width: 100%;
+
+        .admin-input-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        .admin-problem-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 9px 12px 9px 34px !important;
+            border-radius: 9px !important;
+            border: 1px solid #cbd5e1 !important;
+            font-size: 13px !important;
+            background: #ffffff !important;
+            color: #0f172a !important;
+            transition: all 0.2s ease !important;
+
+            &:focus {
+                border-color: #2563eb !important;
+                box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+                outline: none !important;
+            }
+
+            @if not $is_light_theme {
+                background: #0f172a !important;
+                border-color: #334155 !important;
+                color: #f8fafc !important;
+
+                &:focus {
+                    border-color: #60a5fa !important;
+                    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2) !important;
+                }
+            }
+        }
+    }
+
+    .admin-add-submit-btn {
+        width: 100%;
+        padding: 9px 14px !important;
+        border-radius: 9px !important;
+        font-weight: 600 !important;
+        font-size: 13px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25) !important;
+        transition: all 0.2s ease !important;
+
+        &:hover {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.35) !important;
+        }
+
+        @if not $is_light_theme {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3) !important;
+
+            &:hover {
+                background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+            }
+        }
+    }
+
+    .admin-section-hint {
+        font-size: 11px;
+        color: #94a3b8;
+        margin-top: 6px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+
+        i {
+            font-size: 11px;
+        }
+
+        @if not $is_light_theme {
+            color: #64748b;
+        }
+    }
+
+    .admin-section-divider {
+        height: 1px;
+        background: #f1f5f9;
+        margin: 14px 0;
+
+        @if not $is_light_theme {
+            background: #334155;
+        }
+    }
+
+    .admin-action-list {
+        display: flex;
+        flex-direction: column;
         gap: 6px;
     }
 
-    .topic-add-input {
-        flex: 1;
-        padding: 7px 10px !important;
-        border-radius: 8px !important;
-        border: 1px solid #cbd5e1 !important;
-        font-size: 13px !important;
-
-        @if not $is_light_theme {
-            background: #0f172a !important;
-            border-color: #334155 !important;
-            color: #f8fafc !important;
-        }
-    }
-
-    .topic-add-btn {
-        padding: 7px 12px !important;
-        border-radius: 8px !important;
-        font-size: 13px !important;
-        font-weight: 600 !important;
-        white-space: nowrap;
-    }
-
-    .topic-admin-links {
-        border-top: 1px solid #f1f5f9;
-        padding-top: 12px;
-
-        @if not $is_light_theme {
-            border-top-color: #334155;
-        }
-    }
-
-    .topic-admin-link-btn {
-        display: block;
-        text-align: center;
-        padding: 8px 12px !important;
-        border-radius: 8px !important;
-        font-size: 12.5px !important;
-        font-weight: 600 !important;
-        text-decoration: none;
-        background: #f1f5f9 !important;
-        color: #475569 !important;
-        border: 1px solid #e2e8f0 !important;
+    .admin-action-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: 9px;
+        text-decoration: none !important;
+        border: 1px solid transparent;
+        transition: all 0.15s ease;
 
         &:hover {
-            background: #e2e8f0 !important;
-            color: #1e293b !important;
+            background: #f8fafc;
+            border-color: #e2e8f0;
+            transform: translateX(2px);
         }
 
         @if not $is_light_theme {
-            background: #334155 !important;
-            color: #cbd5e1 !important;
-            border-color: #475569 !important;
-
             &:hover {
-                background: #475569 !important;
-                color: #f8fafc !important;
+                background: #0f172a;
+                border-color: #334155;
+            }
+        }
+
+        .admin-action-icon {
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+
+            &.edit {
+                background: #eff6ff;
+                color: #2563eb;
+
+                @if not $is_light_theme {
+                    background: #1e3a8a;
+                    color: #93c5fd;
+                }
+            }
+
+            &.manage {
+                background: #f0fdf4;
+                color: #16a34a;
+
+                @if not $is_light_theme {
+                    background: #14532d;
+                    color: #86efac;
+                }
+            }
+
+            &.delete {
+                background: #fef2f2;
+                color: #dc2626;
+
+                @if not $is_light_theme {
+                    background: #450a0a;
+                    color: #fca5a5;
+                }
+            }
+        }
+
+        .admin-action-text {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+
+            .action-main-title {
+                font-size: 12.5px;
+                font-weight: 600;
+                color: #1e293b;
+                line-height: 1.3;
+
+                @if not $is_light_theme {
+                    color: #f8fafc;
+                }
+            }
+
+            .action-sub-title {
+                font-size: 11px;
+                color: #64748b;
+                line-height: 1.3;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+
+                @if not $is_light_theme {
+                    color: #94a3b8;
+                }
+            }
+        }
+
+        .admin-action-chevron {
+            margin-left: auto;
+            color: #cbd5e1;
+            font-size: 12px;
+            transition: transform 0.15s ease;
+
+            @if not $is_light_theme {
+                color: #475569;
+            }
+        }
+
+        &:hover .admin-action-chevron {
+            transform: translateX(2px);
+            color: #64748b;
+
+            @if not $is_light_theme {
+                color: #cbd5e1;
+            }
+        }
+
+        &.danger {
+            &:hover {
+                background: #fef2f2;
+                border-color: #fecaca;
+
+                .action-main-title {
+                    color: #dc2626;
+                }
+
+                @if not $is_light_theme {
+                    background: #450a0a;
+                    border-color: #7f1d1d;
+
+                    .action-main-title {
+                        color: #fca5a5;
+                    }
+                }
             }
         }
     }

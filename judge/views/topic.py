@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db.models import FloatField, Max, Q
@@ -198,6 +199,7 @@ class TopicAddProblem(View):
 
         problem_code = request.POST.get('problem_code', '').strip()
         if not problem_code:
+            messages.error(request, _('Please enter a problem code.'))
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({'success': False, 'error': _('Please enter a problem code.')}, status=400)
             return redirect(topic.get_absolute_url())
@@ -207,6 +209,7 @@ class TopicAddProblem(View):
             problem = Problem.objects.filter(id=int(problem_code)).first()
 
         if not problem:
+            messages.error(request, _('Problem "%(code)s" not found.') % {'code': problem_code})
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({'success': False, 'error': _('Problem not found.')}, status=404)
             return redirect(topic.get_absolute_url())
@@ -217,6 +220,11 @@ class TopicAddProblem(View):
             defaults={'order': topic.topic_problems.count() + 1},
         )
         topic.update_stats()
+
+        if created:
+            messages.success(request, _('Added "%(name)s" (%(code)s) to topic.') % {'name': problem.name, 'code': problem.code})
+        else:
+            messages.info(request, _('Problem "%(code)s" is already in this topic.') % {'code': problem.code})
 
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({
@@ -242,8 +250,11 @@ class TopicRemoveProblem(View):
         if not topic:
             raise Http404(_('Topic not found.'))
 
-        TopicProblem.objects.filter(topic=topic, problem_id=problem_id).delete()
+        deleted_count, _counts = TopicProblem.objects.filter(topic=topic, problem_id=problem_id).delete()
         topic.update_stats()
+
+        if deleted_count:
+            messages.success(request, _('Removed problem from topic.'))
 
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({'success': True})

@@ -12,6 +12,8 @@
 {% endblock %}
 
 {% block body %}
+    {% include "messages.html" %}
+
     <div id="common-content">
         <div id="content-right" class="topics">
             <div class="info-float">
@@ -50,23 +52,72 @@
                 </div>
 
                 {% if can_edit %}
-                    <div class="sidebox topic-admin-box">
-                        <h3>{{ _('Admin Actions') }} <i class="fa fa-cog"></i></h3>
-                        <div class="sidebox-content">
-                            <form method="post" action="{{ url('topic_add_problem', topic.slug) }}" class="topic-quick-add-form">
-                                {% csrf_token %}
-                                <label for="topic-prob-code"><strong>{{ _('Add Problem to Topic') }}</strong></label>
-                                <div class="topic-add-input-group">
-                                    <input type="text" id="topic-prob-code" name="problem_code" placeholder="{{ _('Code or name...') }}" required class="topic-add-input">
-                                    <button type="submit" class="button primary-btn topic-add-btn">
-                                        <i class="fa fa-plus"></i> {{ _('Add') }}
-                                    </button>
+                    <div class="topic-admin-card">
+                        <div class="topic-admin-card-header">
+                            <div class="admin-header-title">
+                                <i class="fa fa-shield"></i>
+                                <span>{{ _('Admin Actions') }}</span>
+                            </div>
+                            <span class="admin-role-badge">Staff</span>
+                        </div>
+                        <div class="topic-admin-card-body">
+                            <div class="admin-section-block">
+                                <div class="admin-section-heading">
+                                    <i class="fa fa-plus-circle"></i>
+                                    <span>{{ _('Add Problem to Topic') }}</span>
                                 </div>
-                            </form>
-                            <div class="topic-admin-links">
-                                <a href="{{ url('admin:judge_topic_change', topic.id) }}" class="button topic-admin-link-btn" target="_blank">
-                                    <i class="fa fa-external-link"></i> {{ _('Manage in Django Admin') }}
-                                </a>
+                                <form method="post" action="{{ url('topic_add_problem', topic.slug) }}" class="topic-quick-add-form admin-add-problem-form">
+                                    {% csrf_token %}
+                                    <div class="admin-input-group">
+                                        <div class="admin-input-wrapper">
+                                            <i class="fa fa-code admin-input-icon"></i>
+                                            <input type="text" id="topic-prob-code" name="problem_code" placeholder="{{ _('Code or name...') }}" required class="admin-problem-input" autocomplete="off">
+                                        </div>
+                                        <button type="submit" class="button primary-btn admin-add-submit-btn">
+                                            <i class="fa fa-plus"></i> <span>{{ _('Add Problem') }}</span>
+                                        </button>
+                                    </div>
+                                </form>
+                                <div class="admin-section-hint">
+                                    <i class="fa fa-info-circle"></i> <span>{{ _('Nhập mã bài (code) hoặc ID để thêm vào.') }}</span>
+                                </div>
+                            </div>
+
+                            <div class="admin-section-divider"></div>
+
+                            <div class="admin-section-block">
+                                <div class="admin-section-heading">
+                                    <i class="fa fa-sliders"></i>
+                                    <span>{{ _('Tùy chọn quản trị') }}</span>
+                                </div>
+                                <div class="admin-action-list">
+                                    <a href="{{ url('admin:judge_topic_change', topic.id) }}" class="admin-action-row" target="_blank">
+                                        <div class="admin-action-icon edit"><i class="fa fa-pencil"></i></div>
+                                        <div class="admin-action-text">
+                                            <span class="action-main-title">{{ _('Edit Topic') }}</span>
+                                            <span class="action-sub-title">{{ _('Sửa tên, mô tả, biểu tượng') }}</span>
+                                        </div>
+                                        <i class="fa fa-angle-right admin-action-chevron"></i>
+                                    </a>
+
+                                    <a href="{{ url('admin:judge_topic_change', topic.id) }}#topic_problems-group" class="admin-action-row" target="_blank">
+                                        <div class="admin-action-icon manage"><i class="fa fa-list-ol"></i></div>
+                                        <div class="admin-action-text">
+                                            <span class="action-main-title">{{ _('Manage in Django Admin') }}</span>
+                                            <span class="action-sub-title">{{ _('Sắp xếp thứ tự & quản lý bài') }}</span>
+                                        </div>
+                                        <i class="fa fa-angle-right admin-action-chevron"></i>
+                                    </a>
+
+                                    <a href="{{ url('admin:judge_topic_delete', topic.id) }}" class="admin-action-row danger" target="_blank">
+                                        <div class="admin-action-icon delete"><i class="fa fa-trash"></i></div>
+                                        <div class="admin-action-text">
+                                            <span class="action-main-title">{{ _('Delete Topic') }}</span>
+                                            <span class="action-sub-title">{{ _('Xóa chủ đề khỏi hệ thống') }}</span>
+                                        </div>
+                                        <i class="fa fa-angle-right admin-action-chevron"></i>
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -161,9 +212,12 @@
                             </tr>
                         {% else %}
                             <tr>
-                                <td colspan="{% if can_edit %}{% if request.user.is_authenticated %}7{% else %}5{% endif %}{% else %}{% if request.user.is_authenticated %}6{% else %}4{% endif %}{% endif %}" class="empty-table-msg" style="text-align: center; padding: 30px;">
-                                    <i class="fa fa-inbox" style="font-size: 24px; color: #888; display: block; margin-bottom: 8px;"></i>
-                                    {{ _('No problems have been added to this topic yet.') }}
+                                <td colspan="{% if can_edit %}{% if request.user.is_authenticated %}7{% else %}5{% endif %}{% else %}{% if request.user.is_authenticated %}6{% else %}4{% endif %}{% endif %}" class="empty-table-msg" style="text-align: center; padding: 36px 20px;">
+                                    <i class="fa fa-folder-open-o" style="font-size: 32px; color: #94a3b8; display: block; margin-bottom: 10px;"></i>
+                                    <strong style="color: #475569; font-size: 15px;">{{ _('No problems have been added to this topic yet.') }}</strong>
+                                    {% if can_edit %}
+                                        <p style="font-size: 13px; color: #64748b; margin-top: 6px;">{{ _('Hãy sử dụng bảng Quản trị bên phải để thêm bài tập vào chủ đề.') }}</p>
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% endfor %}
