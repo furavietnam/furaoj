@@ -18,6 +18,7 @@ from judge.views.exam import ExamCreate, ExamDetail, ExamEdit, ExamList
 from judge.views.topic import TopicAddProblem, TopicDetail, TopicList, TopicRemoveProblem
 from judge.views.magazine import MagazinePage
 from judge.views.misc_config import MiscConfigEdit
+from judge.views.chunked_upload import ChunkCompleteView, ChunkUploadView
 from judge.views.problem_data import ProblemDataView, ProblemSubmissionDiff, \
     problem_data_file, problem_init_view
 from judge.views.register import ActivationView, RegistrationView
@@ -488,6 +489,11 @@ urlpatterns = [
     ])),
 
     path('magazine/', MagazinePage.as_view(), name='magazine'),
+
+    path('upload/', include([
+        path('chunk/', ChunkUploadView.as_view(), name='chunk_upload'),
+        path('complete/', ChunkCompleteView.as_view(), name='chunk_complete'),
+    ])),
 
     path('misc_config/', MiscConfigEdit.as_view(), name='misc_config'),
 ]
