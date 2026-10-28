@@ -12,6 +12,7 @@ from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_POST
 
 from judge.models import Submission
+from judge.utils.chunked_upload import ChunkedUploadManager
 
 __all__ = ['rejudge_submission']
 
@@ -82,10 +83,19 @@ def submission_uploader(submission_file, problem_code, user_id):
 
 @login_required
 def martor_image_uploader(request):
-    if request.method != 'POST' or 'markdown-image-upload' not in request.FILES:
+    if request.method != 'POST':
         return HttpResponseBadRequest('Invalid request')
 
-    image = request.FILES['markdown-image-upload']
+    image = None
+    if 'markdown-image-upload' in request.FILES:
+        image = request.FILES['markdown-image-upload']
+    elif 'upload_token' in request.POST:
+        token = request.POST['upload_token']
+        image = ChunkedUploadManager.get_assembled_file(request.user.id, token)
+
+    if not image:
+        return HttpResponseBadRequest('Invalid request')
+
     if request.user.is_staff or request.user.has_perm('judge.can_upload_image'):
         data = django_uploader(image)
     else:

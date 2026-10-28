@@ -264,4 +264,45 @@ class ChunkedUploadTestCase(TestCase):
         self.profile.refresh_from_db()
         self.assertTrue(bool(self.profile.background))
 
+    def test_martor_image_uploader_chunk_token(self):
+        self.client.login(username='admin', password='password')
+        test_png = self._generate_png()
+
+        upload_id = str(uuid.uuid4())
+        self.client.post(reverse('chunk_upload'), {
+            'upload_id': upload_id,
+            'chunk_index': 0,
+            'total_chunks': 1,
+            'chunk_file': SimpleUploadedFile('content.png', test_png),
+        })
+        complete_resp = self.client.post(reverse('chunk_complete'), {
+            'upload_id': upload_id,
+            'filename': 'content.png',
+            'total_chunks': 1,
+        })
+        token = complete_resp.json()['upload_token']
+
+        resp = self.client.post(reverse('martor_image_uploader'), {
+            'upload_token': token,
+        })
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data.get('status'), 200)
+        self.assertTrue('link' in data)
+
+    def test_cleanup_chunks_command(self):
+        from django.core.management import call_command
+        self.client.login(username='testuser', password='password')
+        upload_id = str(uuid.uuid4())
+        self.client.post(reverse('chunk_upload'), {
+            'upload_id': upload_id,
+            'chunk_index': 0,
+            'total_chunks': 1,
+            'chunk_file': SimpleUploadedFile('test.bin', b'12345'),
+        })
+        call_command('cleanup_chunks', hours=0)
+        chunk_path = os.path.join(settings.MEDIA_ROOT, 'chunked_uploads', 'chunks', str(self.user.id), upload_id)
+        self.assertFalse(os.path.exists(chunk_path))
+
+
 
