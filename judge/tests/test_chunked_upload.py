@@ -8,7 +8,8 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from judge.models import Profile
+import zipfile
+from judge.models import Problem, ProblemData, ProblemGroup, Profile
 
 
 class ChunkedUploadTestCase(TestCase):
@@ -17,6 +18,17 @@ class ChunkedUploadTestCase(TestCase):
         self.profile = Profile.objects.create(user=self.user)
         self.other_user = User.objects.create_user(username='otheruser', password='password')
         self.other_profile = Profile.objects.create(user=self.other_user)
+        self.staff_user = User.objects.create_superuser(username='admin', email='admin@test.com', password='password')
+        self.staff_profile = Profile.objects.create(user=self.staff_user)
+        self.group = ProblemGroup.objects.create(name='test-group', full_name='Test Group')
+        self.problem = Problem.objects.create(
+            code='probdata',
+            name='Problem Data Test',
+            time_limit=1.0,
+            memory_limit=65536,
+            points=100,
+            group=self.group,
+        )
 
     def tearDown(self):
         chunk_dir = os.path.join(settings.MEDIA_ROOT, 'chunked_uploads')
@@ -145,3 +157,51 @@ class ChunkedUploadTestCase(TestCase):
             'total_chunks': 1,
         })
         self.assertEqual(complete_resp.status_code, 400)
+
+    def test_problem_data_zip_chunk_upload(self):
+        self.client.login(username='admin', password='password')
+
+        # Create valid zip in memory
+        zip_buf = io.BytesIO()
+        with zipfile.ZipFile(zip_buf, 'w') as zf:
+            zf.writestr('1.in', '1 2\n')
+            zf.writestr('1.out', '3\n')
+        zip_bytes = zip_buf.getvalue()
+
+        # Upload zip using chunk upload endpoints
+        upload_id = str(uuid.uuid4())
+        self.client.post(reverse('chunk_upload'), {
+            'upload_id': upload_id,
+            'chunk_index': 0,
+            'total_chunks': 1,
+            'chunk_file': SimpleUploadedFile('tests.zip', zip_bytes),
+        })
+        complete_resp = self.client.post(reverse('chunk_complete'), {
+            'upload_id': upload_id,
+            'filename': 'tests.zip',
+            'total_chunks': 1,
+        })
+        self.assertEqual(complete_resp.status_code, 200)
+        token = complete_resp.json()['upload_token']
+
+        # Post to ProblemDataView with the token
+        url = reverse('problem_data', args=[self.problem.code])
+        response = self.client.post(url, {
+            'problem-data-zipfile-token': token,
+            'problem-data-grader': 'standard',
+            'problem-data-checker': 'standard',
+            'problem-data-checker_type': 'default',
+            'cases-TOTAL_FORMS': '1',
+            'cases-INITIAL_FORMS': '0',
+            'cases-MIN_NUM_FORMS': '0',
+            'cases-MAX_NUM_FORMS': '1',
+            'cases-0-order': '1',
+            'cases-0-type': 'C',
+            'cases-0-input_file': '1.in',
+            'cases-0-output_file': '1.out',
+            'cases-0-points': '100',
+        })
+        self.assertEqual(response.status_code, 302)
+        problem_data = ProblemData.objects.get(problem=self.problem)
+        self.assertTrue(bool(problem_data.zipfile))
+

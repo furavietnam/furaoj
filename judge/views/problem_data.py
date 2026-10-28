@@ -23,6 +23,7 @@ from django.views.generic import DetailView
 from judge.highlight_code import highlight_code
 from judge.models import Problem, ProblemData, ProblemTestCase, Submission, problem_data_storage
 from judge.models.problem_data import CUSTOM_CHECKERS, IO_METHODS
+from judge.utils.chunked_upload import ChunkedUploadManager
 from judge.utils.organization import add_quota_context
 from judge.utils.problem_data import ProblemDataCompiler
 from judge.utils.unicode import utf8text
@@ -235,8 +236,16 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
                         reverse('problem_detail', args=[self.object.code]))))
 
     def get_data_form(self, post=False):
+        files = None
+        if post:
+            files = self.request.FILES.copy()
+            token = self.request.POST.get('problem-data-zipfile-token')
+            if token and 'problem-data-zipfile' not in files:
+                assembled_file = ChunkedUploadManager.get_assembled_file(self.request.user.id, token)
+                if assembled_file:
+                    files['problem-data-zipfile'] = assembled_file
         return ProblemDataForm(data=self.request.POST if post else None, prefix='problem-data',
-                               files=self.request.FILES if post else None,
+                               files=files,
                                instance=ProblemData.objects.get_or_create(problem=self.object)[0])
 
     def get_case_formset(self, files, post=False):
@@ -249,6 +258,11 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
                 return []
             elif post and 'problem-data-zipfile' in self.request.FILES:
                 return ZipFile(self.request.FILES['problem-data-zipfile']).namelist()
+            elif post and 'problem-data-zipfile-token' in self.request.POST:
+                token = self.request.POST.get('problem-data-zipfile-token')
+                assembled_file = ChunkedUploadManager.get_assembled_file(self.request.user.id, token)
+                if assembled_file:
+                    return ZipFile(assembled_file).namelist()
             elif data.zipfile:
                 return ZipFile(data.zipfile.path).namelist()
         except (BadZipfile, FileNotFoundError):
