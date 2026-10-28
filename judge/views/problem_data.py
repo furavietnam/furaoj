@@ -256,16 +256,17 @@ class ProblemDataView(TitleMixin, ProblemManagerMixin):
         try:
             if post and 'problem-data-zipfile-clear' in self.request.POST:
                 return []
-            elif post and 'problem-data-zipfile-token' in self.request.POST:
+            if post:
                 token = self.request.POST.get('problem-data-zipfile-token')
-                assembled_file = ChunkedUploadManager.get_assembled_file(self.request.user.id, token)
-                if assembled_file:
-                    return ZipFile(assembled_file).namelist()
-            elif post and 'problem-data-zipfile' in self.request.FILES:
-                return ZipFile(self.request.FILES['problem-data-zipfile']).namelist()
-            elif data.zipfile:
+                if token:
+                    assembled_file = ChunkedUploadManager.get_assembled_file(self.request.user.id, token)
+                    if assembled_file:
+                        return ZipFile(assembled_file).namelist()
+                if 'problem-data-zipfile' in self.request.FILES:
+                    return ZipFile(self.request.FILES['problem-data-zipfile']).namelist()
+            if data and data.zipfile:
                 return ZipFile(data.zipfile.path).namelist()
-        except (BadZipfile, FileNotFoundError):
+        except (BadZipfile, FileNotFoundError, ValueError):
             return []
         return []
 

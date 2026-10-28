@@ -419,6 +419,65 @@ class ChunkedUploadTestCase(TestCase):
         # If token takes precedence, it extracts the valid ZIP and redirects 302
         self.assertEqual(resp.status_code, 302)
 
+    def test_problem_data_existing_zipfile_with_empty_token(self):
+        self.client.login(username='admin', password='password')
+
+        # First upload a zip file with test cases
+        zip_buf = io.BytesIO()
+        with zipfile.ZipFile(zip_buf, 'w') as zf:
+            zf.writestr('test1/test.inp', '1 2\n')
+            zf.writestr('test1/test.out', '3\n')
+        zip_bytes = zip_buf.getvalue()
+
+        upload_id = str(uuid.uuid4())
+        self.client.post(reverse('chunk_upload'), {
+            'upload_id': upload_id,
+            'chunk_index': 0,
+            'total_chunks': 1,
+            'chunk_file': SimpleUploadedFile('test1.zip', zip_bytes),
+        })
+        complete_resp = self.client.post(reverse('chunk_complete'), {
+            'upload_id': upload_id,
+            'filename': 'test1.zip',
+            'total_chunks': 1,
+        })
+        token = complete_resp.json()['upload_token']
+
+        # Save problem data with the uploaded zip
+        init_resp = self.client.post(reverse('problem_data', args=[self.problem.code]), {
+            'problem-data-zipfile-token': token,
+            'problem-data-grader': 'standard',
+            'problem-data-checker': 'standard',
+            'problem-data-checker_type': 'default',
+            'cases-TOTAL_FORMS': '0',
+            'cases-INITIAL_FORMS': '0',
+            'cases-MIN_NUM_FORMS': '0',
+            'cases-MAX_NUM_FORMS': '1',
+        })
+        self.assertEqual(init_resp.status_code, 302)
+        problem_data = ProblemData.objects.get(problem=self.problem)
+        self.assertTrue(bool(problem_data.zipfile))
+
+        # Now submit the form AGAIN with empty token (e.g. user entering/editing testcases)
+        resp = self.client.post(reverse('problem_data', args=[self.problem.code]), {
+            'problem-data-zipfile-token': '',  # Empty token from hidden input
+            'problem-data-grader': 'standard',
+            'problem-data-checker': 'standard',
+            'problem-data-checker_type': 'default',
+            'cases-TOTAL_FORMS': '1',
+            'cases-INITIAL_FORMS': '0',
+            'cases-MIN_NUM_FORMS': '0',
+            'cases-MAX_NUM_FORMS': '1',
+            'cases-0-order': '1',
+            'cases-0-type': 'C',
+            'cases-0-input_file': 'test1/test.inp',
+            'cases-0-output_file': 'test1/test.out',
+            'cases-0-points': '100',
+        })
+        self.assertEqual(resp.status_code, 302)
+        problem_data.refresh_from_db()
+        self.assertEqual(problem_data.feedback, '')
+
 
 
 
