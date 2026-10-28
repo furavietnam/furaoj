@@ -566,10 +566,37 @@ $(function () {
         }
     });
 
-    $btnConfirm.on('click', function () {
-        $btnConfirm.addClass('is-loading');
-        $confirmText.text("{{ _('Compressing WebP & Uploading...') }}");
+    $btnConfirm.on('click', async function () {
+        var file = $fileInput[0].files && $fileInput[0].files[0];
+        if (!file) {
+            $form.submit();
+            return;
+        }
+
+        $btnConfirm.addClass('is-loading').prop('disabled', true);
+        $confirmText.text("{{ _('Uploading...') }}");
+        $btnConfirm.find('i').remove();
         $btnConfirm.prepend('<i class="fa fa-spinner fa-spin"></i> ');
+
+        if (window.ChunkUploader) {
+            try {
+                var uploader = new ChunkUploader();
+                var result = await uploader.uploadFile(file, {
+                    onProgress: function (p) {
+                        $confirmText.text("{{ _('Uploading...') }} " + p.percent + "%");
+                    }
+                });
+                var $tokenInput = $('<input type="hidden" name="avatar_image_token">').val(result.upload_token);
+                $form.append($tokenInput);
+            } catch (err) {
+                console.error(err);
+                alert("Upload failed: " + (err.message || err));
+                $btnConfirm.removeClass('is-loading').prop('disabled', false);
+                $confirmText.text("{{ _('Confirm & Upload') }}");
+                return;
+            }
+        }
+        $confirmText.text("{{ _('Processing WebP...') }}");
         $form.submit();
     });
 });

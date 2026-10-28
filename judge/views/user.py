@@ -42,6 +42,7 @@ from judge.performance_points import get_pp_breakdown
 from judge.ratings import rating_class, rating_progress
 from judge.tasks import prepare_user_data
 from judge.utils.celery import task_status_by_id, task_status_url_by_id
+from judge.utils.chunked_upload import ChunkedUploadManager
 from judge.utils.infinite_paginator import InfinitePaginationMixin
 from judge.utils.problems import contest_completed_ids, user_completed_ids
 from judge.utils.pwned import PwnedPasswordsValidator
@@ -555,7 +556,14 @@ def edit_avatar(request):
                 request.profile.save(update_fields=['avatar'])
             return HttpResponseRedirect(reverse('edit_avatar') + '?reset=1')
 
-        form = AvatarUploadForm(request.POST, request.FILES)
+        files = request.FILES.copy()
+        token = request.POST.get('avatar_image_token')
+        if token and 'avatar_image' not in files:
+            assembled_file = ChunkedUploadManager.get_assembled_file(request.user.id, token)
+            if assembled_file:
+                files['avatar_image'] = assembled_file
+
+        form = AvatarUploadForm(request.POST, files)
         if form.is_valid():
             uploaded_file = form.cleaned_data['avatar_image']
             avatar_dir = os.path.join(settings.MEDIA_ROOT, 'avatars')
@@ -643,7 +651,14 @@ def edit_background(request):
                 request.profile.save(update_fields=['background'])
             return HttpResponseRedirect(reverse('edit_background') + '?reset=1')
 
-        form = BackgroundUploadForm(request.POST, request.FILES)
+        files = request.FILES.copy()
+        token = request.POST.get('background_image_token')
+        if token and 'background_image' not in files:
+            assembled_file = ChunkedUploadManager.get_assembled_file(request.user.id, token)
+            if assembled_file:
+                files['background_image'] = assembled_file
+
+        form = BackgroundUploadForm(request.POST, files)
         if form.is_valid():
             uploaded_file = form.cleaned_data['background_image']
             bg_dir = os.path.join(settings.MEDIA_ROOT, 'backgrounds')

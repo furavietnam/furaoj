@@ -205,3 +205,63 @@ class ChunkedUploadTestCase(TestCase):
         problem_data = ProblemData.objects.get(problem=self.problem)
         self.assertTrue(bool(problem_data.zipfile))
 
+    def _generate_png(self):
+        from PIL import Image
+        buf = io.BytesIO()
+        img = Image.new('RGB', (100, 100), color='blue')
+        img.save(buf, format='PNG')
+        return buf.getvalue()
+
+    def test_avatar_chunk_upload(self):
+        self.client.login(username='testuser', password='password')
+        test_png = self._generate_png()
+
+        upload_id = str(uuid.uuid4())
+        self.client.post(reverse('chunk_upload'), {
+            'upload_id': upload_id,
+            'chunk_index': 0,
+            'total_chunks': 1,
+            'chunk_file': SimpleUploadedFile('avatar.png', test_png),
+        })
+        complete_resp = self.client.post(reverse('chunk_complete'), {
+            'upload_id': upload_id,
+            'filename': 'avatar.png',
+            'total_chunks': 1,
+        })
+        self.assertEqual(complete_resp.status_code, 200)
+        token = complete_resp.json()['upload_token']
+
+        resp = self.client.post(reverse('edit_avatar'), {
+            'avatar_image_token': token,
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.profile.refresh_from_db()
+        self.assertTrue(bool(self.profile.avatar))
+
+    def test_background_chunk_upload(self):
+        self.client.login(username='testuser', password='password')
+        test_png = self._generate_png()
+
+        upload_id = str(uuid.uuid4())
+        self.client.post(reverse('chunk_upload'), {
+            'upload_id': upload_id,
+            'chunk_index': 0,
+            'total_chunks': 1,
+            'chunk_file': SimpleUploadedFile('bg.png', test_png),
+        })
+        complete_resp = self.client.post(reverse('chunk_complete'), {
+            'upload_id': upload_id,
+            'filename': 'bg.png',
+            'total_chunks': 1,
+        })
+        self.assertEqual(complete_resp.status_code, 200)
+        token = complete_resp.json()['upload_token']
+
+        resp = self.client.post(reverse('edit_background'), {
+            'background_image_token': token,
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.profile.refresh_from_db()
+        self.assertTrue(bool(self.profile.background))
+
+
