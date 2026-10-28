@@ -558,7 +558,7 @@ def edit_avatar(request):
 
         files = request.FILES.copy()
         token = request.POST.get('avatar_image_token')
-        if token and 'avatar_image' not in files:
+        if token:
             assembled_file = ChunkedUploadManager.get_assembled_file(request.user.id, token)
             if assembled_file:
                 files['avatar_image'] = assembled_file
@@ -653,7 +653,7 @@ def edit_background(request):
 
         files = request.FILES.copy()
         token = request.POST.get('background_image_token')
-        if token and 'background_image' not in files:
+        if token:
             assembled_file = ChunkedUploadManager.get_assembled_file(request.user.id, token)
             if assembled_file:
                 files['background_image'] = assembled_file

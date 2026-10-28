@@ -36,6 +36,7 @@ class ChunkCompleteView(LoginRequiredMixin, View):
         upload_id = request.POST.get('upload_id')
         filename = request.POST.get('filename') or 'upload.bin'
         total_chunks = request.POST.get('total_chunks')
+        expected_size = request.POST.get('expected_size')
 
         if not upload_id or total_chunks is None:
             return JsonResponse({'success': False, 'error': 'Missing required fields'}, status=400)
@@ -46,6 +47,7 @@ class ChunkCompleteView(LoginRequiredMixin, View):
                 upload_id=upload_id,
                 original_filename=filename,
                 total_chunks=total_chunks,
+                expected_size=expected_size,
             )
             return JsonResponse({
                 'success': True,

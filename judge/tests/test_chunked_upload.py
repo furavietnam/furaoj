@@ -10,6 +10,7 @@ from django.urls import reverse
 
 import zipfile
 from judge.models import Problem, ProblemData, ProblemGroup, Profile
+from judge.utils.chunked_upload import ChunkedUploadManager
 
 
 class ChunkedUploadTestCase(TestCase):
@@ -303,6 +304,121 @@ class ChunkedUploadTestCase(TestCase):
         call_command('cleanup_chunks', hours=0)
         chunk_path = os.path.join(settings.MEDIA_ROOT, 'chunked_uploads', 'chunks', str(self.user.id), upload_id)
         self.assertFalse(os.path.exists(chunk_path))
+
+    def test_chunk_complete_idempotent(self):
+        self.client.login(username='testuser', password='password')
+        upload_id = str(uuid.uuid4())
+        self.client.post(reverse('chunk_upload'), {
+            'upload_id': upload_id,
+            'chunk_index': 0,
+            'total_chunks': 1,
+            'chunk_file': SimpleUploadedFile('sample.txt', b'Hello world!'),
+        })
+        resp1 = self.client.post(reverse('chunk_complete'), {
+            'upload_id': upload_id,
+            'filename': 'sample.txt',
+            'total_chunks': 1,
+        })
+        self.assertEqual(resp1.status_code, 200)
+        token1 = resp1.json()['upload_token']
+
+        # Second complete call should return same token and metadata
+        resp2 = self.client.post(reverse('chunk_complete'), {
+            'upload_id': upload_id,
+            'filename': 'sample.txt',
+            'total_chunks': 1,
+        })
+        self.assertEqual(resp2.status_code, 200)
+        self.assertEqual(resp2.json()['upload_token'], token1)
+
+    def test_chunk_complete_size_verification(self):
+        self.client.login(username='testuser', password='password')
+        upload_id = str(uuid.uuid4())
+        self.client.post(reverse('chunk_upload'), {
+            'upload_id': upload_id,
+            'chunk_index': 0,
+            'total_chunks': 1,
+            'chunk_file': SimpleUploadedFile('sample.txt', b'12345'),
+        })
+        # Wrong expected size
+        resp = self.client.post(reverse('chunk_complete'), {
+            'upload_id': upload_id,
+            'filename': 'sample.txt',
+            'total_chunks': 1,
+            'expected_size': 9999,
+        })
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('size', resp.json().get('error', '').lower())
+
+    def test_chunked_uploaded_file_reopen_and_mime(self):
+        self.client.login(username='testuser', password='password')
+        upload_id = str(uuid.uuid4())
+        self.client.post(reverse('chunk_upload'), {
+            'upload_id': upload_id,
+            'chunk_index': 0,
+            'total_chunks': 1,
+            'chunk_file': SimpleUploadedFile('avatar.png', b'\x89PNG\r\n\x1a\n'),
+        })
+        resp = self.client.post(reverse('chunk_complete'), {
+            'upload_id': upload_id,
+            'filename': 'avatar.png',
+            'total_chunks': 1,
+        })
+        token = resp.json()['upload_token']
+        assembled = ChunkedUploadManager.get_assembled_file(self.user.id, token)
+        self.assertIsNotNone(assembled)
+        self.assertEqual(assembled.content_type, 'image/png')
+        # Test close and reopen
+        assembled.close()
+        self.assertTrue(assembled.file.closed)
+        assembled.open('rb')
+        self.assertFalse(assembled.file.closed)
+        self.assertEqual(assembled.read(), b'\x89PNG\r\n\x1a\n')
+        assembled.close()
+
+    def test_problem_data_token_precedence_over_files(self):
+        self.client.login(username='admin', password='password')
+        zip_buf = io.BytesIO()
+        with zipfile.ZipFile(zip_buf, 'w') as zf:
+            zf.writestr('1.in', '1 2\n')
+            zf.writestr('1.out', '3\n')
+        zip_bytes = zip_buf.getvalue()
+
+        upload_id = str(uuid.uuid4())
+        self.client.post(reverse('chunk_upload'), {
+            'upload_id': upload_id,
+            'chunk_index': 0,
+            'total_chunks': 1,
+            'chunk_file': SimpleUploadedFile('data.zip', zip_bytes),
+        })
+        complete_resp = self.client.post(reverse('chunk_complete'), {
+            'upload_id': upload_id,
+            'filename': 'data.zip',
+            'total_chunks': 1,
+        })
+        token = complete_resp.json()['upload_token']
+
+        # Send both token AND a dummy corrupted raw file in files
+        dummy_file = SimpleUploadedFile('dummy.zip', b'corrupted_not_a_zip')
+        resp = self.client.post(reverse('problem_data', args=[self.problem.code]), {
+            'problem-data-zipfile': dummy_file,
+            'problem-data-zipfile-token': token,
+            'problem-data-grader': 'standard',
+            'problem-data-checker': 'standard',
+            'problem-data-checker_type': 'default',
+            'cases-TOTAL_FORMS': '1',
+            'cases-INITIAL_FORMS': '0',
+            'cases-MIN_NUM_FORMS': '0',
+            'cases-MAX_NUM_FORMS': '1',
+            'cases-0-order': '1',
+            'cases-0-type': 'C',
+            'cases-0-input_file': '1.in',
+            'cases-0-output_file': '1.out',
+            'cases-0-points': '100',
+        })
+        # If token takes precedence, it extracts the valid ZIP and redirects 302
+        self.assertEqual(resp.status_code, 302)
+
 
 
 

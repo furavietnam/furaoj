@@ -49,8 +49,9 @@ class ChunkUploader {
     }
 
     async uploadChunkWithRetry(formData, signal, attempt = 1) {
+        let response;
         try {
-            const response = await fetch(this.chunkUrl, {
+            response = await fetch(this.chunkUrl, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': ChunkUploader.getCsrfToken(),
@@ -58,26 +59,59 @@ class ChunkUploader {
                 body: formData,
                 signal: signal,
             });
-
-            if (!response.ok) {
-                const isTransient = [502, 503, 504, 520, 521, 522, 524].includes(response.status);
-                if (attempt <= this.maxRetries && (isTransient || response.status >= 500)) {
-                    await new Promise(r => setTimeout(r, this.retryDelay * attempt));
-                    return await this.uploadChunkWithRetry(formData, signal, attempt + 1);
-                }
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || `Chunk upload failed with HTTP ${response.status}`);
-            }
-
-            return await response.json();
-        } catch (err) {
-            if (err.name === 'AbortError') throw err;
+        } catch (netErr) {
+            if (netErr.name === 'AbortError') throw netErr;
             if (attempt <= this.maxRetries) {
                 await new Promise(r => setTimeout(r, this.retryDelay * attempt));
                 return await this.uploadChunkWithRetry(formData, signal, attempt + 1);
             }
-            throw err;
+            throw netErr;
         }
+
+        if (!response.ok) {
+            const isTransient = [502, 503, 504, 520, 521, 522, 524].includes(response.status);
+            if (attempt <= this.maxRetries && (isTransient || response.status >= 500)) {
+                await new Promise(r => setTimeout(r, this.retryDelay * attempt));
+                return await this.uploadChunkWithRetry(formData, signal, attempt + 1);
+            }
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Chunk upload failed with HTTP ${response.status}`);
+        }
+
+        return await response.json();
+    }
+
+    async completeUploadWithRetry(completeData, signal, attempt = 1) {
+        let response;
+        try {
+            response = await fetch(this.completeUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': ChunkUploader.getCsrfToken(),
+                },
+                body: completeData,
+                signal: signal,
+            });
+        } catch (netErr) {
+            if (netErr.name === 'AbortError') throw netErr;
+            if (attempt <= this.maxRetries) {
+                await new Promise(r => setTimeout(r, this.retryDelay * attempt));
+                return await this.completeUploadWithRetry(completeData, signal, attempt + 1);
+            }
+            throw netErr;
+        }
+
+        if (!response.ok) {
+            const isTransient = [502, 503, 504, 520, 521, 522, 524].includes(response.status);
+            if (attempt <= this.maxRetries && (isTransient || response.status >= 500)) {
+                await new Promise(r => setTimeout(r, this.retryDelay * attempt));
+                return await this.completeUploadWithRetry(completeData, signal, attempt + 1);
+            }
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error || `Completing upload failed with HTTP ${response.status}`);
+        }
+
+        return await response.json();
     }
 
     /**
@@ -126,27 +160,14 @@ class ChunkUploader {
             });
         }
 
-        // Call complete endpoint
+        // Call complete endpoint with retry
         const completeData = new FormData();
         completeData.append('upload_id', uploadId);
         completeData.append('filename', file.name);
         completeData.append('total_chunks', totalChunks);
+        completeData.append('expected_size', totalSize);
 
-        const completeResp = await fetch(this.completeUrl, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': ChunkUploader.getCsrfToken(),
-            },
-            body: completeData,
-            signal: signal,
-        });
-
-        if (!completeResp.ok) {
-            const errData = await completeResp.json().catch(() => ({}));
-            throw new Error(errData.error || `Completing upload failed with HTTP ${completeResp.status}`);
-        }
-
-        return await completeResp.json();
+        return await this.completeUploadWithRetry(completeData, signal);
     }
 
     /**
@@ -163,6 +184,19 @@ class ChunkUploader {
         const autoSubmit = options.autoSubmit || false;
         const form = input.closest('form');
 
+        const getSubmitBtn = () => options.submitButton || (form ? form.querySelector('button[type="submit"], input[type="submit"]') : null);
+        const restoreSubmitBtn = (btn) => {
+            if (!btn) return;
+            btn.disabled = false;
+            if (btn.dataset.originalText) {
+                if (btn.tagName === 'INPUT') {
+                    btn.value = btn.dataset.originalText;
+                } else {
+                    btn.textContent = btn.dataset.originalText;
+                }
+            }
+        };
+
         // Check or create hidden input for token
         let hiddenTokenInput = form ? form.querySelector(`input[name="${tokenInputName}"]`) : null;
         if (!hiddenTokenInput && form) {
@@ -170,6 +204,16 @@ class ChunkUploader {
             hiddenTokenInput.type = 'hidden';
             hiddenTokenInput.name = tokenInputName;
             form.appendChild(hiddenTokenInput);
+        }
+
+        // Suppress raw file submission when token is present
+        if (form) {
+            form.addEventListener('submit', () => {
+                if (hiddenTokenInput && hiddenTokenInput.value) {
+                    input.disabled = true;
+                    setTimeout(() => { input.disabled = false; }, 2000);
+                }
+            });
         }
 
         // Create UI progress widget
@@ -207,14 +251,15 @@ class ChunkUploader {
             widget.style.display = 'none';
             input.value = '';
             if (hiddenTokenInput) hiddenTokenInput.value = '';
-            if (options.submitButton) options.submitButton.disabled = false;
+            restoreSubmitBtn(getSubmitBtn());
         });
 
         input.addEventListener('change', async (e) => {
+            if (hiddenTokenInput) hiddenTokenInput.value = '';
+
             const file = input.files && input.files[0];
             if (!file) {
                 widget.style.display = 'none';
-                if (hiddenTokenInput) hiddenTokenInput.value = '';
                 return;
             }
 
@@ -235,10 +280,12 @@ class ChunkUploader {
             progressDetail.textContent = `(0 B / ${ChunkUploader.formatBytes(file.size)})`;
 
             // Disable submit button while uploading chunks
-            const submitBtn = options.submitButton || (form ? form.querySelector('button[type="submit"], input[type="submit"]') : null);
+            const submitBtn = getSubmitBtn();
             if (submitBtn) {
                 submitBtn.disabled = true;
-                submitBtn.dataset.originalText = submitBtn.textContent || submitBtn.value;
+                if (!submitBtn.dataset.originalText) {
+                    submitBtn.dataset.originalText = submitBtn.textContent || submitBtn.value;
+                }
                 if (submitBtn.tagName === 'INPUT') {
                     submitBtn.value = 'Uploading file chunks...';
                 } else {
@@ -269,16 +316,7 @@ class ChunkUploader {
                     options.onComplete(result);
                 }
 
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    if (submitBtn.dataset.originalText) {
-                        if (submitBtn.tagName === 'INPUT') {
-                            submitBtn.value = submitBtn.dataset.originalText;
-                        } else {
-                            submitBtn.textContent = submitBtn.dataset.originalText;
-                        }
-                    }
-                }
+                restoreSubmitBtn(submitBtn);
 
                 if (autoSubmit && form) {
                     form.submit();
@@ -295,21 +333,13 @@ class ChunkUploader {
                         options.onError(err);
                     }
                 }
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    if (submitBtn.dataset.originalText) {
-                        if (submitBtn.tagName === 'INPUT') {
-                            submitBtn.value = submitBtn.dataset.originalText;
-                        } else {
-                            submitBtn.textContent = submitBtn.dataset.originalText;
-                        }
-                    }
-                }
+                restoreSubmitBtn(submitBtn);
             }
         });
 
         return { uploader, widget };
     }
+
 }
 
 if (typeof window !== 'undefined') {

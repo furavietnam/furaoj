@@ -1,4 +1,5 @@
 import json
+import mimetypes
 import os
 import shutil
 import time
@@ -18,6 +19,11 @@ class ChunkedUploadedFile(UploadedFile):
         size = os.path.getsize(file_path)
         super().__init__(file=file_obj, name=original_filename, content_type=content_type, size=size)
         self.file_path = file_path
+
+    def open(self, mode=None):
+        if not self.file or self.file.closed:
+            self.file = open(self.file_path, mode or 'rb')
+        return self
 
     def temporary_file_path(self):
         return self.file_path
@@ -64,8 +70,15 @@ class ChunkedUploadManager:
         except (ValueError, TypeError):
             raise ValueError('Invalid chunk indices')
 
+        if total_chunks <= 0:
+            raise ValueError('total_chunks must be greater than 0')
+        if total_chunks > 10000:
+            raise ValueError('Exceeded maximum chunk count')
         if chunk_index < 0 or chunk_index >= total_chunks:
             raise ValueError(f'chunk_index {chunk_index} out of bounds for total {total_chunks}')
+
+        if chunk_file.size > 25 * 1024 * 1024:
+            raise ValueError('Chunk exceeds size limit')
 
         upload_dir = cls.get_upload_dir(user_id, upload_id)
         chunk_path = os.path.join(upload_dir, f'chunk_{chunk_index}')
@@ -87,11 +100,29 @@ class ChunkedUploadManager:
         return True
 
     @classmethod
-    def assemble_chunks(cls, user_id, upload_id, original_filename, total_chunks):
+    def assemble_chunks(cls, user_id, upload_id, original_filename, total_chunks, expected_size=None):
         try:
             total_chunks = int(total_chunks)
         except (ValueError, TypeError):
             raise ValueError('Invalid total_chunks')
+
+        if total_chunks <= 0:
+            raise ValueError('total_chunks must be greater than 0')
+        if total_chunks > 10000:
+            raise ValueError('Exceeded maximum chunk count')
+
+        valid_upload_id = cls.validate_uuid(upload_id)
+        assembled_dir = cls.get_assembled_dir(user_id, valid_upload_id)
+        meta_path = os.path.join(assembled_dir, 'meta.json')
+
+        # Idempotency check: if already assembled, return existing metadata
+        if os.path.exists(meta_path):
+            try:
+                with open(meta_path, 'r') as f:
+                    meta = json.load(f)
+                return meta
+            except Exception:
+                pass
 
         upload_dir = cls.get_upload_dir(user_id, upload_id)
 
@@ -101,8 +132,7 @@ class ChunkedUploadManager:
             if not os.path.exists(chunk_file):
                 raise ValueError(f'Missing chunk {i} of {total_chunks}')
 
-        upload_token = str(uuid.uuid4())
-        assembled_dir = cls.get_assembled_dir(user_id, upload_token)
+        upload_token = valid_upload_id
         safe_filename = get_valid_filename(original_filename) or 'upload.bin'
         assembled_file_path = os.path.join(assembled_dir, safe_filename)
 
@@ -118,6 +148,16 @@ class ChunkedUploadManager:
                         outfile.write(buf)
                         total_size += len(buf)
 
+        if expected_size is not None:
+            try:
+                expected_size = int(expected_size)
+                if total_size != expected_size:
+                    raise ValueError(f'Assembled file size ({total_size}) does not match expected size ({expected_size})')
+            except (ValueError, TypeError) as e:
+                if 'does not match' in str(e):
+                    shutil.rmtree(assembled_dir, ignore_errors=True)
+                    raise
+
         meta = {
             'upload_token': upload_token,
             'filename': original_filename,
@@ -126,7 +166,7 @@ class ChunkedUploadManager:
             'user_id': user_id,
             'created_at': time.time(),
         }
-        with open(os.path.join(assembled_dir, 'meta.json'), 'w') as f:
+        with open(meta_path, 'w') as f:
             json.dump(meta, f)
 
         # Cleanup raw chunks
@@ -160,7 +200,8 @@ class ChunkedUploadManager:
         if not os.path.exists(file_path):
             return None
 
-        return ChunkedUploadedFile(file_path, meta.get('filename', safe_filename))
+        content_type = mimetypes.guess_type(meta.get('filename') or safe_filename)[0] or 'application/octet-stream'
+        return ChunkedUploadedFile(file_path, meta.get('filename', safe_filename), content_type=content_type)
 
     @classmethod
     def cleanup_old_chunks(cls, max_age_hours=24):
@@ -186,3 +227,8 @@ class ChunkedUploadManager:
                             shutil.rmtree(item_path, ignore_errors=True)
                     except OSError:
                         pass
+                try:
+                    os.rmdir(user_path)
+                except OSError:
+                    pass
+
